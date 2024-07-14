@@ -1,0 +1,123 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\devgitlab\\guidexos\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3880E378-077B-4F24-AD1E-9E157679C9BA}|guideXOS\\guideXOS.csproj|d:\\devgitlab\\guidexos\\guidexos\\gui\\desktop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3880E378-077B-4F24-AD1E-9E157679C9BA}|guideXOS\\guideXOS.csproj|solutionrelative:guidexos\\gui\\desktop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|d:\\devgitlab\\guidexos\\kernel\\driver\\ac97.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|solutionrelative:kernel\\driver\\ac97.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|d:\\devgitlab\\guidexos\\kernel\\fs\\filesystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|solutionrelative:kernel\\fs\\filesystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|D:\\devgitlab\\guidexos\\kernel\\fs\\fatfs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|solutionrelative:kernel\\fs\\fatfs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|D:\\devgitlab\\guidexos\\kernel\\fs\\disk.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{066034BC-37FE-4605-8BDB-C525EC29DBE4}|Kernel\\Kernel.shproj|solutionrelative:kernel\\fs\\disk.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{57d563b6-44a5-47df-85be-f4199ad6b651}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AC97.cs",
+              "DocumentMoniker": "D:\\devgitlab\\guidexos\\Kernel\\Driver\\AC97.cs",
+              "RelativeDocumentMoniker": "Kernel\\Driver\\AC97.cs",
+              "ToolTip": "D:\\devgitlab\\guidexos\\Kernel\\Driver\\AC97.cs",
+              "RelativeToolTip": "Kernel\\Driver\\AC97.cs",
+              "ViewState": "AQIAADMAAAAAAAAAAAAAAEUAAAAYAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-14T19:40:39.173Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Desktop.cs",
+              "DocumentMoniker": "D:\\devgitlab\\guidexos\\guideXOS\\GUI\\Desktop.cs",
+              "RelativeDocumentMoniker": "guideXOS\\GUI\\Desktop.cs",
+              "ToolTip": "D:\\devgitlab\\guidexos\\guideXOS\\GUI\\Desktop.cs",
+              "RelativeToolTip": "guideXOS\\GUI\\Desktop.cs",
+              "ViewState": "AQIAAPoAAAAAAAAAAAAmwBEBAAAdAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-14T19:38:00.071Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "FileSystem.cs",
+              "DocumentMoniker": "D:\\devgitlab\\guidexos\\Kernel\\FS\\FileSystem.cs",
+              "RelativeDocumentMoniker": "Kernel\\FS\\FileSystem.cs",
+              "ToolTip": "D:\\devgitlab\\guidexos\\Kernel\\FS\\FileSystem.cs",
+              "RelativeToolTip": "Kernel\\FS\\FileSystem.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABQAAAAWAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-14T19:30:09.721Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "FATFS.cs",
+              "DocumentMoniker": "D:\\devgitlab\\guidexos\\Kernel\\FS\\FATFS.cs",
+              "RelativeDocumentMoniker": "Kernel\\FS\\FATFS.cs",
+              "ToolTip": "D:\\devgitlab\\guidexos\\Kernel\\FS\\FATFS.cs",
+              "RelativeToolTip": "Kernel\\FS\\FATFS.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-14T19:29:52.8Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Disk.cs",
+              "DocumentMoniker": "D:\\devgitlab\\guidexos\\Kernel\\FS\\Disk.cs",
+              "RelativeDocumentMoniker": "Kernel\\FS\\Disk.cs",
+              "ToolTip": "D:\\devgitlab\\guidexos\\Kernel\\FS\\Disk.cs",
+              "RelativeToolTip": "Kernel\\FS\\Disk.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-14T19:29:52.312Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
