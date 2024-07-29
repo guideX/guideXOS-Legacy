@@ -39,7 +39,7 @@ namespace guideXOS.GUI {
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
                 if (Control.MousePosition.X > 15 && Control.MousePosition.X < 35 && Control.MousePosition.Y > 700 && Control.MousePosition.Y < 800) {
                     if (StartMenu == null) {
-                        StartMenu = new StartMenu(15, 45, 200, 680);
+                        StartMenu = new StartMenu();
                     } else {
                         if (StartMenu != null && StartMenu.Visible) {
                             StartMenu.Visible = false;

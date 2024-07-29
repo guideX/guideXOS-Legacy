@@ -1,5 +1,8 @@
 using guideXOS.Misc;
 namespace guideXOS.Kernel.Drivers {
+    /// <summary>
+    /// The Intel I/O Advanced Programmable Interrupt Controller is used to distribute external interrupts in a more advanced manner than that of the standard 8259 PIC
+    /// </summary>
     public static unsafe class IOAPIC {
         private const int IOREGSEL = 0x00;
         private const int IOWIN = 0x10;

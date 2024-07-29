@@ -20,7 +20,7 @@ namespace guideXOS
         }
 
         public static void DrawChar(char chr,int x, int y, uint color)
-        {
+        { 
             int offset = (chr & 0xFF) * 16;
             for (int i = 0; i < 16; i++)
             {

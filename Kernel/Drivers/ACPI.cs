@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace guideXOS.Kernel.Drivers {
 #pragma warning disable CS0649
     /// <summary>
-    /// ACPI
+    /// Advanced Configuration and Power Interface (ACPI) is an open standard that allows operating systems to configure and discover computer hardware components. It also enables power management, auto configuration, and status monitoring. ACPI was developed by Intel, Microsoft, and Toshiba, and was first released in December 1996
     /// </summary>
     public unsafe class ACPI {
         /// <summary>

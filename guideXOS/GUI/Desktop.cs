@@ -10,35 +10,7 @@ namespace guideXOS.GUI {
     /// <summary>
     /// Desktop
     /// </summary>
-    internal class Desktop {
-        /// <summary>
-        /// File Icon
-        /// </summary>
-        private static Image FileIcon;
-        /// <summary>
-        /// Iamge Icon
-        /// </summary>
-        private static Image IamgeIcon;
-        /// <summary>
-        /// Audio Icon
-        /// </summary>
-        private static Image AudioIcon;
-        /// <summary>
-        /// Folder Icon
-        /// </summary>
-        private static Image FolderIcon;
-        /// <summary>
-        /// Taskbar Icon
-        /// </summary>
-        private static Image TaskbarIcon;
-        /// <summary>
-        /// Start Icon
-        /// </summary>
-        private static Image StartIcon;
-        /// <summary>
-        /// Prefix
-        /// </summary>
-        //public static string Prefix;
+    internal static class Desktop {
         /// <summary>
         /// Dir
         /// </summary>
@@ -75,17 +47,7 @@ namespace guideXOS.GUI {
         public static void Initialize() {
             Apps = new AppCollection();
             IndexClicked = -1;
-            try {
-                TaskbarIcon = new PNG(File.ReadAllBytes("Images/taskbar.png"));
-                FileIcon = new PNG(File.ReadAllBytes("Images/file.png"));
-                IamgeIcon = new PNG(File.ReadAllBytes("Images/Image.png"));
-                AudioIcon = new PNG(File.ReadAllBytes("Images/Audio.png"));
-                FolderIcon = new PNG(File.ReadAllBytes("Images/Folder.png"));
-                StartIcon = new PNG(File.ReadAllBytes("Images/Start.png"));
-            } catch {
-            }
-            Taskbar = new Taskbar(40, TaskbarIcon);
-            //Prefix = " root@guidexos: ";
+            Taskbar = new Taskbar(40, Icons.TaskbarIcon);
             Dir = "";
             imageViewer = new ImageViewer(400, 400);
             msgbox = new MessageBox(100, 300);
@@ -104,40 +66,41 @@ namespace guideXOS.GUI {
         /// Update
         /// </summary>
         public static void Update() {
-            List<FileInfo> names = File.GetFiles(Dir);
+            var fileIcon = Icons.FileIcon;
+            List <FileInfo> names = File.GetFiles(Dir);
             int Devide = 60;
             int X = Devide;
             int Y = Devide;
             if (IsAtRoot) {
                 for (int i = 0; i < Apps.Length; i++) {
-                    if (Y + FileIcon.Height + Devide > Framebuffer.Graphics.Height - Devide) {
+                    if (Y + fileIcon.Height + Devide > Framebuffer.Graphics.Height - Devide) {
                         Y = Devide;
-                        X += FileIcon.Width + Devide;
+                        X += fileIcon.Width + Devide;
                     }
                     ClickEvent(Apps.Name(i), false, X, Y, i);
                     Framebuffer.Graphics.DrawImage(X, Y, Apps.Icon(i));
-                    WindowManager.font.DrawString(X, Y + FileIcon.Height, Apps.Name(i), FileIcon.Width + 8, WindowManager.font.FontSize * 3);
-                    Y += FileIcon.Height + Devide;
+                    WindowManager.font.DrawString(X, Y + fileIcon.Height, Apps.Name(i), fileIcon.Width + 8, WindowManager.font.FontSize * 3);
+                    Y += Icons.FileIcon.Height + Devide;
                 }
             }
 
             for (int i = 0; i < names.Count; i++) {
-                if (Y + FileIcon.Height + Devide > Framebuffer.Graphics.Height - Devide) {
+                if (Y + fileIcon.Height + Devide > Framebuffer.Graphics.Height - Devide) {
                     Y = Devide;
-                    X += FileIcon.Width + Devide;
+                    X += fileIcon.Width + Devide;
                 }
                 ClickEvent(names[i].Name, names[i].Attribute == FileAttribute.Directory, X, Y, i + (IsAtRoot ? Apps.Length : 0));
                 if (names[i].Name.EndsWith(".png") || names[i].Name.EndsWith(".bmp")) {
-                    Framebuffer.Graphics.DrawImage(X, Y, IamgeIcon);
+                    Framebuffer.Graphics.DrawImage(X, Y, Icons.IamgeIcon);
                 } else if (names[i].Name.EndsWith(".wav")) {
-                    Framebuffer.Graphics.DrawImage(X, Y, AudioIcon);
+                    Framebuffer.Graphics.DrawImage(X, Y, Icons.AudioIcon);
                 } else if (names[i].Attribute == FileAttribute.Directory) {
-                    Framebuffer.Graphics.DrawImage(X, Y, FolderIcon);
+                    Framebuffer.Graphics.DrawImage(X, Y, Icons.FolderIcon);
                 } else {
-                    Framebuffer.Graphics.DrawImage(X, Y, FileIcon);
+                    Framebuffer.Graphics.DrawImage(X, Y, fileIcon);
                 }
-                WindowManager.font.DrawString(X, Y + FileIcon.Height, names[i].Name, FileIcon.Width + 8, WindowManager.font.FontSize * 3);
-                Y += FileIcon.Height + Devide;
+                WindowManager.font.DrawString(X, Y + fileIcon.Height, names[i].Name, fileIcon.Width + 8, WindowManager.font.FontSize * 3);
+                Y += fileIcon.Height + Devide;
                 names[i].Dispose();
             }
             names.Dispose();
@@ -211,7 +174,7 @@ namespace guideXOS.GUI {
                         }
                 }
 
-                if (!WindowManager.HasWindowMoving && clickable && !ClickLock && Control.MousePosition.X > X && Control.MousePosition.X < X + FileIcon.Width && Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + FileIcon.Height) {
+                if (!WindowManager.HasWindowMoving && clickable && !ClickLock && Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.FileIcon.Width && Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.FileIcon.Height) {
                     IndexClicked = i;
                     OnClick(name, isDirectory, X, Y);
                 }
@@ -220,11 +183,10 @@ namespace guideXOS.GUI {
             }
 
             if (IndexClicked == i) {
-                int w = (int)(FileIcon.Width * 1.5f);
-                Framebuffer.Graphics.AFillRectangle(X + ((FileIcon.Width / 2) - (w / 2)), Y, w, FileIcon.Height * 2, 0x7F2E86C1);
+                int w = (int)(Icons.FileIcon.Width * 1.5f);
+                Framebuffer.Graphics.AFillRectangle(X + ((Icons.FileIcon.Width / 2) - (w / 2)), Y, w, Icons.FileIcon.Height * 2, 0x7F2E86C1);
             }
         }
-
         static bool ClickLock = false;
         static int IndexClicked;
         /// <summary>

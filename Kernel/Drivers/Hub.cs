@@ -1,7 +1,13 @@
 ﻿using guideXOS.Misc;
 namespace guideXOS.Kernel.Drivers {
+    /// <summary>
+    /// HUB
+    /// </summary>
     public static unsafe class Hub {
-        struct Desc {
+        /// <summary>
+        /// Desc
+        /// </summary>
+        private struct Desc {
             public byte Length;
             public byte Type;
             public byte PortCount;
@@ -9,16 +15,22 @@ namespace guideXOS.Kernel.Drivers {
             public byte PortPowerTime;
             public byte Current;
         }
-
-        static USBRequest* req;
-
+        /// <summary>
+        /// Request
+        /// </summary>
+        private static USBRequest* req;
+        /// <summary>
+        /// Init
+        /// </summary>
         public static void Initialize() {
             req = (USBRequest*)Allocator.Allocate((ulong)sizeof(USBRequest));
         }
-
+        /// <summary>
+        /// Initialize
+        /// </summary>
+        /// <param name="device"></param>
         internal static void Initialize(USBDevice device) {
             Desc* desc = (Desc*)Allocator.Allocate((ulong)sizeof(Desc));
-
             (*req).Clean();
             req->RequestType = 0xA0;
             req->Request = 0x06;
@@ -29,9 +41,7 @@ namespace guideXOS.Kernel.Drivers {
             if (!b) {
                 //Console.WriteLine("[USB Hub] Can't get Hub descriptor");
             }
-
             //Console.WriteLine($"[USB Hub] This hub has {desc->PortCount} ports");
-
             for (int i = 0; i < desc->PortCount; i++) {
                 (*req).Clean();
                 req->RequestType = 0x23;
@@ -41,8 +51,6 @@ namespace guideXOS.Kernel.Drivers {
                 req->Length = 0;
                 b = USB.SendAndReceive(device, req, null, null);
                 ACPITimer.SleepMicroseconds(100000);
-
-
                 (*req).Clean();
                 req->RequestType = 0x23;
                 req->Request = 0x03;
@@ -51,7 +59,6 @@ namespace guideXOS.Kernel.Drivers {
                 req->Length = 0;
                 b = USB.SendAndReceive(device, req, null, null);
                 ACPITimer.SleepMicroseconds(100000);
-
                 uint status = 0;
                 for (int k = 0; k < 8; k++) {
                     (*req).Clean();
@@ -65,13 +72,10 @@ namespace guideXOS.Kernel.Drivers {
                         //Console.WriteLine($"[USB Hub] Can't get Hub port {i} status");
                         return;
                     }
-
                     if (status != 0) break;
                     ACPITimer.SleepMicroseconds(100000);
                 }
-
                 int speed = (int)((status & ((3 << 9))) >> 9);
-
                 if (status & 2) {
                     USB.InitPort(i, device, 2, speed);
                 }

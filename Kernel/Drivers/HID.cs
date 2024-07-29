@@ -12,6 +12,10 @@ namespace guideXOS.Kernel.Drivers {
     public static unsafe class HID {
         #region "public static variables"
         /// <summary>
+        /// USB Request
+        /// </summary>
+        static USBRequest* _usbRequest;
+        /// <summary>
         /// Console Keys
         /// </summary>
         public static ConsoleKey[] ConsoleKeys;
@@ -30,12 +34,9 @@ namespace guideXOS.Kernel.Drivers {
         public static void Initialize() {
             Mouse = null;
             Keyboard = null;
-            cmd = (USBRequest*)Allocator.Allocate((ulong)sizeof(USBRequest));
+            _usbRequest = (USBRequest*)Allocator.Allocate((ulong)sizeof(USBRequest));
         }
-        /// <summary>
-        /// USB Request
-        /// </summary>
-        static USBRequest* cmd;
+
         /// <summary>
         /// Get HID Packet
         /// </summary>
@@ -43,13 +44,13 @@ namespace guideXOS.Kernel.Drivers {
         /// <param name="devicedesc"></param>
         /// <returns></returns>
         public static bool GetHIDPacket(USBDevice device, uint devicedesc) {
-            (*cmd).Clean();
-            cmd->Request = 1;
-            cmd->RequestType = 0xA1;
-            cmd->Index = 0;
-            cmd->Length = 3;
-            cmd->Value = 0x0100;
-            bool res = USB.SendAndReceive(device, cmd, (void*)devicedesc, device.Parent);
+            (*_usbRequest).Clean();
+            _usbRequest->Request = 1;
+            _usbRequest->RequestType = 0xA1;
+            _usbRequest->Index = 0;
+            _usbRequest->Length = 3;
+            _usbRequest->Value = 0x0100;
+            bool res = USB.SendAndReceive(device, _usbRequest, (void*)devicedesc, device.Parent);
             return res;
         }
         /// <summary>

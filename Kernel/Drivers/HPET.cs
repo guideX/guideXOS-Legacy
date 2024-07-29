@@ -1,8 +1,7 @@
-//https://wiki.osdev.org/HPET#Interrupt_routing
 using static guideXOS.Misc.MMIO;
 namespace guideXOS.Kernel.Drivers {
     /// <summary>
-    /// HPET
+    /// The High Precision Event Timer (HPET) is a hardware timer available in modern x86-compatible personal computers
     /// </summary>
     public static unsafe class HPET {
         /// <summary>
@@ -45,15 +44,25 @@ namespace guideXOS.Kernel.Drivers {
         public static void WriteRegister(ulong reg, ulong value) {
             Out64((ulong*)(ACPI.HPET->Addresses.Address + reg), value);
         }
-
+        /// <summary>
+        /// Read Register
+        /// </summary>
+        /// <param name="reg"></param>
+        /// <returns></returns>
         public static ulong ReadRegister(ulong reg) {
             return In64((ulong*)(ACPI.HPET->Addresses.Address + reg));
         }
-
+        /// <summary>
+        /// Wait
+        /// </summary>
+        /// <param name="Millionseconds"></param>
         public static void Wait(ulong Millionseconds) {
             WaitMicrosecond(Millionseconds * 10000);
         }
-
+        /// <summary>
+        /// Wait Microsecond
+        /// </summary>
+        /// <param name="Microsecond"></param>
         public static void WaitMicrosecond(ulong Microsecond) {
             Ticks = 0;
             ulong Until = Ticks + (Microsecond * 1000000000) / Clock;

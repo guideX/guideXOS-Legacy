@@ -1,12 +1,13 @@
 ﻿using guideXOS.Misc;
 using System;
 namespace guideXOS.Kernel.Drivers {
-    //TO-DO 44.1khz
+    /// <summary>
+    /// Creative Ensoniq AudioPCI
+    /// </summary>
     public static unsafe class ES1371 {
         public static uint BAR0;
         public static byte* Buffer;
         private const int CacheSize = 0xFFFFF;
-
         public static void Initialize() {
             var dev = PCI.GetDevice(0x1274, 0x1371);
             if (!dev) return;

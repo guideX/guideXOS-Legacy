@@ -30,8 +30,8 @@ namespace guideXOS.GUI {
             Windows = new List<Window>();
             CloseButton = new PNG(File.ReadAllBytes("Images/Close.png"));
             //MinimizeButton = new PNG(File.ReadAllBytes("Images/Close.png"));
-            PNG yehei = new PNG(File.ReadAllBytes("Images/M+.png"));
-            font = new IFont(yehei, "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", 18);
+            PNG defaultFont = new PNG(File.ReadAllBytes("Images/defaultfont.png"));
+            font = new IFont(defaultFont, "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", 18);
             MouseHandled = false;
         }
         /// <summary>

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using guideXOS.Misc;
 namespace guideXOS.Kernel.Drivers {
     /// <summary>
-    /// AC97
+    /// AC'97 (Audio Codec '97; also MC'97 for Modem Codec '97) is an audio codec standard developed by Intel Architecture Labs and various codec manufacturers in 1997. The standard was used in motherboards, modems, and sound cards.
     /// </summary>
     public unsafe class AC97 {
         /// <summary>

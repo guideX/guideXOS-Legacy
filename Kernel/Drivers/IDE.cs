@@ -1,9 +1,17 @@
 using guideXOS.FS;
 using System.Collections.Generic;
 namespace guideXOS.Kernel.Drivers {
+    /// <summary>
+    /// IDE is a widely used interface standard in computing that allows for the connection and communication between a computer's motherboard and its storage devices. It is commonly used for connecting hard disk drives (HDDs) and optical disc drives (ODDs) to the computer system.
+    /// </summary>
     public unsafe static class IDE {
+        /// <summary>
+        /// Ports
+        /// </summary>
         public static List<IDEDevice> Ports;
-
+        /// <summary>
+        /// Initialize
+        /// </summary>
         public static void Initialize() {
             Ports = new();
             ScanPorts(Channels.Primary);
@@ -11,12 +19,17 @@ namespace guideXOS.Kernel.Drivers {
             //if (Ports.Count == 0)
                 //Console.WriteLine("[IDE] IDE controller Failed to Initialize");
         }
-
+        /// <summary>
+        /// Channels
+        /// </summary>
         public enum Channels {
             Primary,
             Secondary
         }
-
+        /// <summary>
+        /// Scan Ports
+        /// </summary>
+        /// <param name="index"></param>
         public static void ScanPorts(Channels index) {
             ushort LBALowPort;
             ushort LBAMidPort;
@@ -29,14 +42,11 @@ namespace guideXOS.Kernel.Drivers {
             ushort FeaturePort;
             ushort ErrorPort;
             ushort SectorCountPort;
-
             ushort BasePort = 0, ControlPort = 0;
-
             bool Available() {
                 Native.Out8(LBALowPort, 0x88);
                 return Native.In8(LBALowPort) == 0x88;
             }
-
             bool WaitForReadyStatus() {
                 byte status;
                 do {
@@ -46,7 +56,6 @@ namespace guideXOS.Kernel.Drivers {
 
                 return true;
             }
-
             bool WaitForIdentifyData() {
                 byte status;
                 do {

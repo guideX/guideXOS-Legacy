@@ -1,16 +1,15 @@
 using guideXOS.Misc;
 using System.Runtime.InteropServices;
 namespace guideXOS.Kernel.Drivers {
+    /// <summary>
+    /// The Enhanced Host Controller Interface (EHCI) specification describes the register-level interface for a host controller for the Universal Serial Bus (USB)
+    /// </summary>
     public static unsafe class EHCI {
         public static uint BaseAddr;
-
         public static uint CMDReg;
         public static uint AsyncListReg;
-
         public static byte AvailablePorts;
-
         public const int FrameSize = 1024;
-
         public static void Initialize() {
             qh = (QH*)Allocator.Allocate((ulong)sizeof(QH));
             qh1 = (QH*)Allocator.Allocate((ulong)sizeof(QH));
@@ -20,14 +19,10 @@ namespace guideXOS.Kernel.Drivers {
             trans1 = (TD*)Allocator.Allocate((ulong)sizeof(TD));
             sts = (TD*)Allocator.Allocate((ulong)sizeof(TD));
             cmd = (USBRequest*)Allocator.Allocate((ulong)sizeof(USBRequest));
-
             PCIDevice device = PCI.GetDevice(0x0C, 0x03, 0x20);
             if (device == null) return;
-
             //Console.WriteLine("[EHCI] EHCI controller found!");
-
             device.WriteRegister(0x04, 0x04 | 0x02 | 0x01);
-
             uint bar0 = device.Bar0;
             //Console.WriteLine($"[EHCI] Bar0: {bar0.ToString("x2")}");
             BaseAddr = bar0 + *(byte*)bar0;
@@ -40,16 +35,13 @@ namespace guideXOS.Kernel.Drivers {
             AvailablePorts = (byte)(hcsparams & 0xF);
             //Console.WriteLine($"[EHCI] {AvailablePorts} Ports available");
             uint hccparams = *(uint*)(bar0 + 0x08);
-
             uint eecp = (hccparams & (255 << 8)) >> 8;
             if (eecp >= 0x40) {
                 //Console.WriteLine("[EHCI] Disabling BIOS EHCI Hand-off");
                 uint legsup = PCI.ReadRegister32(device.Bus, device.Slot, device.Function, (byte)eecp);
-
                 if (legsup & 0x00010000) {
                     PCI.WriteRegister32(device.Bus, device.Slot, device.Function, (byte)eecp, legsup | 0x01000000);
-                    for (; ; )
-                    {
+                    for (; ; ) {
                         //Console.WriteLine("[EHCI] Waitting for BIOS ready");
                         legsup = PCI.ReadRegister32(device.Bus, device.Slot, device.Function, (byte)eecp);
                         if ((~legsup & 0x00010000) != 0 && (legsup & 0x01000000) != 0) {
@@ -58,10 +50,8 @@ namespace guideXOS.Kernel.Drivers {
                     }
                 }
             }
-
             CMDReg = BaseAddr + 0x00;
             AsyncListReg = BaseAddr + 0x18;
-
             uint default_cmd = *(uint*)CMDReg;
             if (default_cmd & 1) {
                 //Console.WriteLine("[EHCI] Stopping this controller");
@@ -72,7 +62,6 @@ namespace guideXOS.Kernel.Drivers {
                     }
                 }
             }
-
             *(uint*)CMDReg |= 2;
             while (1) {
                 //Console.WriteLine("[EHCI] Waitting for controller ready");
@@ -80,41 +69,68 @@ namespace guideXOS.Kernel.Drivers {
                     break;
                 }
             }
-
             uint* framelist = (uint*)Allocator.Allocate(FrameSize * sizeof(uint));
-
             for (int i = 0; i < FrameSize; i++) {
                 framelist[i] |= 1;
             }
-
             *(uint*)(BaseAddr + 0x08) = 0;
-
             *(uint*)(BaseAddr + 0x10) = 0;
             *(uint*)(BaseAddr + 0x14) = (uint)&framelist;
             *(uint*)CMDReg |= 0x400001;
             *(uint*)(BaseAddr + 0x40) |= 1;
-
             ScanPorts();
-
             //Console.WriteLine("[EHCI] EHCI controller initialized");
         }
-
+        /// <summary>
+        /// End Point
+        /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct EndPoint {
+            /// <summary>
+            /// Length
+            /// </summary>
             public byte Length;
+            /// <summary>
+            /// Descriptor Type
+            /// </summary>
             public byte DescriptorType;
+            /// <summary>
+            /// Endpoint Address
+            /// </summary>
             public byte EndpointAddress;
+            /// <summary>
+            /// Attributes
+            /// </summary>
             public byte Attributes;
+            /// <summary>
+            /// Max Packet Size
+            /// </summary>
             public ushort MaxPacketSize;
+            /// <summary>
+            /// Interval
+            /// </summary>
             public byte Interval;
         }
-
+        /// <summary>
+        /// Config Desc
+        /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct ConfigDesc {
+            /// <summary>
+            /// Length
+            /// </summary>
             public byte Length;
+            /// <summary>
+            /// Descriptor Type
+            /// </summary>
             public byte DescriptorType;
-
+            /// <summary>
+            /// Total Length
+            /// </summary>
             public ushort TotalLength;
+            /// <summary>
+            /// Num Interfaces
+            /// </summary>
             public byte NumInterfaces;
             public byte ConfigurationValue;
             public byte Configuration;

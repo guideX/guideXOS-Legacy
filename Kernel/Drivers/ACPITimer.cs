@@ -1,13 +1,21 @@
 ﻿namespace guideXOS.Kernel.Drivers {
+    /// <summary>
+    /// The ACPI Power Management Timer is a very simple timer which runs at 3.579545 MHz and generates a SCI when the counter has overflown.
+    /// </summary>
     public static unsafe class ACPITimer {
-        const int Clock = 3579545;
-
+        /// <summary>
+        /// Clock
+        /// </summary>
+        private const int Clock = 3579545;
+        /// <summary>
+        /// Sleep
+        /// </summary>
+        /// <param name="ms"></param>
         public static void Sleep(ulong ms) {
             if (ACPI.FADT->PMTimerLength != 4) {
                 Console.Write("ACPI Timer is not present!\n");
                 for (; ; );
             }
-
             ulong delta = 0;
             ulong count = ms * (Clock / 1000);
             ulong last = Native.In32((ushort)ACPI.FADT->PMTimerBlock) & 0xFFFFFF;
@@ -28,16 +36,16 @@
                 }
             }
         }
-
+        /// <summary>
+        /// Sleep Microseconds
+        /// </summary>
+        /// <param name="Microseconds"></param>
         public static void SleepMicroseconds(ulong Microseconds) {
             if (ACPI.FADT->PMTimerLength != 4) return;
-
             ulong Clock;
             ulong Counter;
             ulong Last;
-
             Clock = ACPITimer.Clock * Microseconds / 1000000;
-
             Last = Native.In32(ACPI.FADT->PMTimerBlock);
             Counter = 0;
             while (Counter < Clock) {
