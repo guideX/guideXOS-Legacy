@@ -4,7 +4,7 @@ namespace guideXOS.GUI {
     /// <summary>
     /// Image Viewer
     /// </summary>
-    public class ImageViewer : Window {
+    internal class ImageViewer : Window {
         /// <summary>
         /// Image
         /// </summary>

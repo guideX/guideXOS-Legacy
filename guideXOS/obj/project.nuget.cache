@@ -1,12 +1,24 @@
 {
   "version": 2,
-  "dgSpecHash": "S+3fz/vXvo1MOLh+aDY2hQXavIg6gJwBvIJyVOm78iUVOoWHsPFHC4Dlbans6e4cXA5PiUgAgfu3hIUgF9Vc0w==",
+  "dgSpecHash": "5RLRmUaBYnk=",
   "success": true,
-  "projectFilePath": "D:\\devgitlab\\guidexos\\guideXOS\\guideXOS.csproj",
+  "projectFilePath": "D:\\devgitlab\\guideXOS\\guideXOS\\guideXOS\\guideXOS.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\guideX\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\7.0.0-alpha.1.22074.1\\microsoft.dotnet.ilcompiler.7.0.0-alpha.1.22074.1.nupkg.sha512",
-    "C:\\Users\\guideX\\.nuget\\packages\\microsoft.net.illink.analyzers\\7.0.100-1.23211.1\\microsoft.net.illink.analyzers.7.0.100-1.23211.1.nupkg.sha512",
-    "C:\\Users\\guideX\\.nuget\\packages\\microsoft.net.illink.tasks\\7.0.100-1.23211.1\\microsoft.net.illink.tasks.7.0.100-1.23211.1.nupkg.sha512"
+    "C:\\Users\\DarthguideX\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\7.0.0-preview.2.22152.2\\microsoft.dotnet.ilcompiler.7.0.0-preview.2.22152.2.nupkg.sha512",
+    "C:\\Users\\DarthguideX\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.8\\microsoft.net.illink.tasks.9.0.8.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1603",
+      "level": "Warning",
+      "message": "guideXOS depends on Microsoft.DotNet.ILCompiler (>= 7.0.0-alpha.1.22074.1) but Microsoft.DotNet.ILCompiler 7.0.0-alpha.1.22074.1 was not found. Microsoft.DotNet.ILCompiler 7.0.0-preview.2.22152.2 was resolved instead.",
+      "projectPath": "D:\\devgitlab\\guideXOS\\guideXOS\\guideXOS\\guideXOS.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\devgitlab\\guideXOS\\guideXOS\\guideXOS\\guideXOS.csproj",
+      "libraryId": "Microsoft.DotNet.ILCompiler",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    }
+  ]
 }

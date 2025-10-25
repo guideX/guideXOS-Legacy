@@ -28,7 +28,7 @@ namespace guideXOS.Misc {
 
             Stack->irs.rip = (ulong)method;
 
-            Terminated = false; 
+            Terminated = false;
         }
 
         public Thread(Action action, ulong stack_size = 16384) {

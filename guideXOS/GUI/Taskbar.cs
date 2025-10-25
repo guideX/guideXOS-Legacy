@@ -5,7 +5,7 @@ namespace guideXOS.GUI {
     /// <summary>
     /// TaskBar
     /// </summary>
-    public class Taskbar {
+    internal class Taskbar {
         /// <summary>
         /// Start Menu
         /// </summary>
@@ -13,11 +13,11 @@ namespace guideXOS.GUI {
         /// <summary>
         /// Bar Height
         /// </summary>
-        private readonly int _barHeight;
+        private int _barHeight;
         /// <summary>
         /// Start Icon
         /// </summary>
-        private readonly Image _startIcon;
+        private Image _startIcon;
         /// <summary>
         /// Constructor
         /// </summary>

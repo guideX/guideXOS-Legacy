@@ -3,16 +3,20 @@ using guideXOS.Kernel.Drivers;
 using guideXOS.Misc;
 using System.Drawing;
 using System.Windows.Forms;
+
 namespace guideXOS.GUI {
-    public unsafe class WAVPlayer : Window {
-        private static byte[] _pcm;
-        private static int _index;
-        private static WAV.Header _header;
+    internal unsafe class WAVPlayer : Window {
+        static byte[] _pcm;
+        static int _index;
+        static WAV.Header _header;
         public static WAVPlayer _player;
         public static string _song_name;
-        private readonly Image audiopause;
-        private readonly Image audioplay;
+
+        Image audiopause;
+        Image audioplay;
+
         public static bool playing;
+
         public WAVPlayer(int X, int Y) : base(X, Y, 200, 200) {
             audiopause = new PNG(File.ReadAllBytes("Images/audiopause.png"));
             audioplay = new PNG(File.ReadAllBytes("Images/audioplay.png"));
@@ -52,7 +56,7 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.DrawImage(X + (Width / 2 - audioplay.Width / 2), Y + (Height / 2 - audioplay.Height / 2), playing ? audiopause : audioplay);
         }
 
-        public static void Play(byte[] wav, string name = "unknown") {
+        public void Play(byte[] wav, string name = "unknown") {
             _index = 0;
             WAV.Decode(wav, out var pcm, out var hdr);
             wav.Dispose();

@@ -64,7 +64,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Int32.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Int64.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IntPtr.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)System\IO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IO\StreamReader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IO\TextReader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Math.cs" />
@@ -75,6 +74,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\ObsoleteAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ParamArrayAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Random.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Reflection\DefaultMemberAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Reflection\PortableExecutable\DOSHeader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Reflection\PortableExecutable\SubSystemType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Reflection\PortableExecutable\SectionHeader.cs" />

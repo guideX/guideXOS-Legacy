@@ -13,10 +13,6 @@ using System.Windows.Forms;
 /// </summary>
 unsafe class Program {
     /// <summary>
-    /// Desktop
-    /// </summary>
-    //public static Desktop Desktop;
-    /// <summary>
     /// Main
     /// </summary>
     static void Main() {
@@ -60,7 +56,7 @@ unsafe class Program {
     [RuntimeExport("KMain")]
     static void KMain() {
         Animator.Initialize();
-/*
+
 #if USBDebug
         Hub.Initialize();
         HID.Initialize();
@@ -97,7 +93,7 @@ unsafe class Program {
                 }
             }
         }
-#else*/
+#else
         Hub.Initialize();
         HID.Initialize();
         EHCI.Initialize();
@@ -137,7 +133,7 @@ unsafe class Program {
         if (HID.Keyboard == null) {
             Console.WriteLine("USB Keyboard not present");
         }
-//#endif
+#endif
 
         //Sized width to 512
         Cursor = new PNG(File.ReadAllBytes("Images/Cursor.png"));
@@ -245,7 +241,7 @@ unsafe class Program {
 
         #region Animation of entering Desktop
         Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
-        Desktop.Update();
+        Desktop.Update(Icons.FileIcon);
         WindowManager.DrawAll();
         Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, Cursor);
         Image _screen = Framebuffer.Graphics.Save();
@@ -299,6 +295,7 @@ unsafe class Program {
 
         NotificationManager.Initialize();
 
+        var fileIcon = Icons.FileIcon;
         for (; ; )
         {
             #region ConsoleHotKey
@@ -327,7 +324,7 @@ unsafe class Program {
             WindowManager.InputAll();
 
             Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
-            Desktop.Update();
+            Desktop.Update(fileIcon);
             WindowManager.DrawAll();
             NotificationManager.Update();
             /*

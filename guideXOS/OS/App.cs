@@ -93,6 +93,7 @@ namespace guideXOS.OS {
             _apps.Add(new App("StartMenu", icon));
             _apps.Add(new App("Lock", icon));
             _apps.Add(new App("Notepad", icon));
+            _apps.Add(new App("TaskManager", icon));
         }
         /// <summary>
         /// Load
@@ -130,6 +131,10 @@ namespace guideXOS.OS {
                             break;
                         case "Console":
                             Program.InitConsole();
+                            b = true;
+                            break;
+                        case "TaskManager":
+                            _apps[i].AppObject = new TaskManager(500, 500);
                             b = true;
                             break;
                     }

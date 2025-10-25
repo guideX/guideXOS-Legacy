@@ -1,22 +1,7 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
+
 namespace guideXOS.Misc {
-    /// <summary>
-    /// TXT
-    /// </summary>
-    public unsafe class TXT : string {
-        /// <summary>
-        /// Raw
-        /// </summary>
-        private string _raw;
-        /// <summary>
-        /// TXT
-        /// </summary>
-        /// <param name="raw"></param>
-        public TXT(string raw) : base(raw) {
-            _raw = raw;
-        }
-    }
     public unsafe class PNG : Image {
         public enum LodePNGColorType {
             LCT_GREY = 0, /*greyscale: 1,2,4,8,16 bit*/

@@ -1,0 +1,36 @@
+﻿"obj\debug\net9.0\win-x64\native\guideXOS.obj"
+/OUT:"..\bin\debug\net9.0\win-x64\native\guideXOS.exe"
+/LIBPATH:"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\ATLMFC\lib\x64"
+/LIBPATH:"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\x64"
+/LIBPATH:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64"
+/LIBPATH:"C:\Program Files (x86)\Windows Kits\10\lib\10.0.26100.0\ucrt\x64"
+/LIBPATH:"C:\Program Files (x86)\Windows Kits\10\\lib\10.0.26100.0\\um\x64"
+"obj\debug\net9.0\win-x64\native\guideXOS.res"
+/fixed /base:0x10000000 /map:Kernel.map
+"D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\x64\Debug\NativeLib.lib"
+"D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\x64\Debug\LibC.lib"
+"D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\x64\Debug\Doom.lib"
+"C:\Users\DarthguideX\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\7.0.0-preview.2.22152.2\sdk\bootstrapper.lib"
+"C:\Users\DarthguideX\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\7.0.0-preview.2.22152.2\sdk\Runtime.WorkstationGC.lib"
+"C:\Users\DarthguideX\.nuget\packages\runtime.win-x64.microsoft.dotnet.ilcompiler\7.0.0-preview.2.22152.2\sdk\System.IO.Compression.Native.Aot.lib"
+"advapi32.lib"
+"bcrypt.lib"
+"crypt32.lib"
+"iphlpapi.lib"
+"kernel32.lib"
+"mswsock.lib"
+"ncrypt.lib"
+"normaliz.lib"
+"ntdll.lib"
+"ole32.lib"
+"oleaut32.lib"
+"secur32.lib"
+"user32.lib"
+"version.lib"
+"ws2_32.lib"
+/NOLOGO /MANIFEST:NO
+/DEBUG
+/INCREMENTAL:NO
+/SUBSYSTEM:NATIVE
+/ENTRY:Entry
+/NATVIS:"C:\Users\DarthguideX\.nuget\packages\microsoft.dotnet.ilcompiler\7.0.0-preview.2.22152.2\build\CoreRTNatVis.natvis"

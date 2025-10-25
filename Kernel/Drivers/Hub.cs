@@ -8,29 +8,11 @@ namespace guideXOS.Kernel.Drivers {
         /// Desc
         /// </summary>
         private struct Desc {
-            /// <summary>
-            /// Length
-            /// </summary>
             public byte Length;
-            /// <summary>
-            /// Type
-            /// </summary>
             public byte Type;
-            /// <summary>
-            /// Port Count
-            /// </summary>
             public byte PortCount;
-            /// <summary>
-            /// Characteristic
-            /// </summary>
             public ushort Characteristic;
-            /// <summary>
-            /// Port Power Time
-            /// </summary>
             public byte PortPowerTime;
-            /// <summary>
-            /// Current
-            /// </summary>
             public byte Current;
         }
         /// <summary>

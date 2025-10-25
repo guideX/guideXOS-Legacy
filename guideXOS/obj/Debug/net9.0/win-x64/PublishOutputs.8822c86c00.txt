@@ -1,0 +1,4 @@
+D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\bin\debug\net9.0\win-x64\publish\guideXOS.exe
+D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\bin\debug\net9.0\win-x64\publish\guideXOS.runtimeconfig.json
+D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\bin\debug\net9.0\win-x64\publish\guideXOS.pdb
+D:\devgitlab\guideXOS\guideXOS_d7deb2979faa6e1c2fdae47c8a71fac30976ec66\bin\debug\net9.0\win-x64\publish\guideXOS.deps.json

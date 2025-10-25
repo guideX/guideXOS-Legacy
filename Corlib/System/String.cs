@@ -3,23 +3,23 @@ using Internal.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
+using static guideXOS.Misc.Interrupts;
 namespace System {
-    public unsafe class String {
+    public sealed unsafe class String {
         [Intrinsic]
         public static readonly string Empty = "";
-
 
         // The layout of the string type is a contract with the compiler.
         private int _length;
         internal char _firstChar;
-
 
         public int Length {
             [Intrinsic]
             get => _length;
             set => _length = value;
         }
+
+
 
         public unsafe char this[int index] {
             [Intrinsic]
@@ -212,6 +212,19 @@ namespace System {
             }
         }
 
+		public static bool StartsWith(string str, string prefix) {
+			if (str == null) return false;
+			if (prefix == null) return false;
+			int strLen = str.Length;
+			int prefLen = prefix.Length;
+			if (prefLen == 0) return true;
+			if (prefLen > strLen) return false;
+			for (int i = 0; i < prefLen; i++) {
+				if (str[i] != prefix[i]) return false;
+			}
+			return true;
+		}
+
         public string Remove(int startIndex) {
             return Substring(0, startIndex);
         }
@@ -356,6 +369,36 @@ namespace System {
                 }
                 return output;
             }
+        }
+		/// <summary>
+		/// Trim
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
+		public static string Trim(string input) {
+            if (string.IsNullOrEmpty(input)) {
+                return input;
+            }
+
+            int startIndex = 0;
+            // Find the first non-whitespace character from the beginning
+            while (startIndex < input.Length && char.IsWhiteSpace(input[startIndex])) {
+                startIndex++;
+            }
+
+            int endIndex = input.Length - 1;
+            // Find the first non-whitespace character from the end
+            while (endIndex >= startIndex && char.IsWhiteSpace(input[endIndex])) {
+                endIndex--;
+            }
+
+            // If all characters are whitespace or the string is empty
+            if (startIndex > endIndex) {
+                return string.Empty;
+            }
+
+            // Extract the substring without leading/trailing whitespace
+            return input.Substring(startIndex, endIndex - startIndex + 1);
         }
     }
 }
