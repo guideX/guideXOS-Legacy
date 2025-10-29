@@ -19,6 +19,11 @@ namespace guideXOS.GUI {
         /// </summary>
         private Image _startIcon;
         /// <summary>
+        /// Clock toggle state (12h/24h) and click debounce
+        /// </summary>
+        private bool _clockUse12Hour = false;
+        private bool _clockClickLatch = false;
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="barHeight"></param>
@@ -37,8 +42,9 @@ namespace guideXOS.GUI {
             // Clock (bottom-right) - HH:MM:SS with manual zero-padding; dispose temporary strings to prevent leaks
             string colon = ":";
 
-            string shour = RTC.Hour.ToString();
-            if (RTC.Hour < 10) { string tmp = "0" + shour; shour.Dispose(); shour = tmp; }
+            int hourValue = _clockUse12Hour ? ((RTC.Hour % 12 == 0) ? 12 : (RTC.Hour % 12)) : RTC.Hour;
+            string shour = hourValue.ToString();
+            if (hourValue < 10) { string tmp = "0" + shour; shour.Dispose(); shour = tmp; }
 
             string sminute = RTC.Minute.ToString();
             if (RTC.Minute < 10) { string tmp = "0" + sminute; sminute.Dispose(); sminute = tmp; }
@@ -57,6 +63,12 @@ namespace guideXOS.GUI {
             int textY = Framebuffer.Height - _barHeight + ((_barHeight - WindowManager.font.FontSize) / 2);
             WindowManager.font.DrawString(textX, textY, time);
 
+            // Hit test area for clock
+            int hitX0 = textX;
+            int hitY0 = Framebuffer.Height - _barHeight;
+            int hitX1 = textX + textW;
+            int hitY1 = Framebuffer.Height;
+
             // Dispose temps
             colon.Dispose();
             shour.Dispose();
@@ -65,6 +77,17 @@ namespace guideXOS.GUI {
             time.Dispose();
 
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
+                int mx = Control.MousePosition.X;
+                int my = Control.MousePosition.Y;
+
+                // Toggle 12h/24h when clicking clock (debounced)
+                if (mx >= hitX0 && mx <= hitX1 && my >= hitY0 && my <= hitY1) {
+                    if (!_clockClickLatch) {
+                        _clockUse12Hour = !_clockUse12Hour;
+                        _clockClickLatch = true;
+                    }
+                }
+
                 if (Control.MousePosition.X > 15 && Control.MousePosition.X < 35 && Control.MousePosition.Y > 700 && Control.MousePosition.Y < 800) {
                     if (StartMenu == null) {
                         StartMenu = new StartMenu();
@@ -83,6 +106,9 @@ namespace guideXOS.GUI {
                         }
                     }
                 }
+            } else {
+                // Release latch when mouse button is released
+                _clockClickLatch = false;
             }
         }
     }
