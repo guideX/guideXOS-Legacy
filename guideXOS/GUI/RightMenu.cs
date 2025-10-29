@@ -55,7 +55,8 @@ namespace guideXOS.GUI {
             int len = WindowManager.font.MeasureString(str);
             Height = WindowManager.font.FontSize * 2;
             Width = len;
-            Framebuffer.Graphics.FillRectangle(X, Y, Width, Height, 0xFF222222);
+            // Semi-transparent background
+            Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0xCC222222);
             WindowManager.font.DrawString(X, Y + (WindowManager.font.FontSize / 2), str);
             DrawBorder(false);
         }

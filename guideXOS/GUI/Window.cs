@@ -132,9 +132,14 @@ namespace guideXOS.GUI {
         /// On Draw
         /// </summary>
         public virtual void OnDraw() {
-            Framebuffer.Graphics.FillRectangle(X, Y - BarHeight, Width, BarHeight, 0xFF111111);
-            WindowManager.font.DrawString(X + (Width / 2) - ((WindowManager.font.MeasureString(Title)) / 2), Y - BarHeight + (BarHeight / 4), Title);
-            Framebuffer.Graphics.FillRectangle(X, Y, Width, Height, 0xFF222222);
+            // Semi-transparent title bar and content
+            Framebuffer.Graphics.AFillRectangle(X, Y - BarHeight, Width, BarHeight, 0xCC111111);
+            WindowManager.font.DrawString(
+                X + (Width / 2) - (WindowManager.font.MeasureString(Title) / 2),
+                Y - BarHeight + (BarHeight / 4),
+                Title
+            );
+            Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0xCC222222);
             DrawBorder();
             //Framebuffer.Graphics.DrawImage(MinimizeButtonX, MinimizeButtonY, WindowManager.MinimizeButton);
             Framebuffer.Graphics.DrawImage(CloseButtonX, CloseButtonY, WindowManager.CloseButton);

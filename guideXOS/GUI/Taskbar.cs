@@ -30,8 +30,8 @@ namespace guideXOS.GUI {
         /// Draw Task Bar
         /// </summary>
         public void Draw() {
-            // Use solid fill to avoid per-pixel alpha blending across full width
-            Framebuffer.Graphics.FillRectangle(0, Framebuffer.Height - _barHeight, Framebuffer.Width, _barHeight, 0xFF222222);
+            // Semi-transparent taskbar
+            Framebuffer.Graphics.AFillRectangle(0, Framebuffer.Height - _barHeight, Framebuffer.Width, _barHeight, 0xCC222222);
             Framebuffer.Graphics.DrawImage(12, Framebuffer.Height - _barHeight + 4, _startIcon);
 
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
