@@ -37,6 +37,10 @@ namespace guideXOS.GUI {
         /// </summary>
         public static AppCollection Apps;
         /// <summary>
+        /// File Explorer window
+        /// </summary>
+        static ComputerFiles compFiles;
+        /// <summary>
         /// Is At Root
         /// </summary>
         public static bool IsAtRoot {
@@ -61,6 +65,7 @@ namespace guideXOS.GUI {
             _dirCacheDirty = true;
             _dirCacheFor = null;
             _dirCache = null;
+            compFiles = null;
         }
         /// <summary>
         /// Bar Height
@@ -123,6 +128,22 @@ namespace guideXOS.GUI {
             bool leftDown = Control.MouseButtons.HasFlag(MouseButtons.Left);
             bool mouseBlocked = WindowManager.HasWindowMoving || WindowManager.MouseHandled || IsMouseOverAnyVisibleWindow();
             bool clickable = leftDown && !mouseBlocked;
+
+            // Add a Computer Files icon at root
+            if (IsAtRoot) {
+                // Draw Computer Files icon and label
+                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                // Use folder icon as placeholder
+                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
+                string cf = "Computer Files";
+                WindowManager.font.DrawString(x, y + fh, cf, fw + 8, WindowManager.font.FontSize * 3);
+                if (clickable && Control.MousePosition.X > x && Control.MousePosition.X < x + Icons.FileIcon.Width && Control.MousePosition.Y > y && Control.MousePosition.Y < y + Icons.FileIcon.Height) {
+                    if (compFiles == null) compFiles = new ComputerFiles(300, 200, 540, 380);
+                    else compFiles.Visible = true;
+                    WindowManager.MoveToEnd(compFiles);
+                }
+                y += Icons.FileIcon.Height + devide;
+            }
 
             if (IsAtRoot) {
                 for (int i = 0; i < Apps.Length; i++) {

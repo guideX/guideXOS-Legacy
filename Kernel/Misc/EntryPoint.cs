@@ -24,6 +24,9 @@ namespace guideXOS.Misc {
                 for (; ; ) Native.Hlt();
             }
 
+            // Boot splash init
+            BootSplash.Initialize("Team Nexgen", "guideXOS", "Version: 0.1");
+
             Console.Setup();
             IDT.Disable();
             GDT.Initialise();
@@ -72,6 +75,11 @@ namespace guideXOS.Misc {
             new Ramdisk((IntPtr)(Info->Mods[0]));
             //new FATFS();
             new TarFS();
+
+            // While we are still here (single core boot), animate splash a bit
+            for (int i = 0; i < 120; i++) { // ~2 seconds at 60Hz
+                BootSplash.Tick();
+            }
 
             KMain();
         }
