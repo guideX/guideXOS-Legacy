@@ -164,14 +164,21 @@ namespace guideXOS.GUI {
 
             // Show real filesystem entries only when not in HomeMode
             if (!HomeMode) {
+                // Add special Desktop shortcut to return home
+                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                ClickEvent("Desktop", false, x, y, -100, clickable, leftDown);
+                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Desktop", fw + 8, WindowManager.font.FontSize * 3);
+                y += fh + devide;
+
                 for (int i = 0; i < names.Count; i++) {
                     if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
                     string n = names[i].Name;
                     bool isDir = names[i].Attribute == FileAttribute.Directory;
 
-                    ClickEvent(n, isDir, x, y, i + (HomeMode ? Apps.Length : 0), clickable, leftDown);
+                    ClickEvent(n, isDir, x, y, i + 1000, clickable, leftDown);
 
-                    // Choose icon by extension/type
+                    // Choose icon by extension/use type
                     if (n.EndsWith(".png") || n.EndsWith(".bmp")) {
                         Framebuffer.Graphics.DrawImage(x, y, Icons.IamgeIcon);
                     } else if (n.EndsWith(".wav")) {
@@ -249,7 +256,7 @@ namespace guideXOS.GUI {
         /// <param name="itemY"></param>
         public static void OnClick(string name, bool isDirectory, int itemX, int itemY) {
             ClickLock = true;
-            // Special desktop icons
+            // Special desktop controls
             if (name == "Root" && HomeMode) {
                 HomeMode = false;
                 _dirCacheDirty = true;
@@ -260,6 +267,16 @@ namespace guideXOS.GUI {
                 var cf = new ComputerFiles(300, 200, 540, 380);
                 WindowManager.MoveToEnd(cf);
                 cf.Visible = true;
+                return;
+            }
+            if (name == "Desktop" && !HomeMode) {
+                HomeMode = true;
+                if (Dir.Length != 0) {
+                    Dir.Dispose();
+                }
+                Dir = "";
+                _dirCacheDirty = true;
+                IndexClicked = -1;
                 return;
             }
 
@@ -319,5 +336,9 @@ namespace guideXOS.GUI {
             path.Dispose();
             devider.Dispose();
         }
+        /// <summary>
+        /// Invalidate Directory Cache
+        /// </summary>
+        public static void InvalidateDirCache() { _dirCacheDirty = true; }
     }
 }

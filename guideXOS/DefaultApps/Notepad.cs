@@ -13,68 +13,86 @@ namespace guideXOS.DefaultApps {
     internal class Notepad : Window {
         private string _text;
         private bool _clickLock;
-        private int _padding = 8;
-        private int _btnW = 72;
-        private int _btnH = 26;
+        private int _padding = 10;
+        private int _btnH = 28;
+        private int _btnWSaveAs = 88; // more padding
+        private int _btnWSave = 72;
+        private int _btnWWrap = 64;
         private string _fileName = "notes.txt";
+        private string _savedPath; // full path of last save
+        private bool _dirty;
+        private bool _wrap = true;
         private SaveDialog _dlg;
+        private SaveChangesDialog _confirmDlg;
         private byte _lastScan; private bool _keyDown;
 
-        public Notepad(int x, int y) : base(x, y, 640, 420) {
+        public Notepad(int x, int y) : base(x, y, 700, 460) {
             Title = "Notepad";
-            _text = string.Empty; _clickLock = false;
+            _text = string.Empty; _clickLock = false; _savedPath = null; _dirty = false; _dlg = null; _confirmDlg = null;
             // subscribe keyboard handler
             Keyboard.OnKeyChanged += Keyboard_OnKeyChanged;
-            _dlg = null;
+        }
+
+        public override void OnSetVisible(bool value) {
+            // Intercept close when there are unsaved changes
+            if (!value && _dirty) {
+                if (_confirmDlg == null || !_confirmDlg.Visible) {
+                    _confirmDlg = new SaveChangesDialog(this, () => {
+                        // Save
+                        if (!string.IsNullOrEmpty(_savedPath)) {
+                            SaveTo(_savedPath);
+                            this.Visible = false;
+                        } else {
+                            // open save as
+                            OpenSaveAs(() => { this.Visible = false; });
+                        }
+                    }, () => {
+                        // Don't Save
+                        _dirty = false; this.Visible = false;
+                    }, () => {
+                        // Cancel close
+                        this.Visible = true;
+                    });
+                    WindowManager.MoveToEnd(_confirmDlg);
+                    _confirmDlg.Visible = true;
+                }
+                // keep notepad visible until decision
+                this.Visible = true;
+            }
         }
 
         private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
             if (!Visible) return;
-            if (_dlg != null && _dlg.Visible) return; // let dialog handle keys when visible
+            if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return; // let dialog handle keys when visible
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // de-bounce to avoid repeats
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
 
             if (key.Key == ConsoleKey.Escape) { return; }
-
-            // Basic editing
-            if (key.Key == ConsoleKey.Backspace) {
-                if (_text.Length > 0) _text = _text.Substring(0, _text.Length - 1);
-                return;
-            }
-            if (key.Key == ConsoleKey.Enter) {
-                _text += "\n";
-                return;
-            }
-            if (key.Key == ConsoleKey.Tab) { _text += "    "; return; }
-            if (key.Key == ConsoleKey.Space || Keyboard.KeyInfo.ScanCode == 57) { _text += " "; return; }
+            if (key.Key == ConsoleKey.Backspace) { if (_text.Length > 0) { _text = _text.Substring(0, _text.Length - 1); _dirty = true; } return; }
+            if (key.Key == ConsoleKey.Enter) { _text += "\n"; _dirty = true; return; }
+            if (key.Key == ConsoleKey.Tab) { _text += "    "; _dirty = true; return; }
+            // Space: USB HID usage 44 or PS/2 57, or ConsoleKey.Space
+            if (key.Key == ConsoleKey.Space || Keyboard.KeyInfo.ScanCode == 57 || Keyboard.KeyInfo.ScanCode == 44) { _text += " "; _dirty = true; return; }
 
             // Letters A-Z
-            if (key.Key >= ConsoleKey.A && key.Key <= ConsoleKey.Z) {
-                char c = (char)('a' + (key.Key - ConsoleKey.A));
-                _text += c;
-                return;
-            }
+            if (key.Key >= ConsoleKey.A && key.Key <= ConsoleKey.Z) { char c = (char)('a' + (key.Key - ConsoleKey.A)); _text += c; _dirty = true; return; }
             // Digits 0-9
-            if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9) {
-                char c = (char)('0' + (key.Key - ConsoleKey.D0));
-                _text += c;
-                return;
-            }
+            if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9) { char c = (char)('0' + (key.Key - ConsoleKey.D0)); _text += c; _dirty = true; return; }
+
             // Punctuation basics (best-effort)
             switch (key.Key) {
-                case ConsoleKey.OemPeriod: _text += "."; break;
-                case ConsoleKey.OemComma: _text += ","; break;
-                case ConsoleKey.OemMinus: _text += "-"; break;
-                case ConsoleKey.OemPlus: _text += "+"; break;
-                case ConsoleKey.Oem1: _text += ";"; break; // ;
-                case ConsoleKey.Oem2: _text += "/"; break; // /
-                case ConsoleKey.Oem3: _text += "`"; break; // `
-                case ConsoleKey.Oem4: _text += "["; break; // [
-                case ConsoleKey.Oem5: _text += "\\"; break; // \
-                case ConsoleKey.Oem6: _text += "]"; break; // ]
-                case ConsoleKey.Oem7: _text += "'"; break; // '
-                case ConsoleKey.Separator: _text += "="; break; // fallback
+                case ConsoleKey.OemPeriod: _text += "."; _dirty = true; break;
+                case ConsoleKey.OemComma: _text += ","; _dirty = true; break;
+                case ConsoleKey.OemMinus: _text += "-"; _dirty = true; break;
+                case ConsoleKey.OemPlus: _text += "+"; _dirty = true; break;
+                case ConsoleKey.Oem1: _text += ";"; _dirty = true; break; // ;
+                case ConsoleKey.Oem2: _text += "/"; _dirty = true; break; // /
+                case ConsoleKey.Oem3: _text += "`"; _dirty = true; break; // `
+                case ConsoleKey.Oem4: _text += "["; _dirty = true; break; // [
+                case ConsoleKey.Oem5: _text += "\\"; _dirty = true; break; // \
+                case ConsoleKey.Oem6: _text += "]"; _dirty = true; break; // ]
+                case ConsoleKey.Oem7: _text += "'"; _dirty = true; break; // '
             }
         }
 
@@ -82,42 +100,51 @@ namespace guideXOS.DefaultApps {
             // Save to Desktop.Dir + notes.txt
             byte[] data = new byte[_text.Length]; for (int i = 0; i < _text.Length; i++) data[i] = (byte)_text[i];
             File.WriteAllBytes(path, data); data.Dispose();
+            _savedPath = path; _fileName = path.Substring(path.LastIndexOf('/') + 1); _dirty = false;
+            Desktop.InvalidateDirCache();
             // Feedback
             Desktop.msgbox.X = X + 40; Desktop.msgbox.Y = Y + 80;
             Desktop.msgbox.SetText($"Saved: {path}");
             WindowManager.MoveToEnd(Desktop.msgbox); Desktop.msgbox.Visible = true;
-            RecentManager.AddDocument(path, Icons.FileIcon); path.Dispose();
+            RecentManager.AddDocument(path, Icons.FileIcon);
+        }
+
+        private void OpenSaveAs(Action afterSaveClose = null) {
+            _dlg = new SaveDialog(X + 40, Y + 40, 520, 360, Desktop.Dir, _fileName, (p) => { SaveTo(p); afterSaveClose?.Invoke(); });
+            WindowManager.MoveToEnd(_dlg); _dlg.Visible = true;
         }
 
         public override void OnInput() {
-            base.OnInput();
-            if (_dlg != null && _dlg.Visible) return; // dialog handles own input
+            base.OnInput(); if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return;
             bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
             int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
-            int bx = X + _padding; int by = Y + _padding;
+            int bxSaveAs = X + _padding; int by = Y + _padding;
+            int bxSave = bxSaveAs + _btnWSaveAs + 8; int bxWrap = bxSave + _btnWSave + 8;
+            bool canSave = !string.IsNullOrEmpty(_savedPath) && _dirty;
             if (left) {
-                if (!_clickLock && mx >= bx && mx <= bx + _btnW && my >= by && my <= by + _btnH) {
-                    // open save dialog
-                    _dlg = new SaveDialog(X + 40, Y + 40, 520, 360, Desktop.Dir, _fileName, (p) => { _fileName = p.Substring(p.LastIndexOf('/') + 1); SaveTo(p); });
-                    WindowManager.MoveToEnd(_dlg); _dlg.Visible = true; _clickLock = true; return;
+                if (!_clickLock) {
+                    if (mx >= bxSaveAs && mx <= bxSaveAs + _btnWSaveAs && my >= by && my <= by + _btnH) { OpenSaveAs(); _clickLock = true; return; }
+                    if (canSave && mx >= bxSave && mx <= bxSave + _btnWSave && my >= by && my <= by + _btnH) { SaveTo(_savedPath); _clickLock = true; return; }
+                    if (mx >= bxWrap && mx <= bxWrap + _btnWWrap && my >= by && my <= by + _btnH) { _wrap = !_wrap; _clickLock = true; return; }
                 }
             } else { _clickLock = false; }
         }
 
         public override void OnDraw() {
-            base.OnDraw();
-            // Content area
-            int cx = X + _padding; int cy = Y + _padding; int cw = Width - _padding * 2; int ch = Height - _padding * 2;
-            // Draw Save button
-            Framebuffer.Graphics.FillRectangle(cx, cy, _btnW, _btnH, 0xFF3A3A3A);
-            WindowManager.font.DrawString(cx + 6, cy + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save As");
-            // Text area background
+            base.OnDraw(); int cx = X + _padding; int cy = Y + _padding; int cw = Width - _padding * 2; int ch = Height - _padding * 2;
+            // Buttons
+            int bxSaveAs = cx; int by = cy; int bxSave = bxSaveAs + _btnWSaveAs + 8; int bxWrap = bxSave + _btnWSave + 8;
+            Framebuffer.Graphics.FillRectangle(bxSaveAs, by, _btnWSaveAs, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(bxSaveAs + 6, by + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save As");
+            bool canSave = !string.IsNullOrEmpty(_savedPath) && _dirty;
+            Framebuffer.Graphics.FillRectangle(bxSave, by, _btnWSave, _btnH, canSave ? 0xFF3A3A3Au : 0xFF2A2A2Au);
+            WindowManager.font.DrawString(bxSave + 12, by + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save");
+            Framebuffer.Graphics.FillRectangle(bxWrap, by, _btnWWrap, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(bxWrap + 10, by + (_btnH / 2 - WindowManager.font.FontSize / 2), _wrap ? "Wrap" : "NoWrap");
+
             int tx = cx; int ty = cy + _btnH + 8; int tw = cw; int th = ch - (_btnH + 8);
-            // If dialog visible, dim Notepad a bit more
-            uint bg = (_dlg != null && _dlg.Visible) ? 0x60181818u : 0x80282828u;
-            Framebuffer.Graphics.AFillRectangle(tx, ty, tw, th, bg);
-            // Draw text (wrapped)
-            WindowManager.font.DrawString(tx + 6, ty + 6, _text, tw - 12, WindowManager.font.FontSize * 3);
+            Framebuffer.Graphics.AFillRectangle(tx, ty, tw, th, 0x80282828);
+            // Word wrap toggle
+            if (_wrap) WindowManager.font.DrawString(tx + 6, ty + 6, _text, tw - 12, WindowManager.font.FontSize * 3);
+            else WindowManager.font.DrawString(tx + 6, ty + 6, _text);
         }
     }
 }
