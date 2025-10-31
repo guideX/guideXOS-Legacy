@@ -17,6 +17,10 @@ namespace guideXOS.GUI {
         /// </summary>
         public static string Dir;
         /// <summary>
+        /// Home mode: when true, show app icons and special desktop icons. When false, show real filesystem entries for Dir.
+        /// </summary>
+        public static bool HomeMode;
+        /// <summary>
         /// Taskbar
         /// </summary>
         public static Taskbar Taskbar;
@@ -54,6 +58,7 @@ namespace guideXOS.GUI {
             IndexClicked = -1;
             Taskbar = new Taskbar(40, Icons.TaskbarIcon);
             Dir = "";
+            HomeMode = true;
             imageViewer = new ImageViewer(400, 400);
             msgbox = new MessageBox(100, 300);
             wavplayer = new WAVPlayer(450, 200);
@@ -133,41 +138,52 @@ namespace guideXOS.GUI {
             // If mouse is pressed over any window, skip desktop hit-testing to avoid latency
             if (leftDown && mouseOverWindow) clickable = false;
 
-            if (IsAtRoot) {
+            if (HomeMode) {
+                // Draw Apps
                 for (int i = 0; i < Apps.Length; i++) {
-                    if (y + fh + devide > screenH - devide) {
-                        y = devide;
-                        x += fw + devide;
-                    }
+                    if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
                     ClickEvent(Apps.Name(i), false, x, y, i, clickable, leftDown);
                     Framebuffer.Graphics.DrawImage(x, y, Apps.Icon(i));
                     WindowManager.font.DrawString(x, y + fh, Apps.Name(i), fw + 8, WindowManager.font.FontSize * 3);
                     y += Icons.FileIcon.Height + devide;
                 }
+                // Special desktop icons: Computer Files and Root
+                // Computer Files
+                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                ClickEvent("Computer Files", false, x, y, Apps.Length, clickable, leftDown);
+                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Computer Files", fw + 8, WindowManager.font.FontSize * 3);
+                y += Icons.FileIcon.Height + devide;
+                // Root folder
+                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                ClickEvent("Root", true, x, y, Apps.Length + 1, clickable, leftDown);
+                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Root", fw + 8, WindowManager.font.FontSize * 3);
+                y += Icons.FileIcon.Height + devide;
             }
 
-            for (int i = 0; i < names.Count; i++) {
-                if (y + fh + devide > screenH - devide) {
-                    y = devide;
-                    x += fw + devide;
-                }
-                string n = names[i].Name;
-                bool isDir = names[i].Attribute == FileAttribute.Directory;
+            // Show real filesystem entries only when not in HomeMode
+            if (!HomeMode) {
+                for (int i = 0; i < names.Count; i++) {
+                    if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                    string n = names[i].Name;
+                    bool isDir = names[i].Attribute == FileAttribute.Directory;
 
-                ClickEvent(n, isDir, x, y, i + (IsAtRoot ? Apps.Length : 0), clickable, leftDown);
+                    ClickEvent(n, isDir, x, y, i + (HomeMode ? Apps.Length : 0), clickable, leftDown);
 
-                // Choose icon by extension/type
-                if (n.EndsWith(".png") || n.EndsWith(".bmp")) {
-                    Framebuffer.Graphics.DrawImage(x, y, Icons.IamgeIcon);
-                } else if (n.EndsWith(".wav")) {
-                    Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon);
-                } else if (isDir) {
-                    Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
-                } else {
-                    Framebuffer.Graphics.DrawImage(x, y, fileIcon);
+                    // Choose icon by extension/type
+                    if (n.EndsWith(".png") || n.EndsWith(".bmp")) {
+                        Framebuffer.Graphics.DrawImage(x, y, Icons.IamgeIcon);
+                    } else if (n.EndsWith(".wav")) {
+                        Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon);
+                    } else if (isDir) {
+                        Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
+                    } else {
+                        Framebuffer.Graphics.DrawImage(x, y, fileIcon);
+                    }
+                    WindowManager.font.DrawString(x, y + fh, n, fw + 8, WindowManager.font.FontSize * 3);
+                    y += fh + devide;
                 }
-                WindowManager.font.DrawString(x, y + fh, n, fw + 8, WindowManager.font.FontSize * 3);
-                y += fh + devide;
             }
 
             // Selection marquee with a single normalized rect draw
@@ -233,6 +249,20 @@ namespace guideXOS.GUI {
         /// <param name="itemY"></param>
         public static void OnClick(string name, bool isDirectory, int itemX, int itemY) {
             ClickLock = true;
+            // Special desktop icons
+            if (name == "Root" && HomeMode) {
+                HomeMode = false;
+                _dirCacheDirty = true;
+                IndexClicked = -1;
+                return;
+            }
+            if (name == "Computer Files" && HomeMode) {
+                var cf = new ComputerFiles(300, 200, 540, 380);
+                WindowManager.MoveToEnd(cf);
+                cf.Visible = true;
+                return;
+            }
+
             string devider = "/";
             string path = Dir + name;
             if (isDirectory) {

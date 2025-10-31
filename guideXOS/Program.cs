@@ -137,7 +137,7 @@ unsafe class Program {
         Cursor = new PNG(File.ReadAllBytes("Images/Cursor.png"));
         CursorMoving = new PNG(File.ReadAllBytes("Images/Grab.png"));
         CursorBusy = new PNG(File.ReadAllBytes("Images/Busy.png"));
-        Wallpaper = new PNG(File.ReadAllBytes("Images/Wallpaper1.png"));
+        Wallpaper = new PNG(File.ReadAllBytes("Images/tronporche.png"));
         BitFont.Initialize();
         string CustomCharset = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
         BitFont.RegisterBitFont(new BitFontDescriptor("Song", CustomCharset, File.ReadAllBytes("Fonts/Song.btf"), 16));
