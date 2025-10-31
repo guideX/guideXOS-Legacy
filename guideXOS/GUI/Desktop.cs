@@ -126,24 +126,12 @@ namespace guideXOS.GUI {
 
             // Compute clickability once per frame
             bool leftDown = Control.MouseButtons.HasFlag(MouseButtons.Left);
-            bool mouseBlocked = WindowManager.HasWindowMoving || WindowManager.MouseHandled || IsMouseOverAnyVisibleWindow();
+            bool mouseOverWindow = IsMouseOverAnyVisibleWindow();
+            bool mouseBlocked = WindowManager.HasWindowMoving || WindowManager.MouseHandled || mouseOverWindow;
             bool clickable = leftDown && !mouseBlocked;
 
-            // Add a Computer Files icon at root
-            if (IsAtRoot) {
-                // Draw Computer Files icon and label
-                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
-                // Use folder icon as placeholder
-                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
-                string cf = "Computer Files";
-                WindowManager.font.DrawString(x, y + fh, cf, fw + 8, WindowManager.font.FontSize * 3);
-                if (clickable && Control.MousePosition.X > x && Control.MousePosition.X < x + Icons.FileIcon.Width && Control.MousePosition.Y > y && Control.MousePosition.Y < y + Icons.FileIcon.Height) {
-                    if (compFiles == null) compFiles = new ComputerFiles(300, 200, 540, 380);
-                    else compFiles.Visible = true;
-                    WindowManager.MoveToEnd(compFiles);
-                }
-                y += Icons.FileIcon.Height + devide;
-            }
+            // If mouse is pressed over any window, skip desktop hit-testing to avoid latency
+            if (leftDown && mouseOverWindow) clickable = false;
 
             if (IsAtRoot) {
                 for (int i = 0; i < Apps.Length; i++) {
@@ -183,7 +171,7 @@ namespace guideXOS.GUI {
             }
 
             // Selection marquee with a single normalized rect draw
-            if (leftDown && !WindowManager.HasWindowMoving && !WindowManager.MouseHandled) {
+            if (leftDown && !WindowManager.HasWindowMoving && !WindowManager.MouseHandled && !mouseOverWindow) {
                 int mx = Control.MousePosition.X;
                 int my = Control.MousePosition.Y;
                 if (LastPoint.X == -1 && LastPoint.Y == -1) {
@@ -244,7 +232,6 @@ namespace guideXOS.GUI {
         /// <param name="itemX"></param>
         /// <param name="itemY"></param>
         public static void OnClick(string name, bool isDirectory, int itemX, int itemY) {
-            //if (!string.IsNullOrWhiteSpace(name)) { guideXOS.GUI.NotificationManager.Add(new Nofity("Clicked: " + name)); }
             ClickLock = true;
             string devider = "/";
             string path = Dir + name;
@@ -252,11 +239,8 @@ namespace guideXOS.GUI {
                 string newd = Dir + name + devider;
                 Dir.Dispose();
                 Dir = newd;
-
-                // Mark directory cache dirty so it refreshes next frame
                 _dirCacheDirty = true;
                 IndexClicked = -1;
-                //guideXOS.GUI.NotificationManager.Add(new Nofity("New Dir: " + Dir));
             } else if (name.EndsWith(".png")) {
                 byte[] buffer = File.ReadAllBytes(path);
                 PNG png = new(buffer);
@@ -265,6 +249,7 @@ namespace guideXOS.GUI {
                 png.Dispose();
                 WindowManager.MoveToEnd(imageViewer);
                 imageViewer.Visible = true;
+                RecentManager.AddDocument(path, Icons.IamgeIcon);
             } else if (name.EndsWith(".bmp")) {
                 byte[] buffer = File.ReadAllBytes(path);
                 Bitmap png = new(buffer);
@@ -273,18 +258,20 @@ namespace guideXOS.GUI {
                 png.Dispose();
                 WindowManager.MoveToEnd(imageViewer);
                 imageViewer.Visible = true;
+                RecentManager.AddDocument(path, Icons.IamgeIcon);
             } else if (name.EndsWith(".mue")) {
                 byte[] buffer = File.ReadAllBytes(path);
                 Process.Start(buffer);
+                RecentManager.AddDocument(path, Icons.FileIcon);
             } else if (name.EndsWith(".wav")) {
                 if (Audio.HasAudioDevice) {
                     wavplayer.Visible = true;
                     byte[] buffer = File.ReadAllBytes(path);
                     unsafe {
-                        //name will be disposed after this loop so create a new one
                         fixed (char* ptr = name)
                             wavplayer.Play(buffer, new string(ptr));
                     }
+                    RecentManager.AddDocument(path, Icons.AudioIcon);
                 } else {
                     msgbox.X = itemX + 75;
                     msgbox.Y = itemY + 75;

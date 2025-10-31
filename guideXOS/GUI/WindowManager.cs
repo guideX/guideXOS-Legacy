@@ -99,11 +99,12 @@ namespace guideXOS.GUI {
         /// </summary>
         public static bool HasWindowMoving = false;
         /// <summary>
-        /// Mouse Handled
+        /// Mouse Handled (separate from HasWindowMoving)
         /// </summary>
+        static bool _mouseHandled;
         public static bool MouseHandled {
-            get => HasWindowMoving;
-            set => HasWindowMoving = value;
+            get => _mouseHandled;
+            set => _mouseHandled = value;
         }
     }
 }

@@ -138,6 +138,10 @@ namespace guideXOS.OS {
                             b = true;
                             break;
                     }
+                    if (b) {
+                        // record recents
+                        RecentManager.AddProgram(_apps[i].Name, _apps[i].Icon);
+                    }
                 }
             }
             return b;

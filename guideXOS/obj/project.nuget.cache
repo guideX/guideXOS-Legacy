@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "r8KW83YN5ag=",
+  "dgSpecHash": "5RLRmUaBYnk=",
   "success": true,
   "projectFilePath": "D:\\devgitlab\\guideXOS\\guideXOS\\guideXOS\\guideXOS.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\DarthguideX\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\7.0.0-preview.2.22152.2\\microsoft.dotnet.ilcompiler.7.0.0-preview.2.22152.2.nupkg.sha512",
-    "C:\\Users\\DarthguideX\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\7.0.0-preview.2.22152.2\\runtime.win-x64.microsoft.dotnet.ilcompiler.7.0.0-preview.2.22152.2.nupkg.sha512"
+    "C:\\Users\\DarthguideX\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.8\\microsoft.net.illink.tasks.9.0.8.nupkg.sha512"
   ],
   "logs": [
     {
@@ -17,8 +17,7 @@
       "filePath": "D:\\devgitlab\\guideXOS\\guideXOS\\guideXOS\\guideXOS.csproj",
       "libraryId": "Microsoft.DotNet.ILCompiler",
       "targetGraphs": [
-        "net9.0",
-        "net9.0/win-x64"
+        "net9.0"
       ]
     }
   ]

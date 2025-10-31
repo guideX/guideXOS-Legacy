@@ -6,12 +6,20 @@ namespace guideXOS.GUI {
     /// Icons
     /// </summary>
     public static class Icons {
+        private static Image _fileIcon;
+        private static Image _imageIcon;
+        private static Image _audioIcon;
+        private static Image _folderIcon;
+        private static Image _taskbarIcon;
+        private static Image _startIcon;
+
         /// <summary>
         /// File Icon
         /// </summary>
         public static Image FileIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/file.png"));
+                if (_fileIcon == null) _fileIcon = new PNG(File.ReadAllBytes("Images/file.png"));
+                return _fileIcon;
             }
         }
         /// <summary>
@@ -19,7 +27,8 @@ namespace guideXOS.GUI {
         /// </summary>
         public static Image IamgeIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/Image.png"));
+                if (_imageIcon == null) _imageIcon = new PNG(File.ReadAllBytes("Images/Image.png"));
+                return _imageIcon;
             }
         }
         /// <summary>
@@ -27,7 +36,8 @@ namespace guideXOS.GUI {
         /// </summary>
         public static Image AudioIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/Audio.png"));
+                if (_audioIcon == null) _audioIcon = new PNG(File.ReadAllBytes("Images/Audio.png"));
+                return _audioIcon;
             }
         }
         /// <summary>
@@ -35,7 +45,8 @@ namespace guideXOS.GUI {
         /// </summary>
         public static Image FolderIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/Folder.png"));
+                if (_folderIcon == null) _folderIcon = new PNG(File.ReadAllBytes("Images/Folder.png"));
+                return _folderIcon;
             }
         }
         /// <summary>
@@ -43,7 +54,8 @@ namespace guideXOS.GUI {
         /// </summary>
         public static Image TaskbarIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/taskbar.png"));
+                if (_taskbarIcon == null) _taskbarIcon = new PNG(File.ReadAllBytes("Images/taskbar.png"));
+                return _taskbarIcon;
             }
         }
         /// <summary>
@@ -51,7 +63,8 @@ namespace guideXOS.GUI {
         /// </summary>
         public static Image StartIcon {
             get {
-                return new PNG(File.ReadAllBytes("Images/Start.png"));
+                if (_startIcon == null) _startIcon = new PNG(File.ReadAllBytes("Images/Start.png"));
+                return _startIcon;
             }
         }
     }

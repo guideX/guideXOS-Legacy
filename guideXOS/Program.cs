@@ -301,6 +301,7 @@ unsafe class Program {
         var fileIcon = Icons.FileIcon;
         for (; ; )
         {
+            WindowManager.MouseHandled = false;
             #region ConsoleHotKey
             if (
                 Keyboard.KeyInfo.Key == ConsoleKey.T &&
@@ -324,18 +325,24 @@ unsafe class Program {
                 rightClicked = false;
             }
             #endregion
-            WindowManager.InputAll();
+            // Input top-most first and allow early exit when handled
+            for (int i = WindowManager.Windows.Count - 1; i >= 0; i--) {
+                var w = WindowManager.Windows[i];
+                if (!w.Visible) continue;
+                w.OnInput();
+                if (WindowManager.MouseHandled) break;
+            }
             WindowManager.FlushPendingCreates();
 
+            // Draw wallpaper and UI
             Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
             Desktop.Update(fileIcon);
             WindowManager.DrawAll();
             NotificationManager.Update();
-            /*
-            ASC16.DrawString("FPS: ", 10, 10, 0xFFFFFFFF);
-            ASC16.DrawString(((ulong)FPSMeter.FPS).ToString(), 42, 10, 0xFFFFFFFF);
-            */
-            Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, WindowManager.HasWindowMoving ? CursorMoving : Cursor);
+
+            // Draw cursor once at the end to reduce flicker
+            var cursorImg = WindowManager.HasWindowMoving ? CursorMoving : Cursor;
+            Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, cursorImg);
             Framebuffer.Update();
 
             FPSMeter.Update();
