@@ -26,10 +26,8 @@ unsafe class Program {
     /// Cusor
     /// </summary>
     private static Image Cursor;
-    /// <summary>
-    /// Cursor Moving
-    /// </summary>
     private static Image CursorMoving;
+    private static Image CursorBusy;
     /// <summary>
     /// Wallpaper
     /// </summary>
@@ -138,6 +136,7 @@ unsafe class Program {
         //Sized width to 512
         Cursor = new PNG(File.ReadAllBytes("Images/Cursor.png"));
         CursorMoving = new PNG(File.ReadAllBytes("Images/Grab.png"));
+        CursorBusy = new PNG(File.ReadAllBytes("Images/Busy.png"));
         Wallpaper = new PNG(File.ReadAllBytes("Images/Wallpaper1.png"));
         BitFont.Initialize();
         string CustomCharset = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
@@ -341,7 +340,7 @@ unsafe class Program {
             NotificationManager.Update();
 
             // Draw cursor once at the end to reduce flicker
-            var cursorImg = WindowManager.HasWindowMoving ? CursorMoving : Cursor;
+            var cursorImg = Busy.IsBusy ? CursorBusy : (WindowManager.HasWindowMoving ? CursorMoving : Cursor);
             Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, cursorImg);
             Framebuffer.Update();
 

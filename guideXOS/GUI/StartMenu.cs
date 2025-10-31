@@ -13,8 +13,8 @@ namespace guideXOS.GUI {
 
         private bool _powerMenuVisible = false;
 
-        private const int Padding = 10;
-        private const int Spacing = 50;
+        private const int Padding = 14; // was 10
+        private const int Spacing = 58; // was 50
 
         private const int ShutdownBtnW = 100;
         private const int ShutdownBtnH = 28;
