@@ -33,8 +33,8 @@ namespace guideXOS.GUI {
             if (key.Key == ConsoleKey.Enter) { OpenSelected(); return; }
             if (_entries.Count == 0) return;
             switch (key.Key) {
-                case ConsoleKey.UpArrow: if (_selectedIndex > 0) _selectedIndex--; break;
-                case ConsoleKey.DownArrow: if (_selectedIndex < _entries.Count - 1) _selectedIndex++; break;
+                case ConsoleKey.Up: if (_selectedIndex > 0) _selectedIndex--; break;
+                case ConsoleKey.Down: if (_selectedIndex < _entries.Count - 1) _selectedIndex++; break;
                 case ConsoleKey.Home: _selectedIndex = 0; break;
                 case ConsoleKey.End: _selectedIndex = _entries.Count - 1; break;
             }

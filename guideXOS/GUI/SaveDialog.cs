@@ -72,8 +72,8 @@ namespace guideXOS.GUI {
             // Arrow navigation over list
             if (!_fnameFocus && _entries.Count > 0) {
                 switch (key.Key) {
-                    case ConsoleKey.UpArrow: if (_selectedIndex > 0) _selectedIndex--; return;
-                    case ConsoleKey.DownArrow: if (_selectedIndex < _entries.Count - 1) _selectedIndex++; return;
+                    case ConsoleKey.Up: if (_selectedIndex > 0) _selectedIndex--; return;
+                    case ConsoleKey.Down: if (_selectedIndex < _entries.Count - 1) _selectedIndex++; return;
                     case ConsoleKey.Home: _selectedIndex = 0; return;
                     case ConsoleKey.End: _selectedIndex = _entries.Count - 1; return;
                 }
