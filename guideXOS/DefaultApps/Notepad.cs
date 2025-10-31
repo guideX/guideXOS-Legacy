@@ -68,32 +68,14 @@ namespace guideXOS.DefaultApps {
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // de-bounce to avoid repeats
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
 
+            // Controls
             if (key.Key == ConsoleKey.Escape) { return; }
             if (key.Key == ConsoleKey.Backspace) { if (_text.Length > 0) { _text = _text.Substring(0, _text.Length - 1); _dirty = true; } return; }
             if (key.Key == ConsoleKey.Enter) { _text += "\n"; _dirty = true; return; }
             if (key.Key == ConsoleKey.Tab) { _text += "    "; _dirty = true; return; }
-            // Space: USB HID usage 44 or PS/2 57, or ConsoleKey.Space
-            if (key.Key == ConsoleKey.Space || Keyboard.KeyInfo.ScanCode == 57 || Keyboard.KeyInfo.ScanCode == 44) { _text += " "; _dirty = true; return; }
 
-            // Letters A-Z
-            if (key.Key >= ConsoleKey.A && key.Key <= ConsoleKey.Z) { char c = (char)('a' + (key.Key - ConsoleKey.A)); _text += c; _dirty = true; return; }
-            // Digits 0-9
-            if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9) { char c = (char)('0' + (key.Key - ConsoleKey.D0)); _text += c; _dirty = true; return; }
-
-            // Punctuation basics (best-effort)
-            switch (key.Key) {
-                case ConsoleKey.OemPeriod: _text += "."; _dirty = true; break;
-                case ConsoleKey.OemComma: _text += ","; _dirty = true; break;
-                case ConsoleKey.OemMinus: _text += "-"; _dirty = true; break;
-                case ConsoleKey.OemPlus: _text += "+"; _dirty = true; break;
-                case ConsoleKey.Oem1: _text += ";"; _dirty = true; break; // ;
-                case ConsoleKey.Oem2: _text += "/"; _dirty = true; break; // /
-                case ConsoleKey.Oem3: _text += "`"; _dirty = true; break; // `
-                case ConsoleKey.Oem4: _text += "["; _dirty = true; break; // [
-                case ConsoleKey.Oem5: _text += "\\"; _dirty = true; break; // \
-                case ConsoleKey.Oem6: _text += "]"; _dirty = true; break; // ]
-                case ConsoleKey.Oem7: _text += "'"; _dirty = true; break; // '
-            }
+            // Use KeyChar for printable input (handles space and special chars)
+            if (key.KeyChar != '\0') { _text += key.KeyChar; _dirty = true; return; }
         }
 
         private void SaveTo(string path) {
