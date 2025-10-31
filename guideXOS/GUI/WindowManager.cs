@@ -80,7 +80,8 @@ namespace guideXOS.GUI {
         /// Draw All
         /// </summary>
         public static void DrawAll() {
-            for (int i = Windows.Count - 1; i >= 0; i--) {
+            // Draw from bottom to top so the last window (top-most) is drawn last
+            for (int i = 0; i < Windows.Count; i++) {
                 if (Windows[i].Visible)
                     Windows[i].OnDraw();
             }

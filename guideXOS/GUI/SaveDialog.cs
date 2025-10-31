@@ -18,9 +18,10 @@ namespace guideXOS.GUI {
         private bool _clickLock;
         private readonly Action<string> _onSave;
         private int _padding = 10;
-        private int _rowH = 28;
-        private int _btnW = 80;
-        private int _btnH = 26;
+        private int _paddingRight = 20; // extra right padding so buttons aren’t flush
+        private int _rowH = 36; // ensure enough height for icons
+        private int _btnW = 120; // wider buttons
+        private int _btnH = 28;
         private bool _fnameFocus;
 
         // Key de-bounce
@@ -35,6 +36,9 @@ namespace guideXOS.GUI {
             _onSave = onSave;
             _clickLock = false;
             _fnameFocus = true;
+            // Adjust row height based on icon size
+            int minRow = Icons.FileIcon != null ? Icons.FileIcon.Height + 10 : 36;
+            if (minRow > _rowH) _rowH = minRow;
             Keyboard.OnKeyChanged += Keyboard_OnKeyChanged;
             RefreshEntries();
         }
@@ -59,11 +63,16 @@ namespace guideXOS.GUI {
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return;
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
+
+            // Escape cancels dialog
+            if (key.Key == ConsoleKey.Escape) { this.Visible = false; return; }
+
             if (!_fnameFocus) return;
 
             if (key.Key == ConsoleKey.Backspace) { if (_fileName.Length > 0) _fileName = _fileName.Substring(0, _fileName.Length - 1); return; }
             if (key.Key == ConsoleKey.Enter) { SaveAction(); return; }
-            if (Keyboard.KeyInfo.ScanCode == 57) { _fileName += " "; return; }
+            // spaces
+            if (key.Key == ConsoleKey.Space || Keyboard.KeyInfo.ScanCode == 57) { _fileName += " "; return; }
             if (key.Key >= ConsoleKey.A && key.Key <= ConsoleKey.Z) { char c = (char)('a' + (key.Key - ConsoleKey.A)); _fileName += c; return; }
             if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9) { char c = (char)('0' + (key.Key - ConsoleKey.D0)); _fileName += c; return; }
             switch (key.Key) {
@@ -92,22 +101,19 @@ namespace guideXOS.GUI {
         public override void OnInput() {
             base.OnInput();
             bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
-            int mx = Control.MousePosition.X;
-            int my = Control.MousePosition.Y;
+            int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
             int cx = X + _padding;
-            int cy = Y + _padding + 28; // leave header inside window client
+            int cw = Width - _padding - _paddingRight; // content width with right padding
+            int cy = Y + _padding + 28;
             int listX = cx;
-            int listY = cy + 24; // below toolbar
-            int listW = Width - _padding * 2;
-            int listH = Height - _padding * 2 - 90;
+            int listY = cy + 24;
+            int listW = cw;
+            int listH = Height - _padding - (cy - Y) - 90;
 
-            // Toolbar buttons
             int upW = 60; int upH = 22; int upX = cx; int upY = cy;
-            int pathX = upX + upW + 8; int pathW = listW - upW - 8;
 
-            // Filename + buttons area
-            int fnY = Y + Height - _padding - 40;
-            int fnH = 24; int fnLabelW = 80; int fnX = cx + fnLabelW; int fnW = listW - fnLabelW - (_btnW * 2 + 16 + 8);
+            int fnY = Y + Height - _padding - 44; // a bit more space
+            int fnH = 26; int fnLabelW = 80; int fnX = cx + fnLabelW; int fnW = listW - fnLabelW - (_btnW * 2 + 16 + 8);
             int saveX = fnX + fnW + 8; int cancelX = saveX + _btnW + 8;
 
             if (left) {
@@ -115,8 +121,7 @@ namespace guideXOS.GUI {
                     // Up
                     if (mx >= upX && mx <= upX + upW && my >= upY && my <= upY + upH) { GoUp(); _clickLock = true; return; }
                     // Filename focus
-                    if (mx >= fnX && mx <= fnX + fnW && my >= fnY && my <= fnY + fnH) { _fnameFocus = true; _clickLock = true; return; }
-                    else { if (my >= listY && my <= listY + listH && mx >= listX && mx <= listX + listW) _fnameFocus = false; }
+                    if (mx >= fnX && mx <= fnX + fnW && my >= fnY && my <= fnY + fnH) { _fnameFocus = true; _clickLock = true; return; } else { if (my >= listY && my <= listY + listH && mx >= listX && mx <= listX + listW) _fnameFocus = false; }
                     // Save
                     if (mx >= saveX && mx <= saveX + _btnW && my >= fnY && my <= fnY + _btnH) { SaveAction(); _clickLock = true; return; }
                     // Cancel
@@ -143,43 +148,36 @@ namespace guideXOS.GUI {
 
         public override void OnDraw() {
             base.OnDraw();
-            int cx = X + _padding;
-            int cy = Y + _padding + 28;
-            int listX = cx; int listY = cy + 24; int listW = Width - _padding * 2; int listH = Height - _padding * 2 - 90;
-            // Toolbar
-            Framebuffer.Graphics.FillRectangle(cx, cy, listW, 22, 0xFF333333);
-            // Up button
-            int upW = 60; int upH = 22; Framebuffer.Graphics.FillRectangle(cx, cy, upW, upH, 0xFF444444); WindowManager.font.DrawString(cx + 8, cy + 4, "Up");
-            // Path display
+            int cx = X + _padding; int cw = Width - _padding - _paddingRight; int cy = Y + _padding + 28; int listX = cx; int listY = cy + 24; int listW = cw; int listH = Height - _padding - (cy - Y) - 90;
+            // Title bar area inside content (opaque, no full-screen dim)
+            Framebuffer.Graphics.FillRectangle(cx, cy, listW, 22, 0xFF3A3A3A);
+            int upW = 60; int upH = 22; Framebuffer.Graphics.FillRectangle(cx, cy, upW, upH, 0xFF4A4A4A); WindowManager.font.DrawString(cx + 8, cy + 4, "Up");
             WindowManager.font.DrawString(cx + upW + 8, cy + 4, _currentPath ?? "");
 
             // List background
-            Framebuffer.Graphics.AFillRectangle(listX, listY, listW, listH, 0x80282828);
-            // Entries
-            int y = listY;
-            int iconW = Icons.FileIcon.Width; int iconH = Icons.FileIcon.Height;
+            Framebuffer.Graphics.FillRectangle(listX, listY, listW, listH, 0xFF2B2B2B);
+            int y = listY; int iconW = Icons.FileIcon.Width; int iconH = Icons.FileIcon.Height;
             for (int i = 0; i < _entries.Count; i++) {
                 var e = _entries[i];
-                // row bg
-                if ((i & 1) == 0) Framebuffer.Graphics.AFillRectangle(listX, y, listW, _rowH, 0x20111111);
-                // icon
+                // row bg alternating
+                uint rowBg = ((i & 1) == 0) ? 0xFF303030u : 0xFF2B2B2Bu;
+                Framebuffer.Graphics.FillRectangle(listX, y, listW, _rowH, rowBg);
                 var icon = (e.Attribute == FileAttribute.Directory) ? Icons.FolderIcon : Icons.FileIcon;
-                Framebuffer.Graphics.DrawImage(listX + 4, y + (_rowH / 2 - iconH / 2), icon);
-                WindowManager.font.DrawString(listX + 8 + iconW, y + (_rowH / 2 - WindowManager.font.FontSize / 2), e.Name);
+                int iconY = y + (_rowH / 2 - iconH / 2);
+                Framebuffer.Graphics.DrawImage(listX + 6, iconY, icon);
+                WindowManager.font.DrawString(listX + 12 + iconW, y + (_rowH / 2 - WindowManager.font.FontSize / 2), e.Name);
                 y += _rowH;
                 if (y > listY + listH - _rowH) break;
             }
 
             // Filename + buttons
-            int fnLabelW = 80; int fnY = Y + Height - _padding - 40; int fnH = 24; int fnX = cx + fnLabelW; int fnW = listW - fnLabelW - (_btnW * 2 + 16 + 8);
+            int fnLabelW = 80; int fnY = Y + Height - _padding - 44; int fnH = 26; int fnX = cx + fnLabelW; int fnW = listW - fnLabelW - (_btnW * 2 + 16 + 8);
             WindowManager.font.DrawString(cx, fnY + (fnH / 2 - WindowManager.font.FontSize / 2), "File name:");
-            // Filename box
             Framebuffer.Graphics.FillRectangle(fnX, fnY, fnW, fnH, _fnameFocus ? 0xFF3A3A3A : 0xFF2A2A2A);
-            WindowManager.font.DrawString(fnX + 6, fnY + (fnH / 2 - WindowManager.font.FontSize / 2), _fileName);
-            // Buttons
+            WindowManager.font.DrawString(fnX + 6, fnY + (fnH / 2 - WindowManager.font.FontSize / 2), _fileName ?? "");
             int saveX = fnX + fnW + 8; int cancelX = saveX + _btnW + 8;
-            Framebuffer.Graphics.FillRectangle(saveX, fnY, _btnW, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(saveX + 12, fnY + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save");
-            Framebuffer.Graphics.FillRectangle(cancelX, fnY, _btnW, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(cancelX + 8, fnY + (_btnH / 2 - WindowManager.font.FontSize / 2), "Cancel");
+            Framebuffer.Graphics.FillRectangle(saveX, fnY, _btnW, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(saveX + 16, fnY + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save");
+            Framebuffer.Graphics.FillRectangle(cancelX, fnY, _btnW, _btnH, 0xFF3A3A3A); WindowManager.font.DrawString(cancelX + 12, fnY + (_btnH / 2 - WindowManager.font.FontSize / 2), "Cancel");
         }
     }
 }

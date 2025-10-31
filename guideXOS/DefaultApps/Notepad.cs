@@ -14,13 +14,13 @@ namespace guideXOS.DefaultApps {
         private string _text;
         private bool _clickLock;
         private int _padding = 8;
-        private int _btnW = 64;
-        private int _btnH = 24;
+        private int _btnW = 72;
+        private int _btnH = 26;
         private string _fileName = "notes.txt";
         private SaveDialog _dlg;
         private byte _lastScan; private bool _keyDown;
 
-        public Notepad(int x, int y) : base(x, y, 560, 360) {
+        public Notepad(int x, int y) : base(x, y, 640, 420) {
             Title = "Notepad";
             _text = string.Empty; _clickLock = false;
             // subscribe keyboard handler
@@ -35,6 +35,8 @@ namespace guideXOS.DefaultApps {
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // de-bounce to avoid repeats
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
 
+            if (key.Key == ConsoleKey.Escape) { return; }
+
             // Basic editing
             if (key.Key == ConsoleKey.Backspace) {
                 if (_text.Length > 0) _text = _text.Substring(0, _text.Length - 1);
@@ -45,9 +47,7 @@ namespace guideXOS.DefaultApps {
                 return;
             }
             if (key.Key == ConsoleKey.Tab) { _text += "    "; return; }
-
-            // Space: map when scan code 57 (standard space) is set
-            if (Keyboard.KeyInfo.ScanCode == 57) { _text += " "; return; }
+            if (key.Key == ConsoleKey.Space || Keyboard.KeyInfo.ScanCode == 57) { _text += " "; return; }
 
             // Letters A-Z
             if (key.Key >= ConsoleKey.A && key.Key <= ConsoleKey.Z) {
@@ -67,13 +67,14 @@ namespace guideXOS.DefaultApps {
                 case ConsoleKey.OemComma: _text += ","; break;
                 case ConsoleKey.OemMinus: _text += "-"; break;
                 case ConsoleKey.OemPlus: _text += "+"; break;
-                case ConsoleKey.Oem1: _text += ";"; break;
-                case ConsoleKey.Oem2: _text += "/"; break;
-                case ConsoleKey.Oem3: _text += "`"; break;
-                case ConsoleKey.Oem4: _text += "["; break;
-                case ConsoleKey.Oem5: _text += "\\"; break;
-                case ConsoleKey.Oem6: _text += "]"; break;
-                case ConsoleKey.Oem7: _text += "'"; break;
+                case ConsoleKey.Oem1: _text += ";"; break; // ;
+                case ConsoleKey.Oem2: _text += "/"; break; // /
+                case ConsoleKey.Oem3: _text += "`"; break; // `
+                case ConsoleKey.Oem4: _text += "["; break; // [
+                case ConsoleKey.Oem5: _text += "\\"; break; // \
+                case ConsoleKey.Oem6: _text += "]"; break; // ]
+                case ConsoleKey.Oem7: _text += "'"; break; // '
+                case ConsoleKey.Separator: _text += "="; break; // fallback
             }
         }
 
@@ -97,7 +98,7 @@ namespace guideXOS.DefaultApps {
             if (left) {
                 if (!_clickLock && mx >= bx && mx <= bx + _btnW && my >= by && my <= by + _btnH) {
                     // open save dialog
-                    _dlg = new SaveDialog(X + 40, Y + 40, 520, 320, Desktop.Dir, _fileName, (p) => { _fileName = p.Substring(p.LastIndexOf('/') + 1); SaveTo(p); });
+                    _dlg = new SaveDialog(X + 40, Y + 40, 520, 360, Desktop.Dir, _fileName, (p) => { _fileName = p.Substring(p.LastIndexOf('/') + 1); SaveTo(p); });
                     WindowManager.MoveToEnd(_dlg); _dlg.Visible = true; _clickLock = true; return;
                 }
             } else { _clickLock = false; }
@@ -112,7 +113,9 @@ namespace guideXOS.DefaultApps {
             WindowManager.font.DrawString(cx + 6, cy + (_btnH / 2 - WindowManager.font.FontSize / 2), "Save As");
             // Text area background
             int tx = cx; int ty = cy + _btnH + 8; int tw = cw; int th = ch - (_btnH + 8);
-            Framebuffer.Graphics.AFillRectangle(tx, ty, tw, th, 0x80282828);
+            // If dialog visible, dim Notepad a bit more
+            uint bg = (_dlg != null && _dlg.Visible) ? 0x60181818u : 0x80282828u;
+            Framebuffer.Graphics.AFillRectangle(tx, ty, tw, th, bg);
             // Draw text (wrapped)
             WindowManager.font.DrawString(tx + 6, ty + 6, _text, tw - 12, WindowManager.font.FontSize * 3);
         }
