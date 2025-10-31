@@ -3,16 +3,27 @@ using System.Drawing;
 using System.Windows.Forms;
 namespace guideXOS.GUI {
     internal class Taskbar {
+        public StartMenu StartMenu;
         private int _barHeight;
         private Image _startIcon;
         private bool _clockUse12Hour = false;
         private bool _clockClickLatch = false;
-        private int _netAnimPhase = 0; private ulong _lastTick = 0; private bool _netConnectedShown = false;
+        private bool _startClickLatch = false;
+
+        // Network indicator animation
+        private int _netAnimPhase = 0;
+        private ulong _lastTick = 0;
+        private bool _netConnectedShown = false;
 
         public Taskbar(int barHeight, Image startIcon) { _barHeight = barHeight; _startIcon = startIcon; }
 
         public void Draw() {
             Framebuffer.Graphics.AFillRectangle(0, Framebuffer.Height - _barHeight, Framebuffer.Width, _barHeight, 0xCC222222);
+            int startX = 12; int startY = Framebuffer.Height - _barHeight + 4;
+            // Draw Start icon on the taskbar
+            if (_startIcon != null) {
+                Framebuffer.Graphics.DrawImage(startX, startY, _startIcon);
+            }
 
             // Time and date strings
             string time;
@@ -56,8 +67,8 @@ namespace guideXOS.GUI {
                 // draw 3 bars
                 int bw = 3; int gap = 2;
                 for (int i = 0; i < 3; i++) {
-                    int h = 4 + i * 4;
-                    Framebuffer.Graphics.FillRectangle(netX + i * (bw + gap), netY + (iconSize - h), bw, h, 0xFF5FB878);
+                    int h2 = 4 + i * 4;
+                    Framebuffer.Graphics.FillRectangle(netX + i * (bw + gap), netY + (iconSize - h2), bw, h2, 0xFF5FB878);
                 }
                 _netConnectedShown = true;
             } else {
@@ -75,7 +86,15 @@ namespace guideXOS.GUI {
                 if (mx >= timeX && mx <= timeX + timeW && my >= Framebuffer.Height - _barHeight && my <= Framebuffer.Height) {
                     if (!_clockClickLatch) { _clockUse12Hour = !_clockUse12Hour; _clockClickLatch = true; }
                 }
-            } else { _clockClickLatch = false; }
+                if (_startIcon != null) {
+                    int sW = _startIcon.Width; int sH = _startIcon.Height;
+                    if (mx >= startX && mx <= startX + sW && my >= startY && my <= startY + sH) {
+                        if (!_startClickLatch) { if (StartMenu == null) StartMenu = new StartMenu(); StartMenu.Visible = !StartMenu.Visible; _startClickLatch = true; }
+                    } else {
+                        if (StartMenu != null && StartMenu.Visible && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
+                    }
+                }
+            } else { _clockClickLatch = false; _startClickLatch = false; }
 
             time.Dispose(); date.Dispose();
         }

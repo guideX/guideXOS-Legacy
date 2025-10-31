@@ -15,11 +15,11 @@ namespace guideXOS.DefaultApps {
         private bool _clickLock;
         private int _padding = 10;
         private int _btnH = 28;
-        private int _btnWSaveAs = 88; // more padding
+        private int _btnWSaveAs = 88;
         private int _btnWSave = 72;
         private int _btnWWrap = 64;
         private string _fileName = "notes.txt";
-        private string _savedPath; // full path of last save
+        private string _savedPath;
         private bool _dirty;
         private bool _wrap = true;
         private SaveDialog _dlg;
@@ -61,6 +61,37 @@ namespace guideXOS.DefaultApps {
             }
         }
 
+        private static char MapFromKey(ConsoleKeyInfo key) {
+            // Prefer KeyChar when provided by the driver
+            if (key.KeyChar != '\0') return key.KeyChar;
+            // Fallback mapping from ConsoleKey
+            var k = key.Key;
+            if (k == ConsoleKey.Space) return ' ';
+            if (k >= ConsoleKey.A && k <= ConsoleKey.Z) {
+                bool upper = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) ^ Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.CapsLock);
+                char c = (char)('a' + (k - ConsoleKey.A));
+                return upper ? c.ToUpper() : c;
+            }
+            if (k >= ConsoleKey.D0 && k <= ConsoleKey.D9) {
+                // No shifted symbol mapping for simplicity
+                return (char)('0' + (k - ConsoleKey.D0));
+            }
+            switch (k) {
+                case ConsoleKey.OemPeriod: return '.';
+                case ConsoleKey.OemComma: return ',';
+                case ConsoleKey.OemMinus: return '-';
+                case ConsoleKey.OemPlus: return '+';
+                case ConsoleKey.Oem1: return ';';
+                case ConsoleKey.Oem2: return '/';
+                case ConsoleKey.Oem3: return '`';
+                case ConsoleKey.Oem4: return '[';
+                case ConsoleKey.Oem5: return '\\';
+                case ConsoleKey.Oem6: return ']';
+                case ConsoleKey.Oem7: return '\'';
+            }
+            return '\0';
+        }
+
         private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
             if (!Visible) return;
             if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return; // let dialog handle keys when visible
@@ -74,8 +105,8 @@ namespace guideXOS.DefaultApps {
             if (key.Key == ConsoleKey.Enter) { _text += "\n"; _dirty = true; return; }
             if (key.Key == ConsoleKey.Tab) { _text += "    "; _dirty = true; return; }
 
-            // Use KeyChar for printable input (handles space and special chars)
-            if (key.KeyChar != '\0') { _text += key.KeyChar; _dirty = true; return; }
+            char ch = MapFromKey(key);
+            if (ch != '\0') { _text += ch; _dirty = true; }
         }
 
         private void SaveTo(string path) {
