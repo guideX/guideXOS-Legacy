@@ -25,6 +25,41 @@ namespace guideXOS.GUI {
                 Framebuffer.Graphics.DrawImage(startX, startY, _startIcon);
             }
 
+            // Draw task buttons for open windows
+            int btnX = startX + (_startIcon != null ? _startIcon.Width + 12 : 12);
+            int btnY = Framebuffer.Height - _barHeight + 6;
+            int btnH = _barHeight - 12;
+            int btnW = 140; // fixed width
+            int gap = 8;
+
+            int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
+            bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
+
+            for (int i = 0; i < WindowManager.Windows.Count; i++) {
+                var w = WindowManager.Windows[i];
+                if (!w.Visible) continue;
+                // button rect
+                int x = btnX; int y = btnY; int wRect = btnW; int hRect = btnH;
+                bool hover = (mx >= x && mx <= x + wRect && my >= y && my <= y + hRect);
+                uint bg = hover ? 0xFF3A3A3A : 0xFF303030;
+                Framebuffer.Graphics.FillRectangle(x, y, wRect, hRect, bg);
+                Framebuffer.Graphics.DrawRectangle(x, y, wRect, hRect, 0xFF454545, 1);
+                // icon and title
+                var icon = w.TaskbarIcon ?? Icons.FileIcon;
+                int iconY = y + (hRect / 2) - (icon.Height / 2);
+                Framebuffer.Graphics.DrawImage(x + 6, iconY, icon);
+                int textX = x + 6 + icon.Width + 6;
+                int textWidth = wRect - (textX - x) - 6;
+                if (textWidth > 0) WindowManager.font.DrawString(textX, y + (hRect / 2) - (WindowManager.font.FontSize / 2), w.Title, textWidth, WindowManager.font.FontSize);
+                // click -> focus window
+                if (left && hover) {
+                    WindowManager.MoveToEnd(w);
+                    w.Visible = true;
+                }
+                btnX += wRect + gap;
+                if (btnX > Framebuffer.Width - 300) break; // leave space for clock area
+            }
+
             // Time and date strings
             string time;
             if (_clockUse12Hour) {
@@ -65,30 +100,30 @@ namespace guideXOS.GUI {
             // draw signal bars or spinner
             if (connected) {
                 // draw 3 bars
-                int bw = 3; int gap = 2;
+                int bw = 3; int gap2 = 2;
                 for (int i = 0; i < 3; i++) {
                     int h2 = 4 + i * 4;
-                    Framebuffer.Graphics.FillRectangle(netX + i * (bw + gap), netY + (iconSize - h2), bw, h2, 0xFF5FB878);
+                    Framebuffer.Graphics.FillRectangle(netX + i * (bw + gap2), netY + (iconSize - h2), bw, h2, 0xFF5FB878);
                 }
                 _netConnectedShown = true;
             } else {
                 // animate 3 dots while determining
-                int dot = 3; int gap = 4;
+                int dot = 3; int gap2 = 4;
                 for (int i = 0; i < 3; i++) {
                     uint c = (i == _netAnimPhase) ? 0xFFAAAAAAu : 0xFF555555u;
-                    Framebuffer.Graphics.FillRectangle(netX + i * (dot + gap), netY + (iconSize/2) - (dot/2), dot, dot, c);
+                    Framebuffer.Graphics.FillRectangle(netX + i * (dot + gap2), netY + (iconSize/2) - (dot/2), dot, dot, c);
                 }
             }
 
-            // Input handling
+            // Input handling for start/time areas
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
-                int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
-                if (mx >= timeX && mx <= timeX + timeW && my >= Framebuffer.Height - _barHeight && my <= Framebuffer.Height) {
+                int mx2 = Control.MousePosition.X; int my2 = Control.MousePosition.Y;
+                if (mx2 >= timeX && mx2 <= timeX + timeW && my2 >= Framebuffer.Height - _barHeight && my2 <= Framebuffer.Height) {
                     if (!_clockClickLatch) { _clockUse12Hour = !_clockUse12Hour; _clockClickLatch = true; }
                 }
                 if (_startIcon != null) {
                     int sW = _startIcon.Width; int sH = _startIcon.Height;
-                    if (mx >= startX && mx <= startX + sW && my >= startY && my <= startY + sH) {
+                    if (mx2 >= startX && mx2 <= startX + sW && my2 >= startY && my2 <= startY + sH) {
                         if (!_startClickLatch) { if (StartMenu == null) StartMenu = new StartMenu(); StartMenu.Visible = !StartMenu.Visible; _startClickLatch = true; }
                     } else {
                         if (StartMenu != null && StartMenu.Visible && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }

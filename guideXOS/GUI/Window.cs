@@ -1,5 +1,6 @@
 using guideXOS.Kernel.Drivers;
 using System.Windows.Forms;
+using System.Drawing;
 namespace guideXOS.GUI {
     /// <summary>
     /// Window
@@ -57,6 +58,7 @@ namespace guideXOS.GUI {
             this.Visible = true;
             WindowManager.Windows.Add(this);
             Title = "Window1";
+            TaskbarIcon = Icons.FileIcon;
             // Do not force MoveToEnd here to avoid modifying the list during input iteration
             // Callers can bring to front explicitly when appropriate
         }
@@ -68,6 +70,10 @@ namespace guideXOS.GUI {
         /// Title
         /// </summary>
         public string Title;
+        /// <summary>
+        /// Icon used on taskbar for this window
+        /// </summary>
+        public Image TaskbarIcon;
         /// <summary>
         /// Move
         /// </summary>
