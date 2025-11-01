@@ -29,6 +29,7 @@ namespace guideXOS.GUI {
         private ColorPicker _colorDlg;
 
         public DisplayOptions(int X, int Y, int W = 420, int H = 420) : base(X, Y, W, H) {
+            ShowInTaskbar = true;
             Title = "Display Options";
             var list = DisplayManager.AvailableResolutions;
             if (list != null && list.Length > 0) {

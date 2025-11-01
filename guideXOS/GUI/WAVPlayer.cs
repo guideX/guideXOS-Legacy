@@ -18,6 +18,7 @@ namespace guideXOS.GUI {
         public static bool playing;
 
         public WAVPlayer(int X, int Y) : base(X, Y, 200, 200) {
+            ShowInTaskbar = true;
             audiopause = new PNG(File.ReadAllBytes("Images/audiopause.png"));
             audioplay = new PNG(File.ReadAllBytes("Images/audioplay.png"));
             Title = "WAV Player";

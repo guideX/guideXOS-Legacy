@@ -50,6 +50,9 @@ namespace guideXOS.GUI {
         public unsafe StartMenu() : base(_x, _y, _x2, _y2) {
             Title = "Start";
             BarHeight = 0;
+            ShowInTaskbar = false; // do not show a taskbar button for Start menu
+            ShowMaximize = false;
+            ShowMinimize = false;
         }
 
         public override void OnInput() {

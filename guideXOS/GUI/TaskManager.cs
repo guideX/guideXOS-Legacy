@@ -46,6 +46,7 @@ namespace guideXOS.GUI {
         private ulong _lastPerfTick = 0;
 
         public TaskManager(int X, int Y, int Width = 760, int Height = 520) : base(X, Y, Width, Height) {
+            ShowInTaskbar = true;
             Title = "Task Manager";
             // Initialize charts
             int chartW = 280, chartH = 120;

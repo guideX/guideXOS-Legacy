@@ -24,6 +24,10 @@ namespace guideXOS.GUI {
             Title = "guideXOS";
             img = new PNG(File.ReadAllBytes("Images/Banner.png"));
             link = new PNG(File.ReadAllBytes("Images/teamnexgenlink.png"));
+            // Splash: fixed window, no minimize/maximize buttons
+            ShowMinimize = false;
+            ShowMaximize = false;
+            ShowInTaskbar = true;
         }
         /// <summary>
         /// On Draw

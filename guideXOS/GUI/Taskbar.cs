@@ -55,7 +55,7 @@ namespace guideXOS.GUI {
 
             for (int i = 0; i < WindowManager.Windows.Count; i++) {
                 var w = WindowManager.Windows[i];
-                if (!w.Visible) continue;
+                if (!w.Visible || !w.ShowInTaskbar) continue;
                 // button rect
                 int x = btnX; int y = btnY; int wRect = btnW; int hRect = btnH;
                 bool hover = (mx >= x && mx <= x + wRect && my >= y && my <= y + hRect);

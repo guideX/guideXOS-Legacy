@@ -9,6 +9,7 @@ namespace guideXOS.GUI {
         private string Cmd;
 
         public FConsole(int X, int Y) : base(X, Y, 640, 320) {
+            ShowInTaskbar = true;
             Title = "Console";
             Cmd = string.Empty;
             Data = string.Empty;

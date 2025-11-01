@@ -33,6 +33,7 @@ namespace guideXOS.GUI {
             Title = "Disk Manager";
             _status = BuildStatus();
             ReadDiskLayout();
+            ShowInTaskbar = true;
         }
 
         private string BuildStatus() {

@@ -114,6 +114,27 @@ namespace guideXOS.GUI {
             return false;
         }
 
+        private static bool ShouldHideAppOnDesktop(string name) {
+            // hide these app icons only on desktop
+            // compare by lowercase name for safety
+            string n = name;
+            // Build a simple lowercase comparable copy
+            int len = n.Length;
+            bool match = false;
+            // quick helpers
+            bool Eq(string a) {
+                if (a.Length != len) return false;
+                for (int i = 0; i < len; i++) {
+                    char ca = n[i]; if (ca >= 'A' && ca <= 'Z') ca = (char)(ca + 32);
+                    char cb = a[i]; if (cb >= 'A' && cb <= 'Z') cb = (char)(cb + 32);
+                    if (ca != cb) return false;
+                }
+                return true;
+            }
+            if (Eq("lock") || Eq("notepad") || Eq("task manager") || Eq("start menu") || Eq("monitor") || Eq("console") || Eq("paint") || Eq("clock") || Eq("calculator")) match = true;
+            return match;
+        }
+
         /// <summary>
         /// Update
         /// </summary>
@@ -139,13 +160,18 @@ namespace guideXOS.GUI {
             if (leftDown && mouseOverWindow) clickable = false;
 
             if (HomeMode) {
-                // Draw Apps
+                // Draw Apps (skip specific ones on desktop only)
                 for (int i = 0; i < Apps.Length; i++) {
-                    if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
-                    ClickEvent(Apps.Name(i), false, x, y, i, clickable, leftDown);
-                    Framebuffer.Graphics.DrawImage(x, y, Apps.Icon(i));
-                    WindowManager.font.DrawString(x, y + fh, Apps.Name(i), fw + 8, WindowManager.font.FontSize * 3);
-                    y += Icons.FileIcon.Height + devide;
+                    string appName = Apps.Name(i);
+                    bool hide = ShouldHideAppOnDesktop(appName);
+                    if (!hide) {
+                        if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                        ClickEvent(appName, false, x, y, i, clickable, leftDown);
+                        Framebuffer.Graphics.DrawImage(x, y, Apps.Icon(i));
+                        WindowManager.font.DrawString(x, y + fh, appName, fw + 8, WindowManager.font.FontSize * 3);
+                        y += Icons.FileIcon.Height + devide;
+                    }
+                    appName.Dispose();
                 }
                 // Special desktop icons: Computer Files and Root
                 // Computer Files

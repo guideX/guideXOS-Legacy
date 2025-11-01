@@ -15,6 +15,7 @@ namespace guideXOS.GUI {
         /// <param name="X"></param>
         /// <param name="Y"></param>
         public ImageViewer(int X, int Y) : base(X, Y, 250, 200) {
+            ShowInTaskbar = true;
             image = null;
             Title = "ImageViewer";
         }

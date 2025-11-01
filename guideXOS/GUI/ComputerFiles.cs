@@ -45,6 +45,7 @@ namespace guideXOS.GUI {
             _entriesDirty = true;
             _entriesCacheFor = null;
             _entriesCache = null;
+            ShowInTaskbar = true;
         }
 
         private void LoadIcons() {

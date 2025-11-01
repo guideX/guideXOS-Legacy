@@ -52,6 +52,15 @@ namespace guideXOS.GUI {
         public bool IsMinimized { get; private set; }
         public bool IsMaximized { get; private set; }
         /// <summary>
+        /// Controls whether this window shows in the taskbar
+        /// </summary>
+        public bool ShowInTaskbar = false;
+        /// <summary>
+        /// Controls visibility of Minimize/Maximize buttons
+        /// </summary>
+        public bool ShowMinimize = true;
+        public bool ShowMaximize = true;
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="X"></param>
@@ -118,11 +127,11 @@ namespace guideXOS.GUI {
                     return;
                 }
                 // Minimize
-                if (!WindowManager.HasWindowMoving && Control.MousePosition.X > MinButtonX && Control.MousePosition.X < MinButtonX + WindowManager.MinimizeButton.Width && Control.MousePosition.Y > ButtonsY && Control.MousePosition.Y < ButtonsY + WindowManager.MinimizeButton.Height) {
+                if (ShowMinimize && !WindowManager.HasWindowMoving && Control.MousePosition.X > MinButtonX && Control.MousePosition.X < MinButtonX + WindowManager.MinimizeButton.Width && Control.MousePosition.Y > ButtonsY && Control.MousePosition.Y < ButtonsY + WindowManager.MinimizeButton.Height) {
                     Minimize(); return;
                 }
                 // Maximize/Restore
-                if (!WindowManager.HasWindowMoving && Control.MousePosition.X > MaxButtonX && Control.MousePosition.X < MaxButtonX + WindowManager.MaximizeButton.Width && Control.MousePosition.Y > ButtonsY && Control.MousePosition.Y < ButtonsY + WindowManager.MaximizeButton.Height) {
+                if (ShowMaximize && !WindowManager.HasWindowMoving && Control.MousePosition.X > MaxButtonX && Control.MousePosition.X < MaxButtonX + WindowManager.MaximizeButton.Width && Control.MousePosition.Y > ButtonsY && Control.MousePosition.Y < ButtonsY + WindowManager.MaximizeButton.Height) {
                     if (IsMaximized) Restore(); else Maximize(); return;
                 }
                 // Drag title bar
@@ -171,9 +180,9 @@ namespace guideXOS.GUI {
             // Buttons
             if (WindowManager.CloseButton != null)
                 Framebuffer.Graphics.DrawImage(CloseButtonX, CloseButtonY, WindowManager.CloseButton);
-            if (WindowManager.MaximizeButton != null)
+            if (ShowMaximize && WindowManager.MaximizeButton != null)
                 Framebuffer.Graphics.DrawImage(MaxButtonX, ButtonsY, WindowManager.MaximizeButton);
-            if (WindowManager.MinimizeButton != null)
+            if (ShowMinimize && WindowManager.MinimizeButton != null)
                 Framebuffer.Graphics.DrawImage(MinButtonX, ButtonsY, WindowManager.MinimizeButton);
             // Content
             Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0xCC222222);
