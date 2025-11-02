@@ -27,7 +27,8 @@ namespace guideXOS.GUI {
         private const ulong TenSeconds = 10_000;       // ms
         private const ulong FiveMinutes = 300_000;     // ms
 
-        public Taskbar(int barHeight, Image startIcon) { _barHeight = barHeight; _startIcon = startIcon; 
+        public Taskbar(int barHeight, Image startIcon) {
+            _barHeight = barHeight; _startIcon = startIcon;
             // schedule: show animation for first 10 seconds after boot
             _bootTicks = Timer.Ticks;
             _animWindowStart = _bootTicks;
@@ -38,7 +39,8 @@ namespace guideXOS.GUI {
         public void Draw() {
             int yTop = Framebuffer.Height - _barHeight;
             // Blur area behind taskbar, then tint
-            Framebuffer.Graphics.BlurRectangle(0, yTop, Framebuffer.Width, _barHeight, 4);
+            // Reduce blur radius to 3 (from 4) to save cycles, keeps look
+            Framebuffer.Graphics.BlurRectangle(0, yTop, Framebuffer.Width, _barHeight, 3);
             Framebuffer.Graphics.AFillRectangle(0, yTop, Framebuffer.Width, _barHeight, 0x66111111);
 
             int startX = 12; int startY = Framebuffer.Height - _barHeight + 4;

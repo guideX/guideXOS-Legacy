@@ -4,6 +4,12 @@ namespace guideXOS.Graph {
         public uint* VideoMemory;
         public int Width;
         public int Height;
+        // Reusable buffers for blur to avoid per-frame allocations
+        int[] _blurSrc;
+        int[] _blurTmp;
+        int[] _blurDst;
+        int _blurCapW;
+        int _blurCapH;
         public Graphics(int width, int height, void* vm) {
             this.Width = width;
             this.Height = height;
@@ -32,9 +38,26 @@ namespace guideXOS.Graph {
             }
         }
         public virtual void AFillRectangle(int X, int Y, int Width, int Height, uint Color) {
-            for (int w = 0; w < Width; w++) {
-                for (int h = 0; h < Height; h++) {
-                    DrawPoint(X + w, Y + h, Color, true);
+            // Optimized alpha fill to reduce per-pixel function overhead
+            int x0 = X; int y0 = Y; int x1 = X + Width; int y1 = Y + Height;
+            if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x1 > this.Width) x1 = this.Width; if (y1 > this.Height) y1 = this.Height;
+            if (x1 <= x0 || y1 <= y0) return;
+            int fA = (byte)((Color >> 24) & 0xFF);
+            int fR = (byte)((Color >> 16) & 0xFF);
+            int fG = (byte)((Color >> 8) & 0xFF);
+            int fB = (byte)(Color & 0xFF);
+            int invA = 255 - fA;
+            for (int yy = y0; yy < y1; yy++) {
+                int row = yy * this.Width;
+                for (int xx = x0; xx < x1; xx++) {
+                    uint bg = VideoMemory[row + xx];
+                    int bR = (byte)((bg >> 16) & 0xFF);
+                    int bG = (byte)((bg >> 8) & 0xFF);
+                    int bB = (byte)(bg & 0xFF);
+                    int r = (fR * fA + bR * invA) >> 8;
+                    int g = (fG * fA + bG * invA) >> 8;
+                    int b = (fB * fA + bB * invA) >> 8;
+                    VideoMemory[row + xx] = System.Drawing.Color.ToArgb((byte)r, (byte)g, (byte)b);
                 }
             }
         }
@@ -242,7 +265,7 @@ namespace guideXOS.Graph {
 
 
         // Applies a simple box blur to the specified rectangle and writes the result back to the framebuffer.
-        // This is useful to create a glass-like background before drawing tinted UI elements on top.
+        // Uses reusable buffers and disposes previous ones if growing to prevent leaks in environments without GC.
         public virtual void BlurRectangle(int X, int Y, int W, int H, int radius) {
             if (W <= 0 || H <= 0 || radius <= 0) return;
 
@@ -254,9 +277,17 @@ namespace guideXOS.Graph {
             int rw = x1 - x0; int rh = y1 - y0;
             if (rw <= 0 || rh <= 0) return;
 
-            int[] src = new int[rw * rh];
-            int[] tmp = new int[rw * rh];
-            int[] dst = new int[rw * rh];
+            // Ensure buffers
+            if (_blurSrc == null || rw > _blurCapW || rh > _blurCapH) {
+                // Dispose old buffers explicitly to avoid leaks on custom runtimes
+                if (_blurSrc != null) _blurSrc.Dispose();
+                if (_blurTmp != null) _blurTmp.Dispose();
+                if (_blurDst != null) _blurDst.Dispose();
+                _blurCapW = rw; _blurCapH = rh;
+                _blurSrc = new int[rw * rh];
+                _blurTmp = new int[rw * rh];
+                _blurDst = new int[rw * rh];
+            }
 
             // Snapshot region
             for (int yy = 0; yy < rh; yy++) {
@@ -264,18 +295,19 @@ namespace guideXOS.Graph {
                 int fbRow = sy * Width;
                 for (int xx = 0; xx < rw; xx++) {
                     int sx = x0 + xx;
-                    src[rowOff + xx] = (int)VideoMemory[fbRow + sx];
+                    _blurSrc[rowOff + xx] = (int)VideoMemory[fbRow + sx];
                 }
             }
 
             // Horizontal pass (simple box blur with edge clamping)
             for (int yy = 0; yy < rh; yy++) {
+                int row = yy * rw;
                 for (int xx = 0; xx < rw; xx++) {
                     int r = 0, g = 0, b = 0, a = 0, count = 0;
                     int xmin = xx - radius; if (xmin < 0) xmin = 0;
                     int xmax = xx + radius; if (xmax >= rw) xmax = rw - 1;
                     for (int k = xmin; k <= xmax; k++) {
-                        int c = src[yy * rw + k];
+                        int c = _blurSrc[row + k];
                         a += (byte)(c >> 24);
                         r += (byte)(c >> 16);
                         g += (byte)(c >> 8);
@@ -283,7 +315,7 @@ namespace guideXOS.Graph {
                         count++;
                     }
                     a /= count; r /= count; g /= count; b /= count;
-                    tmp[yy * rw + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
+                    _blurTmp[row + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
                 }
             }
 
@@ -294,7 +326,7 @@ namespace guideXOS.Graph {
                     int ymin = yy - radius; if (ymin < 0) ymin = 0;
                     int ymax = yy + radius; if (ymax >= rh) ymax = rh - 1;
                     for (int k = ymin; k <= ymax; k++) {
-                        int c = tmp[k * rw + xx];
+                        int c = _blurTmp[k * rw + xx];
                         a += (byte)(c >> 24);
                         r += (byte)(c >> 16);
                         g += (byte)(c >> 8);
@@ -302,7 +334,7 @@ namespace guideXOS.Graph {
                         count++;
                     }
                     a /= count; r /= count; g /= count; b /= count;
-                    dst[yy * rw + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
+                    _blurDst[yy * rw + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
                 }
             }
 
@@ -312,7 +344,7 @@ namespace guideXOS.Graph {
                 int rowOff = yy * rw;
                 for (int xx = 0; xx < rw; xx++) {
                     int sx = x0 + xx;
-                    VideoMemory[fbRow + sx] = (uint)dst[rowOff + xx];
+                    VideoMemory[fbRow + sx] = (uint)_blurDst[rowOff + xx];
                 }
             }
         }

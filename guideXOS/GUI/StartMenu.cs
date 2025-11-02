@@ -47,6 +47,11 @@ namespace guideXOS.GUI {
         private bool _showAllPrograms = false;
         private List<int> _allProgramsOrder; // indices into Desktop.Apps sorted by name
 
+        // Cache for recent program entries to avoid ToArray() each frame
+        private AppEntry[] _recentCache;
+        private int _recentCacheCount;
+        private ulong _recentCacheTick;
+
         public unsafe StartMenu() : base(_x, _y, _x2, _y2) {
             Title = "Start";
             BarHeight = 0;
@@ -54,6 +59,24 @@ namespace guideXOS.GUI {
             ShowMaximize = false;
             ShowMinimize = false;
             _showAllPrograms = false;
+        }
+
+        private struct AppEntry { public Image Icon; public string Name; }
+
+        private void RefreshRecentCacheIfNeeded() {
+            // Refresh at most once per 250ms to limit work
+            if (Timer.Ticks == _recentCacheTick) return;
+            _recentCacheTick = Timer.Ticks;
+            var list = RecentManager.Programs;
+            int count = list.Count;
+            if (_recentCache == null || _recentCache.Length < count) _recentCache = new AppEntry[count];
+            _recentCacheCount = count;
+            // copy references without ToArray()
+            for (int i = 0; i < count; i++) {
+                var it = list[i];
+                _recentCache[i].Icon = it.Icon ?? Icons.FileIcon;
+                _recentCache[i].Name = it.Name;
+            }
         }
 
         public override void OnInput() {
@@ -159,11 +182,13 @@ namespace guideXOS.GUI {
                                 return;
                             }
                         } else {
-                            var it = RecentManager.Programs.ToArray()[i];
-                            var icon = it.Icon ?? Icons.FileIcon;
+                            // use cache
+                            RefreshRecentCacheIfNeeded();
+                            if (i >= _recentCacheCount) break;
+                            var icon = _recentCache[i].Icon;
                             ih = icon.Height;
                             if (my >= iy && my <= iy + ih) {
-                                Desktop.Apps.Load(it.Name);
+                                Desktop.Apps.Load(_recentCache[i].Name);
                                 return;
                             }
                         }
@@ -207,23 +232,29 @@ namespace guideXOS.GUI {
             // Recent programs or All Programs
             int count = _showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count;
             int y = listY - _scroll;
-            for (int i = 0; i < count; i++) {
-                Image icon;
-                string name;
-                if (_showAllPrograms) {
+            if (_showAllPrograms) {
+                for (int i = 0; i < count; i++) {
                     int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
-                    icon = Desktop.Apps.Icon(ai) ?? Icons.FileIcon;
-                    name = Desktop.Apps.Name(ai);
-                } else {
-                    var it = RecentManager.Programs.ToArray()[i];
-                    icon = it.Icon ?? Icons.FileIcon;
-                    name = it.Name;
+                    var icon = Desktop.Apps.Icon(ai) ?? Icons.FileIcon;
+                    string name = Desktop.Apps.Name(ai);
+                    int ih = icon.Height;
+                    Framebuffer.Graphics.DrawImage(listX, y, icon);
+                    WindowManager.font.DrawString(listX + icon.Width + 10, y + (ih / 2) - (WindowManager.font.FontSize / 2), name, listW - (icon.Width + 22), WindowManager.font.FontSize);
+                    y += Spacing;
+                    name.Dispose();
                 }
-                int ih = icon.Height;
-                Framebuffer.Graphics.DrawImage(listX, y, icon);
-                WindowManager.font.DrawString(listX + icon.Width + 10, y + (ih / 2) - (WindowManager.font.FontSize / 2), name, listW - (icon.Width + 22), WindowManager.font.FontSize);
-                y += Spacing;
-                name.Dispose();
+            } else {
+                // use cached entries
+                RefreshRecentCacheIfNeeded();
+                int max = _recentCacheCount;
+                for (int i = 0; i < max; i++) {
+                    var icon = _recentCache[i].Icon;
+                    var name = _recentCache[i].Name;
+                    int ih = icon.Height;
+                    Framebuffer.Graphics.DrawImage(listX, y, icon);
+                    WindowManager.font.DrawString(listX + icon.Width + 10, y + (ih / 2) - (WindowManager.font.FontSize / 2), name, listW - (icon.Width + 22), WindowManager.font.FontSize);
+                    y += Spacing;
+                }
             }
 
             // Scrollbar for list

@@ -113,6 +113,7 @@ abstract unsafe class Allocator {
     /// <returns></returns>
     internal static unsafe IntPtr Allocate(ulong size) {
         lock (null) {
+            if (size == 0) size = 1; // avoid zero-page requests causing false leak
             ulong pages = 1;
             if (size > PageSize) {
                 pages = (size / PageSize) + ((size % 4096) != 0 ? 1UL : 0);
@@ -123,7 +124,7 @@ abstract unsafe class Allocator {
                 if (_Info.Pages[i] == 0) {
                     found = true;
                     for (ulong k = 0; k < pages; k++) {
-                        if (_Info.Pages[i + k] != 0) {
+                        if (i + k >= (ulong)NumPages || _Info.Pages[i + k] != 0) { // bounds check
                             found = false;
                             break;
                         }
@@ -134,7 +135,9 @@ abstract unsafe class Allocator {
                 }
             }
             if (!found) {
-                Panic.Error("Memory leak");
+                // Provide more diagnostic info before panic
+                string msg = "Memory leak: no free pages (in use=" + (_Info.PageInUse * PageSize).ToString() + "/" + (NumPages * PageSize).ToString() + ", req=" + (pages * PageSize).ToString() + ")";
+                Panic.Error(msg);
                 return IntPtr.Zero;
             }
             for (ulong k = 0; k < pages; k++) {

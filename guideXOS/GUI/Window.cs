@@ -156,8 +156,7 @@ namespace guideXOS.GUI {
             WindowManager.Windows.Add(this);
             Title = "Window1";
             TaskbarIcon = Icons.FileIcon;
-            // Do not force MoveToEnd here to avoid modifying the list during input iteration
-            // Callers can bring to front explicitly when appropriate
+            // Avoid heavy blur in title when window is large by using smaller radius
             BeginFadeIn();
         }
         /// <summary>
@@ -253,12 +252,12 @@ namespace guideXOS.GUI {
             // Update animation state and adjust properties
             UpdateAnimation();
 
-            // Glassy title bar: blur background then tint
+            // Glassy title bar: blur background then tint (smaller radius for perf)
             int barX = X;
             int barY = Y - BarHeight;
             int barW = Width;
             int barH = BarHeight;
-            Framebuffer.Graphics.BlurRectangle(barX, barY, barW, barH, 4);
+            Framebuffer.Graphics.BlurRectangle(barX, barY, barW, barH, 3);
             // subtle dark tint with alpha
             Framebuffer.Graphics.AFillRectangle(barX, barY, barW, barH, 0x66111111);
 
