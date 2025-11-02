@@ -43,7 +43,7 @@ namespace guideXOS.GUI {
             _selectedIndex = -1;
             _onSave = onSave; _clickLock = false; _fnameFocus = true;
             // Adjust row height based on icon size
-            int minRow = Icons.FileIcon != null ? Icons.FileIcon.Height + 10 : 36;
+            int minRow = Icons.DocumentIcon != null ? Icons.DocumentIcon.Height + 10 : 36;
             if (minRow > _rowH) _rowH = minRow;
             Keyboard.OnKeyChanged += Keyboard_OnKeyChanged;
             RefreshEntries();
@@ -185,7 +185,7 @@ namespace guideXOS.GUI {
 
             // List background
             Framebuffer.Graphics.FillRectangle(listX, listY, listW, listH, 0xFF2B2B2B);
-            int y = listY; int iconW = Icons.FileIcon.Width; int iconH = Icons.FileIcon.Height;
+            int y = listY; int iconW = Icons.DocumentIcon.Width; int iconH = Icons.DocumentIcon.Height;
             int rowsVisible = listH / _rowH; if (rowsVisible < 1) rowsVisible = 1;
             int start = _scroll; int end = start + rowsVisible; if (end > _entries.Count) end = _entries.Count;
             for (int i = start; i < end; i++) {
@@ -195,7 +195,7 @@ namespace guideXOS.GUI {
                 // row bg alternating
                 uint rowBg = (i == _selectedIndex) ? 0xFF404040u : ((i & 1) == 0 ? 0xFF303030u : 0xFF2B2B2Bu);
                 Framebuffer.Graphics.FillRectangle(listX, rowY, listW, _rowH, rowBg);
-                var icon = (e.Attribute == FileAttribute.Directory) ? Icons.FolderIcon : Icons.FileIcon;
+                var icon = (e.Attribute == FileAttribute.Directory) ? Icons.FolderIcon : Icons.DocumentIcon;
                 int iconY = rowY + (_rowH / 2 - iconH / 2);
                 Framebuffer.Graphics.DrawImage(listX + 6, iconY, icon);
                 WindowManager.font.DrawString(listX + 12 + iconW, rowY + (_rowH / 2 - WindowManager.font.FontSize / 2), e.Name);

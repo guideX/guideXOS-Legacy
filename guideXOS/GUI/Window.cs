@@ -155,7 +155,7 @@ namespace guideXOS.GUI {
             this.Visible = true;
             WindowManager.Windows.Add(this);
             Title = "Window1";
-            TaskbarIcon = Icons.FileIcon;
+            TaskbarIcon = Icons.DocumentIcon;
             // Avoid heavy blur in title when window is large by using smaller radius
             BeginFadeIn();
         }

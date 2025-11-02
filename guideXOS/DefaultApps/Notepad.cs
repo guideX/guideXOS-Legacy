@@ -122,7 +122,7 @@ namespace guideXOS.DefaultApps {
             Desktop.msgbox.X = X + 40; Desktop.msgbox.Y = Y + 80;
             Desktop.msgbox.SetText($"Saved: {path}");
             WindowManager.MoveToEnd(Desktop.msgbox); Desktop.msgbox.Visible = true;
-            RecentManager.AddDocument(path, Icons.FileIcon);
+            RecentManager.AddDocument(path, Icons.DocumentIcon);
         }
 
         private void OpenSaveAs(Action afterSaveClose = null) {

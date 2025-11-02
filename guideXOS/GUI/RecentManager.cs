@@ -29,7 +29,7 @@ namespace guideXOS.GUI {
             }
             RecentProgramEntry e;
             e.Name = name;
-            e.Icon = icon ?? Icons.FileIcon;
+            e.Icon = icon ?? Icons.DocumentIcon;
             e.Ticks = Timer.Ticks;
             _programs.Insert(0, e);
             if (_programs.Count > MaxPrograms) _programs.RemoveAt(_programs.Count - 1);
@@ -42,7 +42,7 @@ namespace guideXOS.GUI {
             }
             RecentDocumentEntry d;
             d.Path = path;
-            d.Icon = icon ?? Icons.FileIcon;
+            d.Icon = icon ?? Icons.DocumentIcon;
             d.Ticks = Timer.Ticks;
             _documents.Insert(0, d);
             if (_documents.Count > MaxDocuments) _documents.RemoveAt(_documents.Count - 1);

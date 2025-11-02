@@ -139,14 +139,14 @@ namespace guideXOS.GUI {
         /// <summary>
         /// Update
         /// </summary>
-        /// <param name="fileIcon"></param>
-        public static void Update(Image fileIcon) {
+        /// <param name="DocumentIcon"></param>
+        public static void Update(Image DocumentIcon) {
             var names = GetDirectoryEntries();
 
             // Precompute frequently used values
             int devide = 60;
-            int fw = fileIcon.Width;
-            int fh = fileIcon.Height;
+            int fw = DocumentIcon.Width;
+            int fh = DocumentIcon.Height;
             int screenH = Framebuffer.Graphics.Height;
             int x = devide;
             int y = devide;
@@ -172,7 +172,7 @@ namespace guideXOS.GUI {
                     ClickEvent(appName, false, x, y, i, clickable, leftDown);
                     Framebuffer.Graphics.DrawImage(x, y, Apps.Icon(i));
                     WindowManager.font.DrawString(x, y + fh, appName, fw + 8, WindowManager.font.FontSize * 3);
-                    y += Icons.FileIcon.Height + devide;
+                    y += Icons.DocumentIcon.Height + devide;
                     //}
                     appName.Dispose();
                 }
@@ -188,7 +188,7 @@ namespace guideXOS.GUI {
                 }
                 Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
                 WindowManager.font.DrawString(x, y + fh, "Computer Files", fw + 8, WindowManager.font.FontSize * 3);
-                y += Icons.FileIcon.Height + devide;
+                y += Icons.DocumentIcon.Height + devide;
                 // USB mass storage icons, one per connected device
                 if (Kernel.Drivers.USBStorage.Count > 0) {
                     int count = Kernel.Drivers.USBStorage.Count;
@@ -200,7 +200,7 @@ namespace guideXOS.GUI {
                         Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon.Width + 8, Icons.FolderIcon.Height + 8, col);
                         Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
                         WindowManager.font.DrawString(x, y + fh, label, fw + 8, WindowManager.font.FontSize * 3);
-                        y += Icons.FileIcon.Height + devide;
+                        y += Icons.DocumentIcon.Height + devide;
                         label.Dispose();
                     }
                 }
@@ -211,7 +211,7 @@ namespace guideXOS.GUI {
                 Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon.Width + 8, Icons.FolderIcon.Height + 8, colRoot);
                 Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
                 WindowManager.font.DrawString(x, y + fh, "Root", fw + 8, WindowManager.font.FontSize * 3);
-                y += Icons.FileIcon.Height + devide;
+                y += Icons.DocumentIcon.Height + devide;
             }
 
             // Show real filesystem entries only when not in HomeMode
@@ -232,18 +232,18 @@ namespace guideXOS.GUI {
 
                     ClickEvent(n, isDir, x, y, i + 1000, clickable, leftDown);
 
-                    uint bg = UI.ButtonFillColor(x, y, Icons.FileIcon.Width, Icons.FileIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
-                    Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FileIcon.Width + 8, Icons.FileIcon.Height + 8, bg);
+                    uint bg = UI.ButtonFillColor(x, y, Icons.DocumentIcon.Width, Icons.DocumentIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                    Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.DocumentIcon.Width + 8, Icons.DocumentIcon.Height + 8, bg);
 
                     // Choose icon by extension/use type
                     if (n.EndsWith(".png") || n.EndsWith(".bmp")) {
-                        Framebuffer.Graphics.DrawImage(x, y, Icons.IamgeIcon);
+                        Framebuffer.Graphics.DrawImage(x, y, Icons.ImageIcon);
                     } else if (n.EndsWith(".wav")) {
                         Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon);
                     } else if (isDir) {
                         Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon);
                     } else {
-                        Framebuffer.Graphics.DrawImage(x, y, fileIcon);
+                        Framebuffer.Graphics.DrawImage(x, y, DocumentIcon);
                     }
                     WindowManager.font.DrawString(x, y + fh, n, fw + 8, WindowManager.font.FontSize * 3);
                     y += fh + devide;
@@ -288,8 +288,8 @@ namespace guideXOS.GUI {
         private static void ClickEvent(string name, bool isDirectory, int X, int Y, int i, bool clickable, bool leftDown) {
             if (leftDown) {
                 if (!WindowManager.HasWindowMoving && clickable && !ClickLock &&
-                    Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.FileIcon.Width &&
-                    Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.FileIcon.Height) {
+                    Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.DocumentIcon.Width &&
+                    Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.DocumentIcon.Height) {
                     IndexClicked = i;
                     OnClick(name, isDirectory, X, Y);
                 }
@@ -298,8 +298,8 @@ namespace guideXOS.GUI {
             }
 
             if (IndexClicked == i) {
-                int w = (int)(Icons.FileIcon.Width * 1.5f);
-                Framebuffer.Graphics.AFillRectangle(X + ((Icons.FileIcon.Width / 2) - (w / 2)), Y, w, Icons.FileIcon.Height * 2, 0x7F2E86C1);
+                int w = (int)(Icons.DocumentIcon.Width * 1.5f);
+                Framebuffer.Graphics.AFillRectangle(X + ((Icons.DocumentIcon.Width / 2) - (w / 2)), Y, w, Icons.DocumentIcon.Height * 2, 0x7F2E86C1);
             }
         }
         static bool ClickLock = false;
@@ -370,7 +370,7 @@ namespace guideXOS.GUI {
                 png.Dispose();
                 WindowManager.MoveToEnd(imageViewer);
                 imageViewer.Visible = true;
-                RecentManager.AddDocument(path, Icons.IamgeIcon);
+                RecentManager.AddDocument(path, Icons.ImageIcon);
             } else if (name.EndsWith(".bmp")) {
                 byte[] buffer = File.ReadAllBytes(path);
                 Bitmap png = new(buffer);
@@ -379,11 +379,11 @@ namespace guideXOS.GUI {
                 png.Dispose();
                 WindowManager.MoveToEnd(imageViewer);
                 imageViewer.Visible = true;
-                RecentManager.AddDocument(path, Icons.IamgeIcon);
+                RecentManager.AddDocument(path, Icons.ImageIcon);
             } else if (name.EndsWith(".mue")) {
                 byte[] buffer = File.ReadAllBytes(path);
                 System.Diagnostics.Process.Start(buffer);
-                RecentManager.AddDocument(path, Icons.FileIcon);
+                RecentManager.AddDocument(path, Icons.DocumentIcon);
             } else if (name.EndsWith(".wav")) {
                 if (Audio.HasAudioDevice) {
                     wavplayer.Visible = true;

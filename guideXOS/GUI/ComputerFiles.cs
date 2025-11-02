@@ -54,7 +54,7 @@ namespace guideXOS.GUI {
             string folderPath = $"Images/BlueVelvet/{px}/folder.png";
             string docPath = $"Images/BlueVelvet/{px}/documents.png";
             try { _iconFolder = new PNG(File.ReadAllBytes(folderPath)); } catch { _iconFolder = Icons.FolderIcon; }
-            try { _iconDoc = new PNG(File.ReadAllBytes(docPath)); } catch { _iconDoc = Icons.FileIcon; }
+            try { _iconDoc = new PNG(File.ReadAllBytes(docPath)); } catch { _iconDoc = Icons.DocumentIcon; }
         }
 
         private void ClearEntriesCache() {

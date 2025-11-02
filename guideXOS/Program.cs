@@ -243,7 +243,7 @@ unsafe class Program {
 
         #region Animation of entering Desktop
         Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
-        Desktop.Update(Icons.FileIcon);
+        Desktop.Update(Icons.DocumentIcon);
         WindowManager.DrawAll();
         Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, Cursor);
         Image _screen = Framebuffer.Graphics.Save();
@@ -297,7 +297,7 @@ unsafe class Program {
 
         NotificationManager.Initialize();
 
-        var fileIcon = Icons.FileIcon;
+        var fileIcon = Icons.DocumentIcon;
         for (; ; )
         {
             WindowManager.MouseHandled = false;

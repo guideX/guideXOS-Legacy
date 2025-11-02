@@ -6,7 +6,7 @@ namespace guideXOS.FS {
     /// Detects filesystem in the attached Disk and instantiates appropriate FileSystem.
     /// Supports TAR (initrd) and FAT12/16/32 images.
     /// </summary>
-    internal unsafe class AutoFS : FileSystem {
+    internal unsafe partial class AutoFS : FileSystem {
         private FileSystem _impl;
 
         public AutoFS() {
@@ -18,6 +18,8 @@ namespace guideXOS.FS {
                 _impl = new TarFS();
             } else if (LooksLikeFat(buf)) {
                 _impl = new FAT();
+            } else if (LooksLikeExt()) {
+                _impl = new EXT2();
             } else {
                 // Fallback to TarFS for backward compatibility
                 _impl = new TarFS();

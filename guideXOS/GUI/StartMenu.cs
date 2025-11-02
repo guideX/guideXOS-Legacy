@@ -151,7 +151,7 @@ namespace guideXOS.GUI {
             // copy references without ToArray()
             for (int i = 0; i < count; i++) {
                 var it = list[i];
-                _recentCache[i].Icon = it.Icon ?? Icons.FileIcon;
+                _recentCache[i].Icon = it.Icon ?? Icons.DocumentIcon;
                 _recentCache[i].Name = it.Name;
             }
         }
@@ -234,8 +234,8 @@ namespace guideXOS.GUI {
                     }
                     iy += dwh + 16;
                     // Recent Documents (toggle popup)
-                    int iconW = Icons.FileIcon.Width;
-                    int iconH = Icons.FileIcon.Height;
+                    int iconW = Icons.DocumentIcon.Width;
+                    int iconH = Icons.DocumentIcon.Height;
                     if (mx >= rcX && mx <= rcX + iconW && my >= iy && my <= iy + iconH) { _docsPopupVisible = !_docsPopupVisible; return; }
 
                     // USB Files entry (only if at least one USB MSC device is present)
@@ -276,7 +276,7 @@ namespace guideXOS.GUI {
                         string appName;
                         if (_showAllPrograms) {
                             int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
-                            var icon = Desktop.Apps.Icon(ai) ?? Icons.FileIcon;
+                            var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon;
                             ih = icon.Height;
                             if (my >= iy2 && my <= iy2 + ih) {
                                 appName = Desktop.Apps.Name(ai);
@@ -344,7 +344,7 @@ namespace guideXOS.GUI {
             if (_showAllPrograms) {
                 for (int i = 0; i < count; i++) {
                     int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
-                    var icon = Desktop.Apps.Icon(ai) ?? Icons.FileIcon;
+                    var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon;
                     string name = Desktop.Apps.Name(ai);
                     int ih = icon.Height;
                     Framebuffer.Graphics.DrawImage(listX, y, icon);
@@ -394,7 +394,7 @@ namespace guideXOS.GUI {
             rcCursorY += cfIcon.Height + 16;
             dmText.Dispose();
             // Recent Documents with popout
-            var docIcon = Icons.FileIcon;
+            var docIcon = Icons.DocumentIcon;
             Framebuffer.Graphics.DrawImage(rcX + RightColInnerPad, rcCursorY, docIcon);
             string rdText = TruncateToWidth("Recent Documents", textMax);
             WindowManager.font.DrawString(rcX + RightColInnerPad + docIcon.Width + 8, rcCursorY + (docIcon.Height / 2) - (WindowManager.font.FontSize / 2), rdText);

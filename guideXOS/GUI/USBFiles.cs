@@ -30,7 +30,7 @@ namespace guideXOS.GUI {
 
         private void LoadIcons() {
             try { _iconFolder = Icons.FolderIcon; } catch { }
-            try { _iconDoc = Icons.FileIcon; } catch { }
+            try { _iconDoc = Icons.DocumentIcon; } catch { }
         }
 
         private void InitLocalFS() {

@@ -6,7 +6,7 @@ namespace guideXOS.GUI {
     /// Icons
     /// </summary>
     public static class Icons {
-        private static Image _fileIcon;
+        private static Image _documentIcon;
         private static Image _imageIcon;
         private static Image _audioIcon;
         private static Image _folderIcon;
@@ -14,20 +14,20 @@ namespace guideXOS.GUI {
         private static Image _startIcon;
 
         /// <summary>
-        /// File Icon
+        /// Document Icon
         /// </summary>
-        public static Image FileIcon {
+        public static Image DocumentIcon {
             get {
-                if (_fileIcon == null) _fileIcon = new PNG(File.ReadAllBytes("Images/file.png"));
-                return _fileIcon;
+                if (_documentIcon == null) _documentIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/48/documents.png"));
+                return _documentIcon;
             }
         }
         /// <summary>
-        /// Iamge Icon
+        /// Image Icon
         /// </summary>
-        public static Image IamgeIcon {
+        public static Image ImageIcon {
             get {
-                if (_imageIcon == null) _imageIcon = new PNG(File.ReadAllBytes("Images/Image.png"));
+                if (_imageIcon == null) _imageIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/48/Image.png"));
                 return _imageIcon;
             }
         }
