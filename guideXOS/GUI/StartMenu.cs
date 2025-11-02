@@ -197,7 +197,7 @@ namespace guideXOS.GUI {
                 if (mx >= shutdownX && mx <= shutdownX + ShutdownBtnW && my >= bottomY && my <= bottomY + ShutdownBtnH) {
                     var dlg = new ShutdownDialog();
                     WindowManager.MoveToEnd(dlg);
-                    dlg.Visible = true; return;
+                    dlg.Visible = true; Visible = false; return;
                 }
                 if (mx >= arrowX && mx <= arrowX + ArrowBtnW && my >= bottomY && my <= bottomY + ArrowBtnH) { _powerMenuVisible = !_powerMenuVisible; return; }
 
@@ -221,6 +221,7 @@ namespace guideXOS.GUI {
                         var cf = new ComputerFiles(300, 200, 540, 380);
                         WindowManager.MoveToEnd(cf);
                         cf.Visible = true;
+                        Visible = false;
                         return;
                     }
                     iy += fh + 16;
@@ -230,6 +231,7 @@ namespace guideXOS.GUI {
                         var dm = new DiskManager(340, 260);
                         WindowManager.MoveToEnd(dm);
                         dm.Visible = true;
+                        Visible = false;
                         return;
                     }
                     iy += dwh + 16;
@@ -250,6 +252,7 @@ namespace guideXOS.GUI {
                                     var win = new USBFiles(disk, 380, 220, 560, 400);
                                     WindowManager.MoveToEnd(win);
                                     win.Visible = true;
+                                    Visible = false;
                                 }
                             }
                             return;
@@ -260,6 +263,7 @@ namespace guideXOS.GUI {
                             var list = new USBDrives(rcX - 280, rcY + 40, 420, 360);
                             WindowManager.MoveToEnd(list);
                             list.Visible = true;
+                            Visible = false;
                             return;
                         }
                     }
@@ -282,6 +286,7 @@ namespace guideXOS.GUI {
                                 appName = Desktop.Apps.Name(ai);
                                 Desktop.Apps.Load(appName);
                                 appName.Dispose();
+                                Visible = false;
                                 return;
                             }
                         } else {
@@ -292,6 +297,7 @@ namespace guideXOS.GUI {
                             ih = icon.Height;
                             if (my >= iy2 && my <= iy2 + ih) {
                                 Desktop.Apps.Load(_recentCache[i].Name);
+                                Visible = false;
                                 return;
                             }
                         }
