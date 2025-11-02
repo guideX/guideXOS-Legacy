@@ -52,6 +52,10 @@ namespace guideXOS.GUI {
         private int _recentCacheCount;
         private ulong _recentCacheTick;
 
+        // Cached blurred background for responsiveness
+        private Image _bgBlurCache;
+        private bool _bgCacheReady;
+
         public unsafe StartMenu() : base(_x, _y, _x2, _y2) {
             Title = "Start";
             BarHeight = 0;
@@ -66,7 +70,72 @@ namespace guideXOS.GUI {
             if (value) {
                 // Always bring Start Menu to front when shown
                 WindowManager.MoveToEnd(this);
+                BuildBackgroundBlurCache();
+            } else {
+                // dispose cache when hidden to free memory
+                if (_bgBlurCache != null) { _bgBlurCache.Dispose(); _bgBlurCache = null; }
+                _bgCacheReady = false;
             }
+        }
+
+        private void BuildBackgroundBlurCache() {
+            // Capture current screen region under the menu and blur once
+            int w = Width; int h = Height; if (w <= 0 || h <= 0) { _bgCacheReady = false; return; }
+            var img = new Image(w, h);
+            for (int yy = 0; yy < h; yy++) {
+                int fbY = Y + yy;
+                for (int xx = 0; xx < w; xx++) {
+                    int fbX = X + xx;
+                    img.RawData[yy * w + xx] = (int)Framebuffer.Graphics.GetPoint(fbX, fbY);
+                }
+            }
+            // Box blur into temp buffers (horizontal + vertical), radius 3 to match previous look
+            int radius = 3;
+            int[] src = img.RawData; int[] tmp = new int[w * h]; int[] dst = new int[w * h];
+            // Horizontal
+            for (int yy = 0; yy < h; yy++) {
+                int row = yy * w;
+                for (int xx = 0; xx < w; xx++) {
+                    int r = 0, g = 0, b = 0, a = 0, count = 0;
+                    int xmin = xx - radius; if (xmin < 0) xmin = 0;
+                    int xmax = xx + radius; if (xmax >= w) xmax = w - 1;
+                    for (int k = xmin; k <= xmax; k++) {
+                        int c = src[row + k];
+                        a += (byte)(c >> 24);
+                        r += (byte)(c >> 16);
+                        g += (byte)(c >> 8);
+                        b += (byte)(c);
+                        count++;
+                    }
+                    a /= count; r /= count; g /= count; b /= count;
+                    tmp[row + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
+                }
+            }
+            // Vertical
+            for (int xx = 0; xx < w; xx++) {
+                for (int yy = 0; yy < h; yy++) {
+                    int r = 0, g = 0, b = 0, a = 0, count = 0;
+                    int ymin = yy - radius; if (ymin < 0) ymin = 0;
+                    int ymax = yy + radius; if (ymax >= h) ymax = h - 1;
+                    for (int k = ymin; k <= ymax; k++) {
+                        int c = tmp[k * w + xx];
+                        a += (byte)(c >> 24);
+                        r += (byte)(c >> 16);
+                        g += (byte)(c >> 8);
+                        b += (byte)(c);
+                        count++;
+                    }
+                    a /= count; r /= count; g /= count; b /= count;
+                    dst[yy * w + xx] = (int)((a << 24) | (r << 16) | (g << 8) | b);
+                }
+            }
+            // write back blurred pixels
+            for (int i = 0; i < dst.Length; i++) img.RawData[i] = dst[i];
+            // swap into cache
+            if (_bgBlurCache != null) _bgBlurCache.Dispose();
+            _bgBlurCache = img; _bgCacheReady = true;
+            // dispose temps
+            tmp.Dispose(); dst.Dispose();
         }
 
         private struct AppEntry { public Image Icon; public string Name; }
@@ -216,10 +285,16 @@ namespace guideXOS.GUI {
         }
 
         public override void OnDraw() {
-            // Slight glass effect: blur the background under the Start menu then apply a subtle translucent tint
-            Framebuffer.Graphics.BlurRectangle(X, Y, Width, Height, 3);
-            // Use a high alpha for readability, but slightly translucent
-            Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0xCC222222);
+            // Draw cached blurred background once for responsiveness
+            if (_bgCacheReady && _bgBlurCache != null) {
+                Framebuffer.Graphics.DrawImage(X, Y, _bgBlurCache, false);
+                // slight tint for readability
+                Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0x66222222);
+            } else {
+                // Fallback if cache not ready yet
+                Framebuffer.Graphics.BlurRectangle(X, Y, Width, Height, 3);
+                Framebuffer.Graphics.AFillRectangle(X, Y, Width, Height, 0xCC222222);
+            }
 
             int bottomY = Y + Height - Padding - ShutdownBtnH;
             int shutdownX = X + Width - Padding - ShutdownBtnW - ArrowBtnW - Gap;
