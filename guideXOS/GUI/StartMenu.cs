@@ -61,6 +61,14 @@ namespace guideXOS.GUI {
             _showAllPrograms = false;
         }
 
+        public override void OnSetVisible(bool value) {
+            base.OnSetVisible(value);
+            if (value) {
+                // Always bring Start Menu to front when shown
+                WindowManager.MoveToEnd(this);
+            }
+        }
+
         private struct AppEntry { public Image Icon; public string Name; }
 
         private void RefreshRecentCacheIfNeeded() {

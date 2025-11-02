@@ -32,8 +32,7 @@ namespace guideXOS.GUI {
         private bool _showDesktopLatch = false;
         private TaskView _taskView;
 
-        public Taskbar(int barHeight, Image startIcon) {
-            _barHeight = barHeight; _startIcon = startIcon;
+        public Taskbar(int barHeight, Image startIcon) { _barHeight = barHeight; _startIcon = startIcon; 
             // schedule: show animation for first 10 seconds after boot
             _bootTicks = Timer.Ticks;
             _animWindowStart = _bootTicks;
@@ -193,38 +192,20 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.DrawRectangle(sdX, sdY, sdW, sdH, 0xFF444444, 1);
             Framebuffer.Graphics.DrawRectangle(sdX + 1, sdY + 1, sdW - 2, sdH - 2, 0xFF777777, 1);
 
-            // Input handling for start/time areas and new buttons
+            // Input handling for start/time areas
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
                 int mx2 = Control.MousePosition.X; int my2 = Control.MousePosition.Y;
-                // Time area click toggles 12/24h
                 if (mx2 >= timeX && mx2 <= timeX + timeW && my2 >= Framebuffer.Height - _barHeight && my2 <= Framebuffer.Height) {
                     if (!_clockClickLatch) { _clockUse12Hour = !_clockUse12Hour; _clockClickLatch = true; }
                 }
-                // Start button
                 if (_startIcon != null) {
                     int sW = _startIcon.Width; int sH = _startIcon.Height;
                     if (mx2 >= startX && mx2 <= startX + sW && my2 >= startY && my2 <= startY + sH) {
                         if (!_startClickLatch) { if (StartMenu == null) StartMenu = new StartMenu(); StartMenu.Visible = !StartMenu.Visible; _startClickLatch = true; }
                     } else {
-                        if (StartMenu != null && StartMenu.Visible && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
+                        // only close on a new click (mouse down that didn't originate from Start button)
+                        if (StartMenu != null && StartMenu.Visible && !_startClickLatch && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
                     }
-                }
-                // Task View button toggle
-                if (overTV && !_taskViewLatch) {
-                    if (_taskView == null) _taskView = new TaskView();
-                    _taskView.Visible = !_taskView.Visible;
-                    if (_taskView.Visible) WindowManager.MoveToEnd(_taskView);
-                    _taskViewLatch = true;
-                }
-                // Show Desktop click -> minimize all
-                bool overSD = (mx2 >= sdX && mx2 <= sdX + sdW && my2 >= sdY && my2 <= sdY + sdH);
-                if (overSD && !_showDesktopLatch) {
-                    for (int i = 0; i < WindowManager.Windows.Count; i++) {
-                        var w = WindowManager.Windows[i];
-                        if (!w.ShowInTaskbar) continue;
-                        if (!w.IsMinimized) w.Minimize();
-                    }
-                    _showDesktopLatch = true;
                 }
             } else { _clockClickLatch = false; _startClickLatch = false; _taskViewLatch = false; _showDesktopLatch = false; }
 
