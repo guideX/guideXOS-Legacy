@@ -60,7 +60,7 @@ abstract unsafe class Allocator {
     /// </summary>
     public static ulong MemorySize {
         get {
-            return NumPages * PageSize;
+            return (ulong)NumPages * PageSize;
         }
     }
     /// <summary>
@@ -114,13 +114,19 @@ abstract unsafe class Allocator {
     internal static unsafe IntPtr Allocate(ulong size) {
         lock (null) {
             if (size == 0) size = 1; // avoid zero-page requests causing false leak
+            // Hard guard against impossible requests
+            if (size > MemorySize) {
+                string msg2 = "Memory request too large: size=" + size.ToString() + ", total=" + MemorySize.ToString();
+                Panic.Error(msg2);
+                return IntPtr.Zero;
+            }
             ulong pages = 1;
             if (size > PageSize) {
-                pages = (size / PageSize) + ((size % 4096) != 0 ? 1UL : 0);
+                pages = (size / PageSize) + ((size % PageSize) != 0 ? 1UL : 0);
             }
             ulong i = 0;
             bool found = false;
-            for (i = 0; i < NumPages; i++) {
+            for (i = 0; i < (ulong)NumPages; i++) {
                 if (_Info.Pages[i] == 0) {
                     found = true;
                     for (ulong k = 0; k < pages; k++) {
@@ -136,7 +142,7 @@ abstract unsafe class Allocator {
             }
             if (!found) {
                 // Provide more diagnostic info before panic
-                string msg = "Memory leak: no free pages (in use=" + (_Info.PageInUse * PageSize).ToString() + "/" + (NumPages * PageSize).ToString() + ", req=" + (pages * PageSize).ToString() + ")";
+                string msg = "Memory leak: no free pages (in use=" + (MemoryInUse).ToString() + "/" + (MemorySize).ToString() + ", req=" + (pages * PageSize).ToString() + ")";
                 Panic.Error(msg);
                 return IntPtr.Zero;
             }
@@ -170,7 +176,10 @@ abstract unsafe class Allocator {
         }
         if (_Info.Pages[p] == pages) return intPtr;
         IntPtr newptr = Allocate(size);
-        MemoryCopy(newptr, intPtr, size);
+        // Copy only the smaller of old block and requested new size to avoid overruns
+        ulong oldBytes = _Info.Pages[p] * PageSize;
+        ulong copyLen = size < oldBytes ? size : oldBytes;
+        MemoryCopy(newptr, intPtr, copyLen);
         Free(intPtr);
         return newptr;
     }
@@ -192,8 +201,10 @@ abstract unsafe class Allocator {
     /// <param name="size"></param>
     /// <returns></returns>
     public static IntPtr ClearAllocate(int num, int size) {
-        IntPtr ptr = Allocate((ulong)(num * size));
-        ZeroFill(ptr, (ulong)(num * size));
+        // use 64-bit multiply to avoid overflow
+        ulong total = (ulong)num * (ulong)size;
+        IntPtr ptr = Allocate(total);
+        ZeroFill(ptr, total);
         return ptr;
     }
     /// <summary>

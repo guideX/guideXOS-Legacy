@@ -87,9 +87,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Misc\UserDemo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\VendorID.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\WAV.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\Http.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Intel825xx.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\Json.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NETv4.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\RTL8111.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Security\AES.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SMP.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SSE.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\stdio.cs" />
