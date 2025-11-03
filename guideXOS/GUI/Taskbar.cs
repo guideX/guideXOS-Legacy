@@ -28,10 +28,10 @@ namespace guideXOS.GUI {
         private const ulong TenSeconds = 10_000;       // ms
         private const ulong FiveMinutes = 300_000;     // ms
 
-        // New: latches and references for Task View and Show Desktop
+        // New: latches and references for Workspace Switcher and Show Desktop
         private bool _taskViewLatch = false;
         private bool _showDesktopLatch = false;
-        private TaskView _taskView;
+        private WorkspaceSwitcher _switcher;
 
         // Track windows minimized by Show Desktop to restore them on toggle
         private bool _desktopShown = false;
@@ -177,7 +177,7 @@ namespace guideXOS.GUI {
                 }
             }
 
-            // Task View button (left of time/date)
+            // Workspace Switcher button (left of time/date)
             int tvSize = _barHeight - 12; if (tvSize < 18) tvSize = 18; if (tvSize > 24) tvSize = 24;
             int tvX = netX - tvSize - 10;
             int tvY = Framebuffer.Height - _barHeight + (_barHeight - tvSize) / 2;
@@ -185,10 +185,11 @@ namespace guideXOS.GUI {
             uint tvBg = overTV ? 0xFF3A3A3A : 0xFF303030;
             Framebuffer.Graphics.FillRectangle(tvX, tvY, tvSize, tvSize, tvBg);
             Framebuffer.Graphics.DrawRectangle(tvX, tvY, tvSize, tvSize, 0xFF454545, 1);
-            // draw simple task-view glyph (two overlapped squares)
+            // draw workspace glyph (stacked rectangles)
             int sq = tvSize / 2;
-            Framebuffer.Graphics.DrawRectangle(tvX + 5, tvY + 5, sq, sq, 0xFFAAAAAA, 1);
-            Framebuffer.Graphics.DrawRectangle(tvX + 8, tvY + 8, sq, sq, 0xFF888888, 1);
+            Framebuffer.Graphics.DrawRectangle(tvX + 5, tvY + 4, sq, sq, 0xFFAAAAAA, 1);
+            Framebuffer.Graphics.DrawRectangle(tvX + 8, tvY + 7, sq, sq, 0xFF888888, 1);
+            Framebuffer.Graphics.DrawRectangle(tvX + 11, tvY + 10, sq, sq, 0xFF666666, 1);
 
             // Show Desktop sliver at far right
             int sdW = 6; int sdX = Framebuffer.Width - sdW - 1; int sdY = yTop + 2; int sdH = _barHeight - 4;
@@ -212,16 +213,16 @@ namespace guideXOS.GUI {
                         if (StartMenu != null && StartMenu.Visible && !_startClickLatch && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
                     }
                 }
-                // Task View button click handling
+                // Workspace Switcher button click handling
                 if (mx2 >= tvX && mx2 <= tvX + tvSize && my2 >= tvY && my2 <= tvY + tvSize) {
                     if (!_taskViewLatch) {
-                        if (_taskView == null) _taskView = new TaskView();
-                        bool show = !_taskView.Visible;
+                        if (_switcher == null) _switcher = new WorkspaceSwitcher();
+                        bool show = !_switcher.Visible;
                         if (show) {
-                            WindowManager.MoveToEnd(_taskView);
-                            _taskView.Visible = true;
+                            WindowManager.MoveToEnd(_switcher);
+                            _switcher.Visible = true;
                         } else {
-                            _taskView.Visible = false;
+                            _switcher.Visible = false;
                         }
                         _taskViewLatch = true;
                     }

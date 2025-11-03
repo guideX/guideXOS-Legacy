@@ -11,8 +11,6 @@ namespace System.Diagnostics {
 
                 // Require relocations; loader will rebase if needed
                 if (!nthdr->OptionalHeader.BaseRelocationTable.VirtualAddress) return;
-                // We do not resolve imports: reject binaries that have an import table
-                if (nthdr->OptionalHeader.ImportTable.VirtualAddress != 0) return;
                 // Must have an entry point
                 if (nthdr->OptionalHeader.AddressOfEntryPoint == 0) return;
 
@@ -31,6 +29,11 @@ namespace System.Diagnostics {
                 }
                 long delta = (long)((ulong)newPtr - newnthdr->OptionalHeader.ImageBase);
                 if (delta != 0) FixImageRelocations(newdoshdr, newnthdr, delta);
+
+                // Resolve imports if any
+                if (newnthdr->OptionalHeader.ImportTable.VirtualAddress != 0) {
+                    ResolveImports(newPtr, newnthdr);
+                }
 
                 delegate*<void> p = (delegate*<void>)((ulong)newPtr + newnthdr->OptionalHeader.AddressOfEntryPoint);
                 // Initialize module tables if provided
@@ -67,6 +70,50 @@ namespace System.Diagnostics {
                 }
                 reloc_block = (DataDirectory*)(reloc_block->Size + (ulong)reloc_block);
             }
+        }
+
+        // ---- Import resolution using Win32 shim ----
+        static void ResolveImports(byte* moduleBase, NtHeaders64* nt) {
+            uint impRva = nt->OptionalHeader.ImportTable.VirtualAddress;
+            if (impRva == 0) return;
+            ImportDescriptor* desc = (ImportDescriptor*)(moduleBase + impRva);
+            for (;; desc++) {
+                if (desc->OriginalFirstThunk == 0 && desc->FirstThunk == 0 && desc->Name == 0) break;
+                sbyte* dllNamePtr = (sbyte*)(moduleBase + desc->Name);
+                string dllName = ReadAsciiZ((byte*)dllNamePtr);
+                uint iltRva = desc->OriginalFirstThunk != 0 ? desc->OriginalFirstThunk : desc->FirstThunk;
+                ThunkData64* ilt = (ThunkData64*)(moduleBase + iltRva);
+                ulong* iat = (ulong*)(moduleBase + desc->FirstThunk);
+                for (int i = 0; ; i++) {
+                    ulong val = ilt[i].Value;
+                    if (val == 0) break;
+                    ulong func = 0;
+                    if ((val & 0x8000000000000000UL) != 0) {
+                        // Ordinal import
+                        ushort ord = (ushort)(val & 0xFFFF);
+                        // Represent ordinal as #nnn
+                        string proc = "#" + ord.ToString();
+                        func = guideXOS.Compat.Win32Shim.Resolve(dllName, proc);
+                        proc.Dispose();
+                    } else {
+                        ImportByName* ibn = (ImportByName*)(moduleBase + (uint)val);
+                        string name = ReadAsciiZ(&ibn->Name[0]);
+                        func = guideXOS.Compat.Win32Shim.Resolve(dllName, name);
+                        name.Dispose();
+                    }
+                    // If unresolved, leave zero in IAT (callers may guard or crash).
+                    iat[i] = func;
+                }
+                dllName.Dispose();
+            }
+        }
+
+        static string ReadAsciiZ(byte* p) {
+            if (p == null) return string.Empty;
+            int len = 0; byte* q = p; while (*q != 0) { len++; q++; }
+            char[] chars = new char[len];
+            for (int i = 0; i < len; i++) chars[i] = (char)p[i];
+            return new string(chars);
         }
     }
 }

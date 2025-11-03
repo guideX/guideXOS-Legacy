@@ -82,6 +82,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Misc\PNG.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\Process.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\SchedulerExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Misc\SHA256.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\Threading.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\USB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\USBStorage.cs" />

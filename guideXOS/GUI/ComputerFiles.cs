@@ -4,6 +4,7 @@ using guideXOS.Graph;
 using System.Windows.Forms;
 using guideXOS.Misc;
 using System.Collections.Generic;
+using System; // for ConsoleKeyInfo
 
 namespace guideXOS.GUI {
     // File explorer window with drive list, navigation toolbar, grid icons, resizing and vertical scrollbar
@@ -39,6 +40,11 @@ namespace guideXOS.GUI {
         private string _entriesCacheFor;
         private bool _entriesDirty;
 
+        // Search
+        private string _search = string.Empty;
+        private bool _searchFocus = false;
+        private byte _lastScan; private bool _keyDown;
+
         public ComputerFiles(int X, int Y, int W = 640, int H = 480) : base(X, Y, W, H) {
             Title = "Computer Files";
             LoadIcons();
@@ -46,6 +52,19 @@ namespace guideXOS.GUI {
             _entriesCacheFor = null;
             _entriesCache = null;
             ShowInTaskbar = true;
+            Keyboard.OnKeyChanged += Keyboard_OnKeyChanged;
+        }
+
+        private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
+            if (!Visible || !_searchFocus) return;
+            if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
+            if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return;
+            _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
+
+            if (key.Key == ConsoleKey.Escape) { _searchFocus = false; return; }
+            if (key.Key == ConsoleKey.Backspace) { if (_search.Length > 0) _search = _search.Substring(0, _search.Length - 1); return; }
+            if (key.Key == ConsoleKey.Enter) { return; }
+            char ch = key.KeyChar; if (ch >= ' ' && ch <= '~') { _search += ch.ToString(); }
         }
 
         private void LoadIcons() {
@@ -230,6 +249,11 @@ namespace guideXOS.GUI {
                     sx += w + 4;
                 }
 
+                // Click in search box
+                int searchW = 180; int searchH = btnH;
+                int searchX = X + Width - 8 - searchW; int searchY = tbY;
+                if (mx >= searchX && mx <= searchX + searchW && my >= searchY && my <= searchY + searchH) { _searchFocus = true; return; } else if (my >= tbY && my <= tbY + btnH) { _searchFocus = false; }
+
                 // Left navigation clicks (below toolbar)
                 int leftX0 = X + 1;
                 int leftX1 = X + leftW - 2;
@@ -286,20 +310,23 @@ namespace guideXOS.GUI {
                     int rcX = X + leftW + 8; int rcW = contentW - leftW - 8;
                     int cols = tileW > 0 ? (rcW / tileW) : 1; if (cols < 1) cols = 1;
                     for (int i = 0; i < list.Count; i++) {
+                        // Apply search filter
+                        string name = list[i].Name; bool matches = true;
+                        if (!string.IsNullOrEmpty(_search)) {
+                            // case-insensitive contains
+                            matches = ContainsIgnoreCase(name, _search);
+                        }
+                        if (!matches) continue;
                         int gridX = i % cols; int gridY = i / cols;
                         int gx = rcX + gridX * tileW + pad;
                         int gy = contentY + gridY * tileH + pad - _scroll;
                         if (gy + tileH < contentY || gy > contentY + contentH) continue;
-                        if (mx >= gx && mx <= gx + tileW && my >= gy && my <= gy + tileH) {
-                            string name = list[i].Name;
-                            bool isDir = (list[i].Attribute == FileAttribute.Directory);
-                            if (isDir) {
-                                _currentPath = _currentPath + name + "/"; PushHistory(_currentPath); _scroll = 0; MarkEntriesDirty();
-                            } else {
-                                // open file handler as needed (not implemented)
-                            }
-                            break;
-                        }
+                        bool isDir = (list[i].Attribute == FileAttribute.Directory);
+                        if (isDir) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); else Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc);
+                        int maxW = tileW - pad; // ensure label stays inside tile
+                        string shown = TruncateToWidth(name, maxW);
+                        WindowManager.font.DrawString(gx, gy + icon + 6, shown);
+                        shown.Dispose();
                     }
                 }
             } else {
@@ -323,6 +350,21 @@ namespace guideXOS.GUI {
                 _scroll = (newThumbTop * total) / trackH;
                 if (_scroll < 0) _scroll = 0; if (_scroll > maxScroll) _scroll = maxScroll;
             }
+        }
+
+        private static bool ContainsIgnoreCase(string a, string b) {
+            if (string.IsNullOrEmpty(b)) return true;
+            int la = a.Length; int lb = b.Length; if (lb > la) return false;
+            for (int i = 0; i <= la - lb; i++) {
+                bool ok = true;
+                for (int j = 0; j < lb; j++) {
+                    char ca = a[i + j]; if (ca >= 'A' && ca <= 'Z') ca = (char)(ca + 32);
+                    char cb = b[j]; if (cb >= 'A' && cb <= 'Z') cb = (char)(cb + 32);
+                    if (ca != cb) { ok = false; break; }
+                }
+                if (ok) return true;
+            }
+            return false;
         }
 
         private int GetTotalContentHeight(int contentW) {
@@ -349,14 +391,24 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.FillRectangle(X + 6, Y + 6, Width - 12, tbH, 0xFF1E1E1E);
             int btnW = 80; int btnH = WindowManager.font.FontSize + 8; int gap = 6;
             int bx0 = X + 8; int bx1 = bx0 + btnW + gap; int bx2 = bx1 + btnW + gap;
+
+            // Hover states
+            int mouseX = Control.MousePosition.X; int mouseY = Control.MousePosition.Y;
+            bool overBack = (mouseX >= bx0 && mouseX <= bx0 + btnW && mouseY >= tbY && mouseY <= tbY + btnH);
+            bool overUp = (mouseX >= bx1 && mouseX <= bx1 + btnW && mouseY >= tbY && mouseY <= tbY + btnH);
+            bool overFwd = (mouseX >= bx2 && mouseX <= bx2 + btnW && mouseY >= tbY && mouseY <= tbY + btnH);
+
             // Back
-            Framebuffer.Graphics.FillRectangle(bx0, tbY, btnW, btnH, CanGoBack ? 0xFF2A2A2A : 0xFF202020);
+            UIPrimitives.AFillRoundedRect(bx0, tbY, btnW, btnH, overBack ? 0x333F7FBF : (CanGoBack ? 0x332A2A2A : 0x33202020), 4);
+            UIPrimitives.DrawRoundedRect(bx0, tbY, btnW, btnH, 0xFF3F3F3F, 1, 4);
             WindowManager.font.DrawString(bx0 + 14, tbY + 4, "Back");
             // Up Level
-            Framebuffer.Graphics.FillRectangle(bx1, tbY, btnW, btnH, 0xFF2A2A2A);
+            UIPrimitives.AFillRoundedRect(bx1, tbY, btnW, btnH, overUp ? 0x333F7FBF : 0x332A2A2A, 4);
+            UIPrimitives.DrawRoundedRect(bx1, tbY, btnW, btnH, 0xFF3F3F3F, 1, 4);
             WindowManager.font.DrawString(bx1 + 6, tbY + 4, "Up Level");
             // Forward
-            Framebuffer.Graphics.FillRectangle(bx2, tbY, btnW, btnH, CanGoForward ? 0xFF2A2A2A : 0xFF202020);
+            UIPrimitives.AFillRoundedRect(bx2, tbY, btnW, btnH, overFwd ? 0x333F7FBF : (CanGoForward ? 0x332A2A2A : 0x33202020), 4);
+            UIPrimitives.DrawRoundedRect(bx2, tbY, btnW, btnH, 0xFF3F3F3F, 1, 4);
             WindowManager.font.DrawString(bx2 + 6, tbY + 4, "Forward");
 
             // Size options
@@ -364,10 +416,22 @@ namespace guideXOS.GUI {
             for (int i = 0; i < _sizes.Length; i++) {
                 int w = 36;
                 uint bg = (i == _sizeIndex) ? 0xFF355C9C : 0xFF2A2A2A;
-                Framebuffer.Graphics.FillRectangle(sx, tbY, w, btnH, bg);
+                bool over = (mouseX >= sx && mouseX <= sx + w && mouseY >= tbY && mouseY <= tbY + btnH);
+                UIPrimitives.AFillRoundedRect(sx, tbY, w, btnH, over ? 0x333F7FBF : 0x332A2A2A, 4);
+                UIPrimitives.DrawRoundedRect(sx, tbY, w, btnH, 0xFF3F3F3F, 1, 4);
                 WindowManager.font.DrawString(sx + 6, tbY + 4, _sizes[i].ToString());
                 sx += w + 4;
             }
+
+            // Search box (upper-right)
+            int searchW = 180; int searchH = btnH; int searchX = X + Width - 8 - searchW; int searchY = tbY;
+            bool overSearch = (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH);
+            uint sbg = _searchFocus ? 0xFF2D3E5F : (overSearch ? 0xFF28364F : 0xFF222222);
+            UIPrimitives.AFillRoundedRect(searchX, searchY, searchW, searchH, sbg, 4);
+            UIPrimitives.DrawRoundedRect(searchX, searchY, searchW, searchH, 0xFF3F3F3F, 1, 4);
+            string placeholder = string.IsNullOrEmpty(_search) ? "Search" : _search;
+            WindowManager.font.DrawString(searchX + 8, searchY + 4, placeholder, searchW - 16, WindowManager.font.FontSize);
+            placeholder.Dispose();
 
             // content area bounds
             int contentX = X + 8;
@@ -379,10 +443,10 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.FillRectangle(contentX, contentY, contentW, contentH, 0xFF202020);
 
             // Left column (below toolbar only)
-            int leftW = 180;
-            Framebuffer.Graphics.FillRectangle(X + 1, contentY, leftW - 2, contentH, 0xFF2A2A2A);
+            int leftW2 = 180;
+            Framebuffer.Graphics.FillRectangle(X + 1, contentY, leftW2 - 2, contentH, 0xFF2A2A2A);
             int cursorY = contentY + 10;
-            int maxLeftText = leftW - 2 - (_iconFolder != null ? _iconFolder.Width : 48) - 18;
+            int maxLeftText = leftW2 - 2 - (_iconFolder != null ? _iconFolder.Width : 48) - 18;
             // Root/"Desktop"
             Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
             string l1 = TruncateToWidth("Desktop", maxLeftText);
@@ -406,8 +470,8 @@ namespace guideXOS.GUI {
             }
 
             // Right content panel
-            int rcX = X + leftW + 8;
-            int rcW = contentW - leftW - 8;
+            int rcX = X + leftW2 + 8;
+            int rcW = contentW - leftW2 - 8;
 
             int pad = CurrentPad();
             if (_showDrives) {
@@ -424,13 +488,14 @@ namespace guideXOS.GUI {
                 int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = (icon + WindowManager.font.FontSize + pad);
                 int cols = tileW > 0 ? (rcW / tileW) : 1; if (cols < 1) cols = 1;
                 for (int i = 0; i < list.Count; i++) {
+                    string name = list[i].Name; bool matches = string.IsNullOrEmpty(_search) || ContainsIgnoreCase(name, _search);
+                    if (!matches) continue;
                     int gridX = i % cols; int gridY = i / cols;
                     int gx = rcX + gridX * tileW + pad;
                     int gy = contentY + gridY * tileH + pad - _scroll;
                     if (gy + tileH < contentY || gy > contentY + contentH) continue;
                     bool isDir = (list[i].Attribute == FileAttribute.Directory);
                     if (isDir) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); else Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc);
-                    string name = list[i].Name;
                     int maxW = tileW - pad; // ensure label stays inside tile
                     string shown = TruncateToWidth(name, maxW);
                     WindowManager.font.DrawString(gx, gy + icon + 6, shown);
