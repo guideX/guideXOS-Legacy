@@ -64,33 +64,36 @@ namespace guideXOS.DefaultApps {
         private static char MapFromKey(ConsoleKeyInfo key) {
             // Prefer KeyChar when provided by the driver
             if (key.KeyChar != '\0') return key.KeyChar;
-            // Fallback mapping from ConsoleKey
+            // Fallback mapping from ConsoleKey with Shift/Caps handling
             var k = key.Key;
+            bool shift = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift);
+            bool caps = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.CapsLock);
             if (k == ConsoleKey.Space) return ' ';
             if (k >= ConsoleKey.A && k <= ConsoleKey.Z) {
-                bool upper = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) ^ Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.CapsLock);
                 char c = (char)('a' + (k - ConsoleKey.A));
-                if (upper && c >= 'a' && c <= 'z') {
-                    return (char)('A' + (c - 'a'));
-                }
+                if (shift ^ caps) { if (c >= 'a' && c <= 'z') c = (char)('A' + (c - 'a')); }
                 return c;
             }
             if (k >= ConsoleKey.D0 && k <= ConsoleKey.D9) {
-                // No shifted symbol mapping for simplicity
-                return (char)('0' + (k - ConsoleKey.D0));
+                int d = (int)(k - ConsoleKey.D0);
+                if (!shift) return (char)('0' + d);
+                switch (d) {
+                    case 0: return ')'; case 1: return '!'; case 2: return '@'; case 3: return '#'; case 4: return '$';
+                    case 5: return '%'; case 6: return '^'; case 7: return '&'; case 8: return '*'; case 9: return '(';
+                }
             }
             switch (k) {
-                case ConsoleKey.OemPeriod: return '.';
-                case ConsoleKey.OemComma: return ',';
-                case ConsoleKey.OemMinus: return '-';
-                case ConsoleKey.OemPlus: return '+';
-                case ConsoleKey.Oem1: return ';';
-                case ConsoleKey.Oem2: return '/';
-                case ConsoleKey.Oem3: return '`';
-                case ConsoleKey.Oem4: return '[';
-                case ConsoleKey.Oem5: return '\\';
-                case ConsoleKey.Oem6: return ']';
-                case ConsoleKey.Oem7: return '\'';
+                case ConsoleKey.OemPeriod: return shift ? '>' : '.';
+                case ConsoleKey.OemComma: return shift ? '<' : ',';
+                case ConsoleKey.OemMinus: return shift ? '_' : '-';
+                case ConsoleKey.OemPlus: return shift ? '+' : '=';
+                case ConsoleKey.Oem1: return shift ? ':' : ';';
+                case ConsoleKey.Oem2: return shift ? '?' : '/';
+                case ConsoleKey.Oem3: return shift ? '~' : '`';
+                case ConsoleKey.Oem4: return shift ? '{' : '[';
+                case ConsoleKey.Oem5: return shift ? '|' : '\\';
+                case ConsoleKey.Oem6: return shift ? '}' : ']';
+                case ConsoleKey.Oem7: return shift ? '"' : '\'';
             }
             return '\0';
         }

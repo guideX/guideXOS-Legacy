@@ -1,3 +1,5 @@
 /bin
 /x64
 /.vs
+/guideXOS.Web/bin
+/guideXOS.Web/obj

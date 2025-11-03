@@ -9,7 +9,7 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Kernel", "Kernel\Kernel.shp
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Corlib", "Corlib\Corlib.shproj", "{51E1B402-1D4F-4C9B-831C-45C8603353D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "guideXOS.Web", "..\guideXOS.Web\guideXOS.Web.csproj", "{69BC7514-F27B-D695-0F1B-322FD248F4D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "guideXOS.Web", "guideXOS.Web\guideXOS.Web.csproj", "{69BC7514-F27B-D695-0F1B-322FD248F4D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

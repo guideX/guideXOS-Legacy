@@ -235,127 +235,48 @@ unsafe class Program {
         Lockscreen.Run();
         FConsole = null;
 
-        //var welcome = new Welcome(500, 250);
-        _ = new Welcome(500, 250);
-
-        rightmenu = new RightMenu();
-        rightClicked = false;
-
-        #region Animation of entering Desktop
-        Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
-        Desktop.Update(Icons.DocumentIcon);
-        WindowManager.DrawAll();
-        Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, Cursor);
-        Image _screen = Framebuffer.Graphics.Save();
-        Framebuffer.Graphics.Clear(0x0);
-
-        int startAt = 20;
-
-        var SizedScreens = new Image[60];
-        for (int i = 0; i < SizedScreens.Length; i++) {
-            if (i < startAt) continue;
-
-            SizedScreens[i] = _screen.ResizeImage(
-                //(int)(_screen.Width * (i / ((float)SizedScreens.Length))),
-                (int)(_screen.Width * (Math.Sin(Math.PI * 90 / 180 * (i / ((float)SizedScreens.Length))))),
-                //(int)(_screen.Height * (i / ((float)SizedScreens.Length)))
-                (int)(_screen.Height * (Math.Sin(Math.PI * 90 / 180 * (i / ((float)SizedScreens.Length)))))
-                );
+        // Ensure context menu exists
+        if (rightmenu == null) {
+            rightmenu = new RightMenu();
+            rightmenu.Visible = false;
         }
 
-        Animation EA = new()
-        {
-            MinimumValue = 0,
-            MaximumValue = SizedScreens.Length - 1,
-            PeriodInMS = 17,
-        };
-        Animator.AddAnimation(EA);
+        // Show login screen immediately after unlocking
+        // var login = new guideXOS.GUI.LoginDialog();
+        // WindowManager.MoveToEnd(login);
+        // login.Visible = true;
 
-        int last = -1;
-        while (EA.Value < EA.MaximumValue) {
-            if (EA.Value < startAt || last == EA.Value) continue;
+        var welcome = new Welcome(500, 250);
 
-            var img = SizedScreens[EA.Value];
-            Framebuffer.Graphics.Clear(0x0);
-            Framebuffer.Graphics.ADrawImage(
-                (Framebuffer.Graphics.Width / 2) - (img.Width / 2),
-                (Framebuffer.Graphics.Height / 2) - (img.Height / 2),
-                img,
-                (byte)(((EA.Value - startAt) / (float)(EA.MaximumValue - startAt)) * 255f));
-            Framebuffer.Update();
-            last = EA.Value;
-        }
-        EA.Dispose();
-        Animator.DisposeAnimation(EA);
-
-        for (int i = 0; i < SizedScreens.Length; i++) {
-            if (i < startAt) continue;
-            SizedScreens[i].Dispose();
-        }
-        SizedScreens.Dispose();
-        #endregion
-
-        NotificationManager.Initialize();
-
-        var fileIcon = Icons.DocumentIcon;
-        for (; ; )
-        {
+        //Console.WriteLine("Draw Start");
+        for (; ; ) {
+            // Per-frame input pass for all windows
             WindowManager.MouseHandled = false;
-            #region ConsoleHotKey
-            if (
-                Keyboard.KeyInfo.Key == ConsoleKey.T &&
-                Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) &&
-                Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt)
-                ) {
-                WindowManager.MoveToEnd(FConsole);
-                if (FConsole.Visible == false)
-                    FConsole.Visible = true;
-            }
-            #endregion
-            #region Right Menu
-            if (Control.MouseButtons.HasFlag(MouseButtons.Right)) {
-                rightClicked = true;
-            } else {
-                if (rightClicked == true) {
-                    rightmenu.Visible = !rightmenu.Visible;
-                    WindowManager.MoveToEnd(rightmenu);
-                }
-
-                rightClicked = false;
-            }
-            #endregion
-            // Input top-most first and allow early exit when handled
-            for (int i = WindowManager.Windows.Count - 1; i >= 0; i--) {
-                var w = WindowManager.Windows[i];
-                if (!w.Visible) continue;
-                w.OnInput();
-                if (WindowManager.MouseHandled) break;
-            }
+            WindowManager.InputAll();
             WindowManager.FlushPendingCreates();
 
-            // Draw wallpaper and UI
-            Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper, false);
-            Desktop.Update(fileIcon);
+            //clear screen
+            Framebuffer.Graphics.Clear(0x0);
+            //draw carpet or wallpaper
+            Framebuffer.Graphics.DrawImage((Framebuffer.Width / 2) - (Wallpaper.Width / 2), (Framebuffer.Height / 2) - (Wallpaper.Height / 2), Wallpaper);
+            //Inspects the system to see if the user has right clicked there is a small difference between these two functions
+            if (Control.MouseButtons.HasFlag(MouseButtons.Right) && !rightClicked) {
+                rightClicked = true;
+                rightmenu.X = Control.MousePosition.X;
+                rightmenu.Y = Control.MousePosition.Y;
+                WindowManager.MoveToEnd(rightmenu);
+                rightmenu.Visible = true;
+            } else if (!Control.MouseButtons.HasFlag(MouseButtons.Right)) rightClicked = false;
+            Desktop.Update(Icons.DocumentIcon);
+            //Desktop.Draw();
             WindowManager.DrawAll();
-            NotificationManager.Update();
-
-            // Draw cursor once at the end to reduce flicker
-            var cursorImg = Busy.IsBusy ? CursorBusy : (WindowManager.HasWindowMoving ? CursorMoving : Cursor);
-            Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, cursorImg);
+            //draw cursor
+            var img = Control.MouseButtons.HasFlag(MouseButtons.Left) ? CursorMoving : Cursor;
+            Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, img);
+            //refresh screen
             Framebuffer.Update();
-
-            FPSMeter.Update();
+            //sleep to get lower cpu usage
+            //System.Threading.Thread.Sleep(15);
         }
-    }
-
-    //private static void Console_OnWrite(char chr) {
-    //Console.Write(chr.ToString());
-    //}
-
-    /// <summary>
-    /// Init Console
-    /// </summary>
-    public static void InitConsole() {
-        FConsole = new FConsole(350, 300);
     }
 }

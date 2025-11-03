@@ -35,6 +35,7 @@ namespace guideXOS.Network {
             byte[] cipher = AES128.CTR(key16, nonce16, plain);
             // You can wrap into a simple envelope {"nonce":"...","data":"..."} if needed; for now raw bytes as body
             var req = BuildPost(url, cipher, "application/octet-stream");
+            if (req.request == null || string.IsNullOrEmpty(req.host)) return string.Empty;
             var resp = Send(req.host, req.port, req.request, timeoutMs);
             byte[] decrypted = AES128.CTR(key16, nonce16, resp.Body);
             return BytesToAscii(decrypted);
@@ -44,6 +45,8 @@ namespace guideXOS.Network {
         public static string PostJson(string url, string json, int timeoutMs = 7000) {
             byte[] body = ToAsciiBytes(json);
             var req = BuildPost(url, body, "application/json");
+            // Guard against invalid/unsupported URLs to avoid null deref
+            if (req.request == null || string.IsNullOrEmpty(req.host)) return string.Empty;
             var resp = Send(req.host, req.port, req.request, timeoutMs);
             return BytesToAscii(resp.Body);
         }
@@ -55,13 +58,27 @@ namespace guideXOS.Network {
             string hostPort; string path;
             int slash = work.IndexOf('/');
             if (slash >= 0) { hostPort = work.Substring(0, slash); path = work.Substring(slash); } else { hostPort = work; path = "/"; }
+            // collapse duplicate leading slash in path (e.g., "//v1/auth")
+            if (path.Length > 1 && path[0] == '/' && path[1] == '/') path = path.Substring(1);
             string host = hostPort; int port = 80; int colon = hostPort.IndexOf(':'); if (colon >= 0) { host = hostPort.Substring(0, colon); port = ParseInt(hostPort.Substring(colon + 1)); if (port == 0) port = 80; }
             var req = new Request(); req.Method = "POST"; req.Path = path; AddHeader(req.Headers, "Content-Type", contentType); req.Body = body; return new BuiltReq{host=host,port=port,request=req};
         }
 
         public static Response Send(string host, int port, Request req, int timeoutMs = 5000) {
+            // Network not initialized guard to avoid ARP table null deref
+            if (NETv4.ARPTable == null) { var r = new Response(); r.StatusCode = -1; r.ReasonPhrase = "Network not initialized"; return r; }
+
+            // Loopback is not supported by our stack; avoid trying to route it through gateway (can destabilize)
+            if (EqualsIgnoreCase(host, "localhost") || EqualsIgnoreCase(host, "127.0.0.1")) {
+                var rr = new Response(); rr.StatusCode = -1; rr.ReasonPhrase = "Loopback not supported"; return rr;
+            }
+
             var dest = Resolve(host);
-            if (dest.P1 == 0 && dest.P2 == 0 && dest.P3 == 0 && dest.P4 == 0) { var r = new Response(); r.StatusCode = -1; r.ReasonPhrase = "DNS failed"; return r; }
+            // Also avoid connecting to ourselves directly (no local TCP acceptance for HTTP client)
+            if (!IsZero(dest) && EqualsIp(dest, NETv4.IP)) {
+                var rx = new Response(); rx.StatusCode = -1; rx.ReasonPhrase = "Self-connect not supported"; return rx;
+            }
+            if (IsZero(dest)) { var r = new Response(); r.StatusCode = -1; r.ReasonPhrase = "DNS failed"; return r; }
             ushort localPort = NextEphemeralPort();
             var tcp = new NETv4.TCPClient(dest, (ushort)port, localPort);
             tcp.Connect();
@@ -98,6 +115,10 @@ namespace guideXOS.Network {
         }
 
         private static NETv4.IPAddress Resolve(string host) {
+            // If network not initialized, skip DNS to avoid UDP path usage
+            if (NETv4.ARPTable == null) return default;
+            // Special-case loopback names to avoid accidental external DNS lookup
+            if (EqualsIgnoreCase(host, "localhost")) return new NETv4.IPAddress(127,0,0,1);
             // dotted-quad?
             byte b1=0,b2=0,b3=0,b4=0; int dots=0; int acc=0; bool ok=true;
             for (int i=0;i<host.Length;i++){
@@ -109,6 +130,9 @@ namespace guideXOS.Network {
             if (ok && dots==3){ b4=(byte)acc; return new NETv4.IPAddress(b1,b2,b3,b4); }
             return NETv4.DNSQuery(host);
         }
+
+        private static bool IsZero(NETv4.IPAddress ip){ return ip.P1==0 && ip.P2==0 && ip.P3==0 && ip.P4==0; }
+        private static bool EqualsIp(NETv4.IPAddress a, NETv4.IPAddress b){ return a.P1==b.P1 && a.P2==b.P2 && a.P3==b.P3 && a.P4==b.P4; }
 
         private static byte[] ReceiveAll(NETv4.TCPClient tcp, int timeoutMs){
             ulong start = Timer.Ticks;
@@ -254,6 +278,7 @@ namespace guideXOS.Network {
         private static string GetHeader(List<Header> list, string k){ for (int i=0;i<list.Count;i++){ if (EqualsIgnoreCase(list[i].Key,k)) return list[i].Value; } return null; }
 
         private static bool EqualsIgnoreCase(string a, string b){
+            if (a == null || b == null) return false;
             if (a.Length != b.Length) return false;
             for (int i=0;i<a.Length;i++){ char ca=a[i]; if (ca>='A' && ca<='Z') ca=(char)(ca+32); char cb=b[i]; if (cb>='A' && cb<='Z') cb=(char)(cb+32); if (ca!=cb) return false; }
             return true;

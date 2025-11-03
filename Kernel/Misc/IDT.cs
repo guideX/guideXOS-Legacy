@@ -109,6 +109,7 @@ public static class IDT {
 
             // Compute correct location of InterruptReturnStack depending on whether the CPU pushed an error code
             InterruptReturnStack* irs;
+            bool hasErrorCode = false;
             switch (irq) {
                 case 8:
                 case 10:
@@ -122,20 +123,34 @@ public static class IDT {
                 case 30:
                     // Exceptions that push an error code: irs follows RegistersStack + errorCode
                     irs = (InterruptReturnStack*)(((byte*)stack) + sizeof(RegistersStack) + sizeof(ulong));
+                    hasErrorCode = true;
                     break;
                 default:
                     // No error code pushed: irs follows only RegistersStack
                     irs = (InterruptReturnStack*)(((byte*)stack) + sizeof(RegistersStack));
+                    hasErrorCode = false;
                     break;
             }
 
-            // Print using correctly computed frame
-            Console.WriteLine($"RIP: 0x{irs->rip.ToString("x2")}");
-            Console.WriteLine($"Code Segment: 0x{irs->cs.ToString("x2")}");
-            Console.WriteLine($"RFlags: 0x{irs->rflags.ToString("x2")}");
-            Console.WriteLine($"RSP: 0x{irs->rsp.ToString("x2")}");
-            Console.WriteLine($"Stack Segment: 0x{irs->ss.ToString("x2")}");
+            Console.WriteLine("================== EXCEPTION ==================");
+            Console.WriteLine($"Vector: 0x{((uint)irq).ToString("x2")}  CPU: {SMP.ThisCPU}");
 
+            // Print using correctly computed frame
+            Console.WriteLine($"RIP: 0x{irs->rip.ToString("x2")}  CS: 0x{irs->cs.ToString("x2")}  CPL: {((int)(irs->cs & 3))}");
+            Console.WriteLine($"RFLAGS: 0x{irs->rflags.ToString("x2")}  RSP: 0x{irs->rsp.ToString("x2")}  SS: 0x{irs->ss.ToString("x2")} ");
+            if (hasErrorCode) Console.WriteLine($"ERROR CODE: 0x{stack->errorCode.ToString("x2")}");
+
+            // Registers
+            Console.WriteLine($"RAX={stack->rs.rax.ToString("x2")} RBX={stack->rs.rbx.ToString("x2")} RCX={stack->rs.rcx.ToString("x2")} RDX={stack->rs.rdx.ToString("x2")} ");
+            Console.WriteLine($"RSI={stack->rs.rsi.ToString("x2")} RDI={stack->rs.rdi.ToString("x2")} R8 ={stack->rs.r8.ToString("x2")} R9 ={stack->rs.r9.ToString("x2")} ");
+            Console.WriteLine($"R10={stack->rs.r10.ToString("x2")} R11={stack->rs.r11.ToString("x2")} R12={stack->rs.r12.ToString("x2")} R13={stack->rs.r13.ToString("x2")} ");
+            Console.WriteLine($"R14={stack->rs.r14.ToString("x2")} R15={stack->rs.r15.ToString("x2")} ");
+
+            // Control and tables
+            ulong cr2 = Native.ReadCR2();
+            Console.WriteLine($"CR2: 0x{cr2.ToString("x2")}  IDTR: base=0x{((ulong)idtr.Base).ToString("x2")} limit=0x{((uint)idtr.Limit).ToString("x2")}  GDTR: base=0x{GDT.gdtr.Base.ToString("x2")} limit=0x{GDT.gdtr.Limit.ToString("x2")} ");
+
+            // Decode exception type
             switch (irq) {
                 case 0: Console.WriteLine("DIVIDE BY ZERO"); break;
                 case 1: Console.WriteLine("SINGLE STEP"); break;
@@ -150,18 +165,28 @@ public static class IDT {
                 case 10: Console.WriteLine("INVALID TSS"); break;
                 case 11: Console.WriteLine("SEGMENT NOT FOUND"); break;
                 case 12: Console.WriteLine("STACK EXCEPTION"); break;
-                case 13: Console.WriteLine("GENERAL PROTECTION"); break;
-                case 14:
-                    ulong CR2 = Native.ReadCR2();
-                    if (CR2 < 0x1000) {
-                        Console.WriteLine("NULL POINTER");
-                    } else {
-                        Console.WriteLine("PAGE FAULT");
-                    }
+                case 13:
+                    Console.WriteLine("GENERAL PROTECTION");
+                    if (hasErrorCode) Console.WriteLine($"GP ERROR CODE: 0x{stack->errorCode.ToString("x2")} ");
                     break;
+                case 14: {
+                        if (cr2 < 0x1000) {
+                            Console.WriteLine("NULL POINTER");
+                        } else {
+                            Console.WriteLine("PAGE FAULT");
+                        }
+                        if (hasErrorCode) {
+                            ulong ec = stack->errorCode;
+                            // PF EC bits: P(0) W/R(1) U/S(2) RSVD(3) I/D(4) PK(5)
+                            Console.WriteLine($"PF EC: P={(ec & 1UL)!=0} WR={((ec>>1)&1UL)!=0} US={((ec>>2)&1UL)!=0} RSVD={((ec>>3)&1UL)!=0} ID={((ec>>4)&1UL)!=0} PK={((ec>>5)&1UL)!=0}");
+                        }
+                        Console.WriteLine($"Fault VA: 0x{cr2.ToString("x2")} (CPL {((int)(irs->cs & 3))})");
+                        break;
+                    }
                 case 16: Console.WriteLine("COPR ERROR"); break;
                 default: Console.WriteLine("UNKNOWN EXCEPTION"); break;
             }
+            Console.WriteLine("===============================================");
             Framebuffer.Update();
             for (; ; ) ;
         }

@@ -249,6 +249,16 @@ namespace guideXOS.GUI {
                         return;
                     }
                     iy += dwh + 16;
+                    // Console
+                    int cwh = Icons.DocumentIcon.Height; int cww = Icons.DocumentIcon.Width;
+                    if (mx >= rcX && mx <= rcX + cww && my >= iy && my <= iy + cwh) {
+                        if (Program.FConsole == null) Program.FConsole = new FConsole(160, 120);
+                        WindowManager.MoveToEnd(Program.FConsole);
+                        Program.FConsole.Visible = true;
+                        Visible = false;
+                        return;
+                    }
+                    iy += cwh + 16;
                     // Recent Documents (toggle popup)
                     int iconW = Icons.DocumentIcon.Width;
                     int iconH = Icons.DocumentIcon.Height;
@@ -450,6 +460,20 @@ namespace guideXOS.GUI {
             WindowManager.font.DrawString(rcX + RightColInnerPad + cfIcon.Width + 8, rcCursorY + (cfIcon.Height / 2) - (WindowManager.font.FontSize / 2), dmText);
             rcCursorY += cfIcon.Height + 16;
             dmText.Dispose();
+
+            // Console icon + label
+            var conIcon = Icons.DocumentIcon;
+            int conRowH = conIcon.Height;
+            if (mouseX >= rcX && mouseX <= rcX + rcW && mouseY >= rcCursorY && mouseY <= rcCursorY + conRowH) {
+                UIPrimitives.AFillRoundedRect(rcX + 2, rcCursorY - 2, rowW, conRowH + 4, 0x332A5B9A, 6);
+                UIPrimitives.DrawRoundedRect(rcX + 2, rcCursorY - 2, rowW, conRowH + 4, 0xFF3F7FBF, 1, 6);
+                Framebuffer.Graphics.FillRectangle(rcX + 2, rcCursorY - 2, 3, conRowH + 4, 0x883F7FBF);
+            }
+            Framebuffer.Graphics.DrawImage(rcX + RightColInnerPad, rcCursorY, conIcon);
+            string conText = TruncateToWidth("Console", textMax);
+            WindowManager.font.DrawString(rcX + RightColInnerPad + conIcon.Width + 8, rcCursorY + (conIcon.Height / 2) - (WindowManager.font.FontSize / 2), conText);
+            rcCursorY += conIcon.Height + 16;
+            conText.Dispose();
 
             // Recent Documents with popout
             var docIcon = Icons.DocumentIcon;

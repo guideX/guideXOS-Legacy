@@ -130,7 +130,8 @@ namespace guideXOS.OS {
                             b = true;
                             break;
                         case "Console":
-                            Program.InitConsole();
+                            //Program.InitConsole();
+                            _apps[i].AppObject = Program.FConsole;
                             b = true;
                             break;
                         case "TaskManager":
