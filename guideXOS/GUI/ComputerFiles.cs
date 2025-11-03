@@ -132,6 +132,33 @@ namespace guideXOS.GUI {
             MarkEntriesDirty();
         }
 
+        // Conservative spacing to improve readability without heavy layout work
+        private int CurrentPad() {
+            int icon = _iconFolder != null ? _iconFolder.Width : 48;
+            int basePad = 16; // previously 12
+            if (icon >= 48) basePad += 4; // slightly more padding for larger icons
+            return basePad;
+        }
+
+        // Truncate to width with ellipsis (single-line) to avoid spill
+        private string TruncateToWidth(string text, int maxW) {
+            if (text == null) return string.Empty;
+            if (WindowManager.font.MeasureString(text) <= maxW) return text;
+            string ell = "...";
+            int ellW = WindowManager.font.MeasureString(ell);
+            int w = 0; int i = 0;
+            for (; i < text.Length; i++) {
+                string chs = text[i].ToString();
+                int chW = WindowManager.font.MeasureString(chs);
+                chs.Dispose();
+                if (w + chW + ellW > maxW) break;
+                w += chW;
+            }
+            string sub = text.Substring(0, i) + ell;
+            ell.Dispose();
+            return sub;
+        }
+
         public override void OnInput() {
             base.OnInput();
             if (!Visible) return;
@@ -241,9 +268,10 @@ namespace guideXOS.GUI {
                 }
 
                 // Content clicks (right grid)
+                int pad = CurrentPad();
                 if (_showDrives) {
                     // Single drive tile
-                    int tile = (_iconFolder != null ? _iconFolder.Height : 48) + WindowManager.font.FontSize + 16;
+                    int tile = (_iconFolder != null ? _iconFolder.Height : 48) + WindowManager.font.FontSize + (pad);
                     int rowY = contentY;
                     int rowW = contentW - leftW; // exclude left panel width
                     int rowX = X + leftW + 8;
@@ -254,7 +282,7 @@ namespace guideXOS.GUI {
                     EnsureEntries();
                     var list = _entriesCache;
                     // Grid layout in right content area only
-                    int pad = 12; int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = (icon + WindowManager.font.FontSize + pad * 2);
+                    int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = (icon + WindowManager.font.FontSize + pad);
                     int rcX = X + leftW + 8; int rcW = contentW - leftW - 8;
                     int cols = tileW > 0 ? (rcW / tileW) : 1; if (cols < 1) cols = 1;
                     for (int i = 0; i < list.Count; i++) {
@@ -298,13 +326,14 @@ namespace guideXOS.GUI {
         }
 
         private int GetTotalContentHeight(int contentW) {
+            int pad = CurrentPad();
             if (_showDrives) {
-                int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileH = (icon + WindowManager.font.FontSize + 24);
+                int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileH = (icon + WindowManager.font.FontSize + pad);
                 return tileH;
             }
             EnsureEntries();
             var list = _entriesCache;
-            int pad = 12; int ic = _iconFolder != null ? _iconFolder.Width : 48; int tileW = ic + pad * 2; int tileH2 = (ic + WindowManager.font.FontSize + pad * 2);
+            int ic = _iconFolder != null ? _iconFolder.Width : 48; int tileW = ic + pad * 2; int tileH2 = (ic + WindowManager.font.FontSize + pad);
             int cols = tileW > 0 ? (contentW / tileW) : 1; if (cols < 1) cols = 1;
             int rows = (list.Count + cols - 1) / cols; if (rows < 1) rows = 1;
             return rows * tileH2;
@@ -353,20 +382,26 @@ namespace guideXOS.GUI {
             int leftW = 180;
             Framebuffer.Graphics.FillRectangle(X + 1, contentY, leftW - 2, contentH, 0xFF2A2A2A);
             int cursorY = contentY + 10;
+            int maxLeftText = leftW - 2 - (_iconFolder != null ? _iconFolder.Width : 48) - 18;
             // Root/"Desktop"
             Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
-            WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), "Desktop");
+            string l1 = TruncateToWidth("Desktop", maxLeftText);
+            WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), l1);
+            l1.Dispose();
             cursorY += _iconFolder.Height + 10;
             // Computer Files root
             Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
-            WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), "Computer Files");
+            string l2 = TruncateToWidth("Computer Files", maxLeftText);
+            WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), l2);
+            l2.Dispose();
             cursorY += _iconFolder.Height + 10;
             // USB drive indicator
             if (Kernel.Drivers.USBStorage.Count > 0) {
-                string label = Kernel.Drivers.USBStorage.Count == 1 ? "USB Drive" : "USB Drives";
+                string baseLabel = Kernel.Drivers.USBStorage.Count == 1 ? "USB Drive" : "USB Drives";
+                string l3 = TruncateToWidth(baseLabel, maxLeftText);
                 Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
-                WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), label);
-                label.Dispose();
+                WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + (_iconFolder.Height / 2) - (WindowManager.font.FontSize / 2), l3);
+                l3.Dispose();
                 cursorY += _iconFolder.Height + 10;
             }
 
@@ -374,10 +409,11 @@ namespace guideXOS.GUI {
             int rcX = X + leftW + 8;
             int rcW = contentW - leftW - 8;
 
+            int pad = CurrentPad();
             if (_showDrives) {
                 // Single drive tile (root of current FS)
                 int icon = _iconFolder != null ? _iconFolder.Width : 48;
-                int tileH = icon + WindowManager.font.FontSize + 16;
+                int tileH = icon + WindowManager.font.FontSize + pad;
                 int cx = rcX + (rcW - icon) / 2;
                 int cy = contentY + 12 - _scroll;
                 if (_iconFolder != null) Framebuffer.Graphics.DrawImage(cx, cy, _iconFolder);
@@ -385,7 +421,7 @@ namespace guideXOS.GUI {
             } else {
                 EnsureEntries();
                 var list = _entriesCache;
-                int pad = 12; int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = (icon + WindowManager.font.FontSize + pad * 2);
+                int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = (icon + WindowManager.font.FontSize + pad);
                 int cols = tileW > 0 ? (rcW / tileW) : 1; if (cols < 1) cols = 1;
                 for (int i = 0; i < list.Count; i++) {
                     int gridX = i % cols; int gridY = i / cols;
@@ -395,7 +431,10 @@ namespace guideXOS.GUI {
                     bool isDir = (list[i].Attribute == FileAttribute.Directory);
                     if (isDir) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); else Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc);
                     string name = list[i].Name;
-                    WindowManager.font.DrawString(gx, gy + icon + 6, name);
+                    int maxW = tileW - pad; // ensure label stays inside tile
+                    string shown = TruncateToWidth(name, maxW);
+                    WindowManager.font.DrawString(gx, gy + icon + 6, shown);
+                    shown.Dispose();
                 }
             }
 
