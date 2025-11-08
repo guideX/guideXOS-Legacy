@@ -233,8 +233,8 @@ unsafe class Program {
             if (img != null) Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, img);
             //refresh screen
             Framebuffer.Update();
-            //sleep to get lower cpu usage
-            //System.Threading.Thread.Sleep(15);
+            // yield a bit to avoid tight spin
+            Thread.Sleep(1);
         }
     }
 }

@@ -3,7 +3,7 @@ using guideXOS.Graph;
 using guideXOS.Misc;
 using System.Windows.Forms;
 using System.Drawing;
-using System; // for simple math/formatting
+using System;
 namespace guideXOS.GUI {
     /// <summary>
     /// Task Manager window with Processes and Performance tabs
@@ -65,9 +65,7 @@ namespace guideXOS.GUI {
         private int _diskRespMs;
 
         public TaskManager(int X, int Y, int Width = 760, int Height = 520) : base(X, Y, Width, Height) {
-            ShowInTaskbar = true;
-            Title = "Task Manager";
-            // Initialize charts
+            ShowInTaskbar = true; Title = "Task Manager";
             int chartW = 280, chartH = 120;
             _cpuChart = new Chart(chartW, chartH, "CPU");
             _memChart = new Chart(chartW, chartH, "Memory");
@@ -386,21 +384,17 @@ namespace guideXOS.GUI {
 
         private void UpdateChart(Chart chart, int valuePct, uint color) {
             if (valuePct < 0) valuePct = 0; if (valuePct > 100) valuePct = 100;
-            int val = 100 - valuePct; // invert for top origin
-            int w = chart.graphics.Width; int h = chart.graphics.Height;
-            // clear current write column
+            int h = chart.graphics.Height; int w = chart.graphics.Width;
+            // Clear current column
             chart.graphics.FillRectangle(chart.writeX, 0, ChartLineWidth, h, 0xFF222222);
-            // draw line from lastValue to current at writeX (approximate as vertical segment)
-            int yPrev = (h * chart.lastValue) / 100;
-            int yNow = (h * val) / 100;
-            chart.graphics.DrawLine(chart.writeX, yPrev, chart.writeX, yNow, color);
-            chart.lastValue = val;
+            // Compute y positions (invert for top origin)
+            int newY = h - (h * valuePct / 100) - 1; if (newY < 0) newY = 0;
+            int prevY = h - (h * (100 - chart.lastValue) / 100) - 1; if (prevY < 0) prevY = 0; // adjust previous basis
+            // Draw vertical segment from previous to new
+            chart.graphics.DrawLine(chart.writeX, prevY, chart.writeX, newY, color);
+            chart.lastValue = 100 - valuePct; // store inverted again for legacy usage
             chart.writeX += ChartLineWidth;
-            if (chart.writeX >= w) {
-                chart.writeX = 0;
-                // optional: clear whole surface on wrap to avoid artifacts
-                chart.graphics.FillRectangle(0, 0, w, h, 0xFF222222);
-            }
+            if (chart.writeX >= w) { chart.writeX = 0; chart.graphics.FillRectangle(0, 0, w, h, 0xFF222222); }
         }
 
         private void OnEndTask() {

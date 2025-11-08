@@ -29,10 +29,7 @@ namespace guideXOS.OS {
         /// App
         /// </summary>
         /// <param name="name"></param>
-        public App(string name, Image icon) {
-            _name = name;
-            _icon = icon;
-        }
+        public App(string name, Image icon) { _name = name; _icon = icon; }
         /// <summary>
         /// Name
         /// </summary>
@@ -96,19 +93,14 @@ namespace guideXOS.OS {
             _apps.Add(new App("Notepad", new PNG(File.ReadAllBytes(path + "notepad.png"))));
             _apps.Add(new App("TaskManager", new PNG(File.ReadAllBytes(path + "applications.png"))));
             _apps.Add(new App("Devices", new PNG(File.ReadAllBytes(path + "configure.png"))));
-            // New apps (use tools icon fallback if specific icons missing)
-            //Image browserIcon; 
-            Image ircIcon; 
-            //Image audioIcon; 
-            //Image ftpIcon;
-            //try { browserIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/web.png")); } catch { browserIcon = icon; }
+            // New / restored apps
+            Image browserIcon; Image ircIcon; Image ircNetIcon;
+            try { browserIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/web.png")); } catch { browserIcon = icon; }
             try { ircIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/chat.png")); } catch { ircIcon = icon; }
-            //try { audioIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/music.png")); } catch { audioIcon = icon; }
-            //try { ftpIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/network.png")); } catch { ftpIcon = icon; }
-            //_apps.Add(new App("Anomalocaris", browserIcon));
-            _apps.Add(new App("nexIRC", ircIcon));
-            //_apps.Add(new App("Audica", audioIcon));
-            //_apps.Add(new App("Gorganopsid", ftpIcon));
+            try { ircNetIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/network.png")); } catch { ircNetIcon = icon; }
+            _apps.Add(new App("Anomalocaris", browserIcon)); // web browser
+            _apps.Add(new App("nexIRC", ircIcon)); // IRC client
+            _apps.Add(new App("IRCNetworks", ircNetIcon)); // IRC connection/profile manager
         }
         /// <summary>
         /// Load
@@ -120,63 +112,27 @@ namespace guideXOS.OS {
             for (int i = 0; i < _apps.Count; i++) {
                 if (_apps[i].Name == name) {
                     switch (name) {
-                        case "Devices":
-                            _apps[i].AppObject = new Devices(400, 300);
-                            b = true;
-                            break;
-                        case "Lock":
-                            Lockscreen.Run();
-                            b = true;
-                            break;
-                        case "Calculator":
-                            _apps[i].AppObject = new Calculator(300, 500);
-                            b = true;
-                            break;
-                        case "Monitor":
-                            _apps[i].AppObject = new Monitor(200, 450);
-                            b = true;
-                            break;
-                        case "Clock":
-                            _apps[i].AppObject = new Clock(650, 500);
-                            b = true;
-                            break;
-                        case "Paint":
-                            _apps[i].AppObject = new Paint(500, 200);
-                            b = true;
-                            break;
-                        case "Notepad":
-                            _apps[i].AppObject = new Notepad(360, 200);
-                            b = true;
-                            break;
-                        case "Console":
-                            if (Program.FConsole == null) Program.FConsole = new FConsole(160, 120);
-                            _apps[i].AppObject = Program.FConsole;
-                            b = true;
-                            break;
-                        case "TaskManager":
-                            _apps[i].AppObject = new TaskManager(500, 500);
-                            b = true;
-                            break;
-                        case "Anomalocaris":
-                            _apps[i].AppObject = new Anomalocaris(220, 180);
-                            b = true;
-                            break;
-                        case "nexIRC":
-                            _apps[i].AppObject = new nexIRC(260, 220);
-                            b = true;
-                            break;
-                        case "Audica":
-                            _apps[i].AppObject = new Audica(300, 240);
-                            b = true;
-                            break;
-                        case "Gorganopsid":
-                            _apps[i].AppObject = new Gorganopsid(340, 260);
-                            b = true;
-                            break;
+                        case "Devices": _apps[i].AppObject = new Devices(400, 300); b = true; break;
+                        case "Lock": Lockscreen.Run(); b = true; break;
+                        case "Calculator": _apps[i].AppObject = new Calculator(300, 500); b = true; break;
+                        case "Monitor": _apps[i].AppObject = new Monitor(200, 450); b = true; break;
+                        case "Clock": _apps[i].AppObject = new Clock(650, 500); b = true; break;
+                        case "Paint": _apps[i].AppObject = new Paint(500, 200); b = true; break;
+                        case "Notepad": _apps[i].AppObject = new Notepad(360, 200); b = true; break;
+                        case "Console": if (Program.FConsole == null) Program.FConsole = new FConsole(160, 120); _apps[i].AppObject = Program.FConsole; b = true; break;
+                        case "TaskManager": _apps[i].AppObject = new TaskManager(500, 500); b = true; break;
+                        case "Anomalocaris": _apps[i].AppObject = new Anomalocaris(220, 180); b = true; break;
+                        case "nexIRC": _apps[i].AppObject = new nexIRC(260, 220); b = true; break;
+                        case "IRCNetworks": _apps[i].AppObject = new IRCNetworks(300, 240); b = true; break;
                     }
                     if (b) {
                         // record recents
                         RecentManager.AddProgram(_apps[i].Name, _apps[i].Icon);
+                        // apply taskbar icon if window
+                        if (_apps[i].AppObject is guideXOS.GUI.Window w) {
+                            w.TaskbarIcon = _apps[i].Icon;
+                            w.ShowInTaskbar = true;
+                        }
                     }
                 }
             }
