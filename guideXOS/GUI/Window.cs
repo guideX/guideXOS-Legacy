@@ -38,6 +38,14 @@ namespace guideXOS.GUI {
         /// Is Animating
         /// </summary>
         bool IsAnimating => _animType != WindowAnimationType.None;
+
+        // New: resizable support
+        public bool IsResizable = false;
+        private bool _resizing;
+        private int _resizeStartMouseX, _resizeStartMouseY;
+        private int _resizeStartW, _resizeStartH;
+        private const int _resizeGripSize = 16;
+
         /// <summary>
         /// Begin Fade In
         /// </summary>
@@ -366,6 +374,26 @@ namespace guideXOS.GUI {
             if (Move) {
                 X = mx - OffsetX; Y = my - OffsetY; ClampToScreen(); _normX = X; _normY = Y; _normW = Width; _normH = Height;
             }
+
+            // Resize handling in bottom-right corner
+            if (IsResizable) {
+                int gripX = X + Width - _resizeGripSize; int gripY = Y + Height - _resizeGripSize;
+                bool over = mx >= gripX && mx <= gripX + _resizeGripSize && my >= gripY && my <= gripY + _resizeGripSize;
+                if (Control.MouseButtons == MouseButtons.Left) {
+                    if (!_resizing && over) {
+                        _resizing = true; _resizeStartMouseX = mx; _resizeStartMouseY = my; _resizeStartW = Width; _resizeStartH = Height;
+                        return;
+                    }
+                } else {
+                    _resizing = false;
+                }
+                if (_resizing) {
+                    int dw = mx - _resizeStartMouseX; int dh = my - _resizeStartMouseY;
+                    int newW = _resizeStartW + dw; int newH = _resizeStartH + dh;
+                    if (newW < 160) newW = 160; if (newH < 120) newH = 120;
+                    Width = newW; Height = newH; return;
+                }
+            }
         }
         /// <summary>
         /// On Draw
@@ -387,12 +415,13 @@ namespace guideXOS.GUI {
             int ty = Y - BarHeight + (BarHeight / 4);
             WindowManager.font.DrawString(tx, ty, title);
 
-            // Custom title buttons with glow and press states
+            // Custom title buttons with glow and press states (honor Show* flags)
             ComputeButtonRects();
-            DrawTitleButton(_rcMinX, _btnY, _btnSize, TitleButton.Minimize, _hoverBtn == TitleButton.Minimize, _pressedBtn == TitleButton.Minimize && _captureButtons);
-            DrawTitleButton(_rcMaxX, _btnY, _btnSize, TitleButton.Maximize, _hoverBtn == TitleButton.Maximize, _pressedBtn == TitleButton.Maximize && _captureButtons);
-            DrawTitleButton(_rcRestoreX, _btnY, _btnSize, TitleButton.Restore, _hoverBtn == TitleButton.Restore, _pressedBtn == TitleButton.Restore && _captureButtons);
-            DrawTitleButton(_rcTombX, _btnY, _btnSize, TitleButton.Tombstone, _hoverBtn == TitleButton.Tombstone, _pressedBtn == TitleButton.Tombstone && _captureButtons);
+            if (ShowMinimize) DrawTitleButton(_rcMinX, _btnY, _btnSize, TitleButton.Minimize, _hoverBtn == TitleButton.Minimize, _pressedBtn == TitleButton.Minimize && _captureButtons);
+            if (ShowMaximize) DrawTitleButton(_rcMaxX, _btnY, _btnSize, TitleButton.Maximize, _hoverBtn == TitleButton.Maximize, _pressedBtn == TitleButton.Maximize && _captureButtons);
+            if (ShowRestore) DrawTitleButton(_rcRestoreX, _btnY, _btnSize, TitleButton.Restore, _hoverBtn == TitleButton.Restore, _pressedBtn == TitleButton.Restore && _captureButtons);
+            if (ShowTombstone) DrawTitleButton(_rcTombX, _btnY, _btnSize, TitleButton.Tombstone, _hoverBtn == TitleButton.Tombstone, _pressedBtn == TitleButton.Tombstone && _captureButtons);
+            // Close button always present
             DrawTitleButton(_rcCloseX, _btnY, _btnSize, TitleButton.Close, _hoverBtn == TitleButton.Close, _pressedBtn == TitleButton.Close && _captureButtons);
 
             // Content
@@ -410,6 +439,19 @@ namespace guideXOS.GUI {
             if (_overlayAlpha > 0 && _animType != WindowAnimationType.None && (_animType == WindowAnimationType.FadeIn || _animType == WindowAnimationType.FadeOutClose)) {
                 uint col = (uint)(_overlayAlpha) << 24;
                 UIPrimitives.AFillRoundedRect(X - 1, Y - BarHeight - 1, Width + 2, Height + BarHeight + 2, col, 4);
+            }
+
+            // Resize grip visual
+            if (IsResizable) {
+                int gx = X + Width - _resizeGripSize; int gy = Y + Height - _resizeGripSize;
+                Framebuffer.Graphics.FillRectangle(gx, gy, _resizeGripSize, _resizeGripSize, 0x332F2F2F);
+                // three little diagonal lines
+                int inset = 4; uint lc = 0xFF777777;
+                for (int i = 0; i < 3; i++) {
+                    int ox = gx + _resizeGripSize - inset - (i * 4); int oy = gy + _resizeGripSize - inset;
+                    Framebuffer.Graphics.DrawLine(ox - 6, oy, ox, oy - 6, lc);
+                }
+                UIPrimitives.DrawRoundedRect(gx, gy, _resizeGripSize, _resizeGripSize, 0xFF444444, 1, 2);
             }
         }
         /// <summary>

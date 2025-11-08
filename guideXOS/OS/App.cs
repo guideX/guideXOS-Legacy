@@ -95,6 +95,7 @@ namespace guideXOS.OS {
             _apps.Add(new App("Lock", new PNG(File.ReadAllBytes(path + "lock.png"))));
             _apps.Add(new App("Notepad", new PNG(File.ReadAllBytes(path + "notepad.png"))));
             _apps.Add(new App("TaskManager", new PNG(File.ReadAllBytes(path + "applications.png"))));
+            _apps.Add(new App("Devices", new PNG(File.ReadAllBytes(path + "configure.png"))));
             // New apps (use tools icon fallback if specific icons missing)
             //Image browserIcon; 
             Image ircIcon; 
@@ -119,6 +120,10 @@ namespace guideXOS.OS {
             for (int i = 0; i < _apps.Count; i++) {
                 if (_apps[i].Name == name) {
                     switch (name) {
+                        case "Devices":
+                            _apps[i].AppObject = new Devices(400, 300);
+                            b = true;
+                            break;
                         case "Lock":
                             Lockscreen.Run();
                             b = true;
