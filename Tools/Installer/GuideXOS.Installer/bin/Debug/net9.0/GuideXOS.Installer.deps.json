@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "GuideXOS.Installer/1.0.0": {
+        "runtime": {
+          "GuideXOS.Installer.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "GuideXOS.Installer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

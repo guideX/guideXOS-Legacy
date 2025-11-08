@@ -15,8 +15,7 @@ namespace guideXOS.GUI {
         private static readonly int _y2 = 680;
 
         private bool _powerMenuVisible = false;
-
-        private const int Padding = 14; // was 10
+        private const int Padding = 18; // increased left/right padding
         private const int Spacing = 58; // was 50
 
         private const int ShutdownBtnW = 100;
@@ -60,6 +59,8 @@ namespace guideXOS.GUI {
         private ulong _frameCacheTick;
         private bool _frameDirty;
         private const ulong MinRedrawMs = 120;
+
+        private bool _leftDownPrev; // edge detect
 
         public unsafe StartMenu() : base(_x, _y, _x2, _y2) {
             Title = "Start";
@@ -176,9 +177,9 @@ namespace guideXOS.GUI {
             // Close on Escape
             if (Keyboard.KeyInfo.Key == ConsoleKey.Escape) { _powerMenuVisible = false; _docsPopupVisible = false; Visible = false; return; }
 
-            int mx = Control.MousePosition.X;
-            int my = Control.MousePosition.Y;
-            bool leftDown = Control.MouseButtons == MouseButtons.Left;
+            int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
+            bool leftDown = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool clickEdge = leftDown && !_leftDownPrev; // only act on new press
 
             int bottomY = Y + Height - Padding - ShutdownBtnH;
             int shutdownX = X + Width - Padding - ShutdownBtnW - ArrowBtnW - Gap;
@@ -205,16 +206,35 @@ namespace guideXOS.GUI {
             // Scrollbar hit
             int sbW = 8;
             int sbX = listX + listW - sbW;
-            if (leftDown) {
-                // Handle power buttons
+            if (clickEdge) {
+                // Power menu items (if visible) first so they capture clicks on overlay region
+                if (_powerMenuVisible) {
+                    int menuH = MenuPad * 2 + (MenuItemH * 2);
+                    int menuW = MenuW;
+                    int menuX = X + Width - Padding - menuW;
+                    int menuY = bottomY - menuH - Gap;
+                    if (mx >= menuX && mx <= menuX + menuW && my >= menuY && my <= menuY + menuH) {
+                        int itemY = menuY + MenuPad;
+                        if (my >= itemY && my < itemY + MenuItemH) { // Reboot
+                            Power.Reboot(); _powerMenuVisible = false; Visible = false; return;
+                        }
+                        if (my >= itemY + MenuItemH && my < itemY + (2 * MenuItemH)) { // Log Off
+                            // Simple logoff: hide all windows & show lock screen
+                            for (int i = 0; i < WindowManager.Windows.Count; i++) WindowManager.Windows[i].Visible = false;
+                            _powerMenuVisible = false; Lockscreen.Run(); Visible = false; return;
+                        }
+                    }
+                }
+                // Shutdown
                 if (mx >= shutdownX && mx <= shutdownX + ShutdownBtnW && my >= bottomY && my <= bottomY + ShutdownBtnH) {
                     var dlg = new ShutdownDialog();
                     WindowManager.MoveToEnd(dlg);
-                    dlg.Visible = true; Visible = false; return;
+                    dlg.Visible = true; Visible = false; _powerMenuVisible = false; return;
                 }
+                // Arrow toggle
                 if (mx >= arrowX && mx <= arrowX + ArrowBtnW && my >= bottomY && my <= bottomY + ArrowBtnH) { _powerMenuVisible = !_powerMenuVisible; _frameDirty = true; return; }
 
-                // All Programs toggle
+                // All Programs button
                 if (mx >= allBtnX && mx <= allBtnX + allBtnW && my >= allBtnY && my <= allBtnY + allBtnH) {
                     ToggleAllPrograms(); _frameDirty = true;
                     return;
@@ -327,10 +347,10 @@ namespace guideXOS.GUI {
                         y += Spacing;
                     }
                 }
-            } else { _scrollDrag = false; }
+            } else if (!leftDown) { _scrollDrag = false; }
 
             // Drag update
-            if (_scrollDrag) {
+            if (_scrollDrag && leftDown) {
                 int total = (_showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count) * Spacing;
                 int maxScroll = total - listH; if (maxScroll < 0) maxScroll = 0;
                 int dy = my - _scrollStartY;
@@ -338,6 +358,7 @@ namespace guideXOS.GUI {
                 if (newScroll < 0) newScroll = 0; if (newScroll > maxScroll) newScroll = maxScroll;
                 if (newScroll != _scroll) { _scroll = newScroll; _frameDirty = true; }
             }
+            _leftDownPrev = leftDown;
         }
 
         public override void OnDraw() {

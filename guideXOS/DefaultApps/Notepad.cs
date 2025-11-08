@@ -160,6 +160,13 @@ namespace guideXOS.DefaultApps {
             WindowManager.MoveToEnd(_dlg); _dlg.Visible = true;
         }
 
+        private static bool StartsWithFast(string s,string pref){ int l=pref.Length; if (s==null||s.Length<l) return false; for(int i=0;i<l;i++) if(s[i]!=pref[i]) return false; return true; }
+        public void OpenFile(string path){
+            if (string.IsNullOrEmpty(path)) return; string p = path; if (!StartsWithFast(p,"/") && !string.IsNullOrEmpty(Desktop.Dir)) p = Desktop.Dir + p; byte[] data = File.ReadAllBytes(p);
+            if (data != null) { char[] chars = new char[data.Length]; for(int i=0;i<data.Length;i++){ byte b=data[i]; chars[i]= b>=32 && b<127? (char)b : (b==10?'\n':'.'); } _text = new string(chars); data.Dispose(); _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/') + 1); _dirty = false; Title = "Notepad - " + _fileName; RecentManager.AddDocument(p, Icons.DocumentIcon); }
+            else { _text = string.Empty; _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/')+1); _dirty=false; Title = "Notepad - " + _fileName; }
+        }
+
         public override void OnInput() {
             base.OnInput(); if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return;
             bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);

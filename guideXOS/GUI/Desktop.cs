@@ -379,10 +379,15 @@ namespace guideXOS.GUI {
                 WindowManager.MoveToEnd(imageViewer);
                 imageViewer.Visible = true;
                 RecentManager.AddDocument(path, Icons.ImageIcon);
-            } else if (name.EndsWith(".mue")) {
+            } else if (name.EndsWith(".gxm") || name.EndsWith(".mue")) {
                 byte[] buffer = File.ReadAllBytes(path);
-                System.Diagnostics.Process.Start(buffer);
-                RecentManager.AddDocument(path, Icons.DocumentIcon);
+                // Prefer in-kernel GXM loader for execution
+                string err; bool ok = GXMLoader.TryExecute(buffer, out err);
+                if (!ok) {
+                    msgbox.X = itemX + 60; msgbox.Y = itemY + 60; msgbox.SetText(err ?? "Failed to run executable"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true;
+                } else {
+                    RecentManager.AddDocument(path, Icons.DocumentIcon);
+                }
             } else if (name.EndsWith(".wav")) {
                 if (Audio.HasAudioDevice) {
                     wavplayer.Visible = true;

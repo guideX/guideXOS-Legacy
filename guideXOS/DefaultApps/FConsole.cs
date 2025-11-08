@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using guideXOS.OS;
 using guideXOS.GUI;
+using guideXOS.Compat;
 
 namespace guideXOS.DefaultApps {
     internal class FConsole : Window {
@@ -12,6 +13,8 @@ namespace guideXOS.DefaultApps {
         private bool _keyDown = false; private byte _lastScan = 0;
         private string _prompt = ">"; // prompt symbol
         private string _cwd = ""; // current working directory
+        // vi state
+        private string _textBufferForVi; private string _viPath; private bool _viMode; private bool _viInsert; private int _viCursor;
 
         public FConsole(int X, int Y) : base(X, Y, 640, 320) {
             ShowInTaskbar = true;
@@ -30,6 +33,8 @@ namespace guideXOS.DefaultApps {
             Console.OnWrite += Console_OnWrite;
             WriteLine("Type help to get information!");
             WritePrompt();
+            // vi init
+            _textBufferForVi = string.Empty; _viPath = null; _viMode = false; _viInsert = false; _viCursor = 0;
         }
 
         private void UpdateTitle() { Title = string.IsNullOrEmpty(_cwd) ? "Console" : "Console - " + _cwd; }
@@ -53,18 +58,9 @@ namespace guideXOS.DefaultApps {
             if (k >= ConsoleKey.D0 && k <= ConsoleKey.D9) {
                 int d = k - ConsoleKey.D0;
                 if (!shift) return (char)('0' + d);
-                // Shifted number row
                 switch (d) {
-                    case 0: return ')';
-                    case 1: return '!';
-                    case 2: return '@';
-                    case 3: return '#';
-                    case 4: return '$';
-                    case 5: return '%';
-                    case 6: return '^';
-                    case 7: return '&';
-                    case 8: return '*';
-                    case 9: return '(';
+                    case 0: return ')'; case 1: return '!'; case 2: return '@'; case 3: return '#'; case 4: return '$';
+                    case 5: return '%'; case 6: return '^'; case 7: return '&'; case 8: return '*'; case 9: return '(';
                 }
             }
             switch (k) {
@@ -84,6 +80,7 @@ namespace guideXOS.DefaultApps {
         }
 
         private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
+            if (_viMode){ HandleViKey(key); return; }
             if (!Visible) return;
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // debounce same key while held
@@ -103,9 +100,9 @@ namespace guideXOS.DefaultApps {
             if (ch != '\0') { Cmd += ch; AppendRaw(ch.ToString()); }
         }
 
-        private static string TrimSpaces(string s){
-            if (s == null) return string.Empty; int a=0,b=s.Length-1; while(a<=b && s[a]==' ') a++; while(b>=a && s[b]==' ') b--; if (b<a) return string.Empty; return s.Substring(a,b-a+1);
-        }
+        private static string TrimSpaces(string s){ if (s == null) return string.Empty; int a=0,b=s.Length-1; while(a<=b && s[a]==' ') a++; while(b>=a && s[b]==' ') b--; if (b<a) return string.Empty; return s.Substring(a,b-a+1); }
+        private static bool StartsWithFast(string s, string pref){ int l=pref.Length; if (s==null||s.Length<l) return false; for(int i=0;i<l;i++){ if(s[i]!=pref[i]) return false; } return true; }
+        private static string JoinParts(string[] arr, char sep, int start){ if (start>=arr.Length) return string.Empty; string r=arr[start]; for(int i=start+1;i<arr.Length;i++){ r+=sep; r+=arr[i]; } return r; }
 
         private static bool TryParseIp(string s, out NETv4.IPAddress ip) {
             ip = default;
@@ -124,67 +121,82 @@ namespace guideXOS.DefaultApps {
             return true;
         }
 
-        private static bool StartsWithFast(string s, string pref){ int l=pref.Length; if (s.Length<l) return false; for(int i=0;i<l;i++){ if(s[i]!=pref[i]) return false; } return true; }
-        private static string JoinParts(string[] arr, char sep, int start){ if (start>=arr.Length) return string.Empty; string r=arr[start]; for(int i=start+1;i<arr.Length;i++){ r+=sep; r+=arr[i]; } return r; }
+        // ---- vi minimal implementation ----
+        private void HandleViKey(ConsoleKeyInfo key){
+            if (!_viMode) return; if (key.KeyState != ConsoleKeyState.Pressed) return;
+            if (!_viInsert) { // command mode
+                if (key.Key == ConsoleKey.I) { _viInsert = true; StatusMsg("-- INSERT --"); return; }
+                if (key.Key == ConsoleKey.Escape) { ExitVi(); return; }
+                if (key.Key == ConsoleKey.S) { SaveVi(); return; }
+                if (key.Key == ConsoleKey.Q) { ExitVi(); return; }
+                if (key.Key == ConsoleKey.Left) { if(_viCursor>0) _viCursor--; RedrawVi(); return; }
+                if (key.Key == ConsoleKey.Right) { if(_viCursor<_textBufferForVi.Length) _viCursor++; RedrawVi(); return; }
+            } else { // insert mode
+                if (key.Key == ConsoleKey.Escape){ _viInsert=false; StatusMsg(""); return; }
+                if (key.Key == ConsoleKey.Backspace){ if(_viCursor>0){ _textBufferForVi=_textBufferForVi.Substring(0,_viCursor-1)+_textBufferForVi.Substring(_viCursor); _viCursor--; RedrawVi(); } return; }
+                if (key.Key == ConsoleKey.Enter){ InsertVi('\n'); return; }
+                char ch = MapFromKey(key); if (ch!='\0'){ InsertVi(ch); }
+            }
+        }
+        private void InsertVi(char ch){ _textBufferForVi = _textBufferForVi.Substring(0,_viCursor)+ch+_textBufferForVi.Substring(_viCursor); _viCursor++; RedrawVi(); }
+        private void RedrawVi(){ Data = string.Empty; AppendRaw("-- vi -- " + (_viInsert?"INSERT":"CMD") + " " + (_viPath??"(new)") + "\n"); AppendRaw(_textBufferForVi); }
+        private void SaveVi(){ if(_viPath==null) return; byte[] d=new byte[_textBufferForVi.Length]; for(int i=0;i<d.Length;i++) d[i]=(byte)_textBufferForVi[i]; FS.File.WriteAllBytes(_viPath,d); d.Dispose(); StatusMsg("Written"); }
+        private void StatusMsg(string msg){ /* optional */ }
+        private void ExitVi(){ _viMode=false; _viInsert=false; _viPath=null; _textBufferForVi=string.Empty; _viCursor=0; WritePrompt(); }
+        private void EnterVi(string path){ _viMode=true; _viInsert=false; _viPath=Posix.NormalizePath(_cwd, path); byte[] d=FS.File.ReadAllBytes(_viPath); if(d!=null){ char[] c=new char[d.Length]; for(int i=0;i<d.Length;i++){ byte b=d[i]; c[i]= b>=32&&b<127?(char)b:(b==10?'\n':'.'); } _textBufferForVi=new string(c); d.Dispose(); } else { _textBufferForVi=string.Empty; } _viCursor=0; RedrawVi(); }
 
         private void HandleCommand(string cmdLine) {
             if (string.IsNullOrEmpty(cmdLine)) return;
             string[] parts = SplitArgs(cmdLine);
             string cmd = parts[0];
             switch (cmd) {
-                case "cd": {
-                        if (parts.Length < 2) { WriteLine("Usage: cd <path>"); break; }
-                        string target = parts[1];
-                        if (target == "/" || target == "\\" ) { _cwd = ""; Desktop.Dir = _cwd; Desktop.InvalidateDirCache(); UpdateTitle(); WriteLine("Changed directory"); break; }
-                        if (target == "..") {
-                            if (_cwd.Length > 0) {
-                                string p = _cwd;
-                                if (p[p.Length-1] == '/') p = p.Substring(0, p.Length-1);
-                                int last = p.LastIndexOf('/');
-                                if (last >= 0) p = p.Substring(0, last+1); else p = "";
-                                _cwd = p;
-                            }
-                            Desktop.Dir = _cwd; Desktop.InvalidateDirCache(); UpdateTitle(); WriteLine("Changed directory"); break;
-                        }
-                        if (!target.EndsWith("/")) target += "/"; _cwd += target; Desktop.Dir = _cwd; Desktop.InvalidateDirCache(); UpdateTitle(); WriteLine("Changed directory");
-                    }
-                    break;
-                case "help": WriteLine("Commands: help, cd <path>, pwd, ls [path], cat <file>, echo <text> [>file], touch <file>, mkdir <dir>, rm <file>, shutdown, reboot, cpu, null, netinit, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <httpUrl>, authlogin <user> <pass>, authregister <user> <pass>, authtoken, logout"); break;
+                case "help": WriteLine("Commands: help, pwd, ls, cd, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, netinit, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot"); break;
                 case "pwd": { string p = _cwd; if (string.IsNullOrEmpty(p)) p = "/"; WriteLine(p); } break;
                 case "ls": {
-                        string target = _cwd; if (parts.Length > 1) { target = parts[1]; if (target == "/") target = ""; if (target.Length > 0 && !target.EndsWith("/")) target += "/"; }
-                        var list = FS.File.GetFiles(target);
-                        if (list == null || list.Count == 0) { WriteLine("(empty)"); break; }
-                        for (int i=0;i<list.Count;i++){ var fi = list[i]; bool isDir = fi.Attribute == FS.FileAttribute.Directory; WriteLine((isDir?"d":"-")+" \t"+fi.Name); fi.Dispose(); }
+                        string target = parts.Length > 1 ? Posix.NormalizePath(_cwd, parts[1]) : (string.IsNullOrEmpty(_cwd)?"/":"/"+_cwd);
+                        var names = Posix.List(target);
+                        if (names.Length == 0) { WriteLine("(empty)"); break; }
+                        for (int i=0;i<names.Length;i++){ WriteLine(names[i]); }
+                    } break;
+                case "cd": {
+                        if (parts.Length < 2) { WriteLine("Usage: cd <path>"); break; }
+                        string target = Posix.NormalizePath(_cwd, parts[1]);
+                        if (target == "/") { _cwd = ""; }
+                        else { if (!target.EndsWith("/")) target += "/"; _cwd = target.Substring(1); }
+                        Desktop.Dir = _cwd; Desktop.InvalidateDirCache(); UpdateTitle(); WriteLine("Changed directory");
                     } break;
                 case "cat": {
                         if (parts.Length < 2){ WriteLine("Usage: cat <file>"); break; }
-                        string path = parts[1]; if (path == "/") { WriteLine("Not a file"); break; }
-                        if (!StartsWithFast(path, "/") && _cwd.Length > 0) path = _cwd + path; // relative
-                        byte[] data = FS.File.ReadAllBytes(path);
+                        string path = Posix.NormalizePath(_cwd, parts[1]); byte[] data = FS.File.ReadAllBytes(path);
                         if (data == null) { WriteLine("Unable to read file"); break; }
-                        int len = data.Length; int max = len; char[] buf = new char[max]; for(int i=0;i<max;i++){ byte b=data[i]; buf[i]= b>=32 && b<127? (char)b : '.'; }
+                        int len = data.Length; char[] buf = new char[len]; for(int i=0;i<len;i++){ byte b=data[i]; buf[i]= b>=32 && b<127? (char)b : (b==10?'\n':'.'); }
                         WriteLine(new string(buf)); data.Dispose();
                     } break;
                 case "echo": {
                         if (parts.Length < 2){ WriteLine(""); break; }
-                        // detect redirection
                         int gtIndex = -1; for(int i=1;i<parts.Length;i++){ if(parts[i]==">") { gtIndex=i; break; } }
-                        if (gtIndex==-1){ // no redirect
-                            string outText = JoinParts(parts,' ',1); WriteLine(outText); break; }
+                        if (gtIndex==-1){ string outText = JoinParts(parts,' ',1); WriteLine(outText); break; }
                         if (gtIndex+1 >= parts.Length){ WriteLine("echo: missing filename after >"); break; }
-                        string fileName = parts[gtIndex+1]; string outText2=""; for(int i=1;i<gtIndex;i++){ if(i>1) outText2+=' '; outText2+=parts[i]; }
-                        if (!StartsWithFast(fileName, "/") && _cwd.Length>0) fileName = _cwd + fileName; byte[] d=new byte[outText2.Length]; for(int i=0;i<d.Length;i++) d[i]=(byte)(outText2[i]<128?outText2[i]:'?'); FS.File.WriteAllBytes(fileName,d); d.Dispose(); Desktop.InvalidateDirCache(); WriteLine("Written " + fileName);
+                        string fileName = Posix.NormalizePath(_cwd, parts[gtIndex+1]); string outText2=""; for(int i=1;i<gtIndex;i++){ if(i>1) outText2+=' '; outText2+=parts[i]; }
+                        byte[] d=new byte[outText2.Length]; for(int i=0;i<d.Length;i++) d[i]=(byte)(outText2[i]<128?outText2[i]:'?'); FS.File.WriteAllBytes(fileName,d); d.Dispose(); Desktop.InvalidateDirCache(); WriteLine("Written " + fileName);
                     } break;
-                case "touch": {
-                        if (parts.Length<2){ WriteLine("Usage: touch <file>"); break; }
-                        string fileName = parts[1]; if (!StartsWithFast(fileName, "/") && _cwd.Length>0) fileName = _cwd + fileName; byte[] empty = new byte[0]; FS.File.WriteAllBytes(fileName, empty); empty.Dispose(); Desktop.InvalidateDirCache(); WriteLine("Created " + fileName); } break;
-                case "mkdir": {
-                        WriteLine("mkdir not supported by current filesystem");
-                    } break;
-                case "rm": {
-                        WriteLine("rm not supported (delete not implemented)");
-                    } break;
+                case "notepad": {
+                        if (parts.Length < 2){ WriteLine("Usage: notepad <file>"); break; }
+                        string path = parts[1]; if (Program.FConsole == null) Program.FConsole = this; var np = new Notepad(200,160); WindowManager.MoveToEnd(np); np.Visible=true; np.OpenFile(path); break; }
+                case "vi": { if (parts.Length < 2){ WriteLine("Usage: vi <file>"); break; } EnterVi(parts[1]); break; }
+                case "gxminfo": {
+                        if (parts.Length<2){ WriteLine("Usage: gxminfo <file.gxm>"); break; }
+                        string path = Posix.NormalizePath(_cwd, parts[1]); byte[] buf = FS.File.ReadAllBytes(path); if(buf==null){ WriteLine("Unable to read file"); break; }
+                        string sig = (buf.Length>=4)? ((char)buf[0]).ToString()+((char)buf[1])+((char)buf[2])+((char)buf[3]) : "(too small)"; WriteLine("Signature: "+sig);
+                        if (buf.Length>=16){ uint ver = (uint)(buf[4] | buf[5]<<8 | buf[6]<<16 | buf[7]<<24); uint entry = (uint)(buf[8] | buf[9]<<8 | buf[10]<<16 | buf[11]<<24); uint size = (uint)(buf[12] | buf[13]<<8 | buf[14]<<16 | buf[15]<<24); WriteLine($"Version:{ver} EntryRVA:0x{entry:X8} DeclaredSize:{size}"); }
+                        buf.Dispose(); break; }
+                // legacy alias
+                case "mueinfo": {
+                        if (parts.Length<2){ WriteLine("Usage: mueinfo <file>"); break; }
+                        string path = Posix.NormalizePath(_cwd, parts[1]); byte[] buf = FS.File.ReadAllBytes(path); if(buf==null){ WriteLine("Unable to read file"); break; }
+                        string sig = (buf.Length>=4)? ((char)buf[0]).ToString()+((char)buf[1])+((char)buf[2])+((char)buf[3]) : "(too small)"; WriteLine("Signature: "+sig);
+                        if (buf.Length>=16){ uint ver = (uint)(buf[4] | buf[5]<<8 | buf[6]<<16 | buf[7]<<24); uint entry = (uint)(buf[8] | buf[9]<<8 | buf[10]<<16 | buf[11]<<24); uint size = (uint)(buf[12] | buf[13]<<8 | buf[14]<<16 | buf[15]<<24); WriteLine($"Version:{ver} EntryRVA:0x{entry:X8} DeclaredSize:{size}"); }
+                        buf.Dispose(); break; }
                 case "shutdown": Power.Shutdown(); break;
                 case "reboot": Power.Reboot(); break;
                 case "cpu": break;
@@ -290,18 +302,15 @@ namespace guideXOS.DefaultApps {
         public override void OnDraw() { base.OnDraw(); DrawString(X, Y, Data, Height, Width); }
 
         public void DrawString(int X, int Y, string Str, int HeightLimit = -1, int LineLimit = -1) {
-            // Render with built-in ASC16 font to guarantee ASCII punctuation shows
             int wpx = 0, hpx = 0;
             for (int i = 0; i < Str.Length; i++) {
                 char ch = Str[i];
                 if (ch == '\n') { wpx = 0; hpx += 16; goto handle_wrap; }
-                // draw char (ASCII range supported by ASC16)
                 ASC16.DrawChar(ch, X + wpx, Y + hpx, 0xFFFFFFFF);
                 wpx += 8;
                 if (LineLimit != -1 && wpx + 8 > LineLimit) { wpx = 0; hpx += 16; }
             handle_wrap:
                 if (HeightLimit != -1 && hpx >= HeightLimit) {
-                    // Scroll up one row inside the console window area
                     Framebuffer.Graphics.Copy(X, Y, X, Y + 16, LineLimit, HeightLimit - 16);
                     Framebuffer.Graphics.FillRectangle(X, Y + HeightLimit - 16, LineLimit, 16, 0xFF222222);
                     hpx -= 16;

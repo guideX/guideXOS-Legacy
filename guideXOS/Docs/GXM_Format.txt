@@ -1,0 +1,75 @@
+GuideXOS .GXM Executable Format (Draft)
+======================================
+
+Purpose
+-------
+GXM (GuideXOS eXecutable Module) is a very small binary container intended for
+loading simple native code modules inside guideXOS without a full PE/ELF parser.
+Replaces the earlier .MUE name.
+
+Design Goals
+------------
+- Fixed little-endian header
+- Simple linear code/data image (no relocations yet)
+- Single entry point RVA from start of image (just an offset)
+- Fast validation via 4-byte signature
+- Backward compatibility: legacy 'MUE\0' still accepted by loader
+
+Header Layout (offsets)
+-----------------------
+0x00 4 bytes  Signature "GXM\0"  (bytes: 0x47 0x58 0x4D 0x00)
+      Legacy accepted: "MUE\0"
+0x04 4 bytes  Version (uint32)    (currently 1)
+0x08 4 bytes  Entry RVA (uint32)  Offset from start of image to entry function
+0x0C 4 bytes  Image Size (uint32) Total size of the executable image including header
+0x10 ...      Code/Data blob      Raw machine code + any literals
+
+Loading Steps (Kernel/GXMLoader)
+--------------------------------
+1. Read first 16 bytes.
+2. Validate signature: either GXM\0 or legacy MUE\0.
+3. Ensure Image Size >= 16 and entry RVA < Image Size.
+4. Allocate executable region (page aligned) and copy image.
+5. Map pages as user accessible.
+6. Allocate user stack (64KB, page mapped).
+7. Compute entry RIP = base + Entry RVA, RSP = stack top - 16.
+8. Enter user mode via iret (SchedulerExtensions.EnterUserMode).
+
+Constraints
+-----------
+- No relocations (position dependent).
+- No imports; use int 0x80 syscall interface for services.
+- Single segment image.
+
+Exit Convention
+---------------
+Currently unspecified; returning just halts in user context unless future trampoline handles it.
+
+Creating a .GXM
+---------------
+1. Assemble raw machine code with origin after header (or start header then code).
+2. Header fields:
+   Signature: 47 58 4D 00 ('G','X','M','\0')
+   Version:   01 00 00 00
+   EntryRVA:  10 00 00 00 (if code starts right after header)
+   ImageSize: total file size (header + code)
+3. Save as .gxm and copy into filesystem.
+4. Run `gxminfo /path/to/file.gxm` in Console to inspect header.
+
+Example Hex Skeleton
+--------------------
+47 58 4D 00  01 00 00 00  10 00 00 00  28 00 00 00  C3 ...
+Signature     Version    Entry RVA=0x10  Image Size=0x28  Code (RET)
+
+Security Notes / Future Work
+----------------------------
+- Validation limits (max size)
+- Optional hashing/signature
+- Return path / process isolation model
+- Simple relocation + import tables
+
+Legacy .MUE
+-----------
+Older modules with signature MUE\0 continue to load; recommended to rename to .gxm.
+
+End of Document

@@ -3,3 +3,10 @@
 /.vs
 /guideXOS.Web/bin
 /guideXOS.Web/obj
+/guideXOS.WinPETestApp/x64
+/guideXOS.Web/.vs
+/guideXOS/obj
+/Tools/MediaCreator.Windows/obj
+/Tools/MediaCreator.Windows/bin
+/Tools/MediaCreator.Linux/obj
+/Tools/MediaCreator.Linux/bin

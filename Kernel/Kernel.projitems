@@ -72,6 +72,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Misc\EntryPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\FPSMeter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\GDT.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Misc\GXMLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\IDT.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\IFont.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\Interrupts.cs" />
@@ -88,6 +89,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Misc\USB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\USBStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\UserDemo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Misc\UserModeStub.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\VendorID.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Misc\WAV.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Http.cs" />

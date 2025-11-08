@@ -1,1 +1,0 @@
-D:\devgitlab\guideXOS\guideXOS\guideXOS.WinPETestApp\x64\Debug\guideXOS.WinPETestApp.exe
