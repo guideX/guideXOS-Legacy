@@ -1139,7 +1139,7 @@ namespace System {
         // of the returned value is the current date, and the time-of-day part of
         // the returned value is zero (midnight).
         //
-        public static DateTime Today => DateTime.Now.Date;
+        //public static DateTime Today => DateTime.Now.Date;
 
         // Returns the year part of this DateTime. The returned value is an
         // integer between 1 and 9999.

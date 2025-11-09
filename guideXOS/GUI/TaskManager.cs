@@ -66,7 +66,13 @@ namespace guideXOS.GUI {
         private int _diskRespMs;
 
         public TaskManager(int X, int Y, int Width = 760, int Height = 520) : base(X, Y, Width, Height) {
-            ShowInTaskbar = true; Title = "Task Manager";
+            ShowInTaskbar = true;
+            ShowMaximize = true;
+            ShowMinimize = true;
+            ShowRestore = true;
+            ShowTombstone = true;
+            IsResizable = true;
+            Title = "Task Manager";
             int chartW = 280, chartH = 120;
             _cpuChart = new Chart(chartW, chartH, "CPU");
             _memChart = new Chart(chartW, chartH, "Memory");

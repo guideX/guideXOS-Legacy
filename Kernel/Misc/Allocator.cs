@@ -4,6 +4,19 @@ using System;
 /// Allocator
 /// </summary>
 abstract unsafe class Allocator {
+    // Allocation tags to attribute page usage
+    public enum AllocTag : byte {
+        Unknown = 0,
+        ThreadMeta = 1,
+        ThreadStack = 2,
+        ExecImage = 3,
+        ExecStack = 4,
+        Image = 5,
+        GraphicsTemp = 6,
+        FileBuffer = 7,
+        Other = 8,
+        Count = 16
+    }
     /// <summary>
     /// Zero Fill
     /// </summary>
@@ -36,6 +49,11 @@ abstract unsafe class Allocator {
             if (p == -1) return 0;
             ulong pages = _Info.Pages[p];
             if (pages != 0 && pages != PageSignature) {
+                // decrement tag counters
+                byte tag = _Info.Tags[p];
+                if (tag < (byte)AllocTag.Count) _Info.TagLivePages[tag] -= pages;
+                _Info.Tags[p] = 0;
+
                 _Info.PageInUse -= pages;
                 Native.Stosb((void*)intPtr, 0, pages * PageSize);
                 for (ulong i = 0; i < pages; i++) {
@@ -91,6 +109,10 @@ abstract unsafe class Allocator {
         /// Pages
         /// </summary>
         public fixed ulong Pages[NumPages]; //Max 512MiB
+        // Tagging: tag recorded at the start page of an allocation run
+        public fixed byte Tags[NumPages];
+        // Live pages per tag
+        public fixed ulong TagLivePages[(int)AllocTag.Count];
     }
     /// <summary>
     /// Info
@@ -111,7 +133,9 @@ abstract unsafe class Allocator {
     /// </summary>
     /// <param name="size"></param>
     /// <returns></returns>
-    internal static unsafe IntPtr Allocate(ulong size) {
+    internal static unsafe IntPtr Allocate(ulong size) { return Allocate(size, AllocTag.Unknown); }
+
+    internal static unsafe IntPtr Allocate(ulong size, AllocTag tag) {
         lock (null) {
             if (size == 0) size = 1; // avoid zero-page requests causing false leak
             // Hard guard against impossible requests
@@ -151,6 +175,11 @@ abstract unsafe class Allocator {
             }
             _Info.Pages[i] = pages;
             _Info.PageInUse += pages;
+            // record tag
+            byte t = (byte)tag; if (t >= (byte)AllocTag.Count) t = (byte)AllocTag.Unknown;
+            _Info.Tags[i] = t;
+            _Info.TagLivePages[t] += pages;
+
             IntPtr ptr = _Info.Start + (i * PageSize);
             return ptr;
         }
@@ -175,7 +204,9 @@ abstract unsafe class Allocator {
             pages = (size / PageSize) + ((size % 4096) != 0 ? 1UL : 0);
         }
         if (_Info.Pages[p] == pages) return intPtr;
-        IntPtr newptr = Allocate(size);
+        // preserve tag for reallocation
+        byte tag = _Info.Tags[p];
+        IntPtr newptr = Allocate(size, (AllocTag)tag);
         // Copy only the smaller of old block and requested new size to avoid overruns
         ulong oldBytes = _Info.Pages[p] * PageSize;
         ulong copyLen = size < oldBytes ? size : oldBytes;
@@ -190,9 +221,7 @@ abstract unsafe class Allocator {
     /// <param name="num"></param>
     /// <returns></returns>
 #pragma warning disable CS8500
-    public static T* ClearAllocate<T>(int num) where T : struct {
-        return (T*)ClearAllocate(num, sizeof(T));
-    }
+    public static T* ClearAllocate<T>(int num) where T : struct { return (T*)ClearAllocate(num, sizeof(T)); }
 #pragma warning restore CS8500
     /// <summary>
     /// Clear Allocate
@@ -213,7 +242,8 @@ abstract unsafe class Allocator {
     /// <param name="dst"></param>
     /// <param name="src"></param>
     /// <param name="size"></param>
-    internal static unsafe void MemoryCopy(IntPtr dst, IntPtr src, ulong size) {
-        Native.Movsb((void*)dst, (void*)src, size);
-    }
+    internal static unsafe void MemoryCopy(IntPtr dst, IntPtr src, ulong size) { Native.Movsb((void*)dst, (void*)src, size); }
+
+    // Public helpers to query live bytes by tag
+    public static ulong GetTagBytes(AllocTag tag) { return _Info.TagLivePages[(int)tag] * PageSize; }
 }

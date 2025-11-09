@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GuideXOS.Installer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ef899ae7fac5f64d5db653bf0852d4a549cf2e08")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+632d3c975865a372d50a7bb213417e32137340ac")]
 [assembly: System.Reflection.AssemblyProductAttribute("GuideXOS.Installer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GuideXOS.Installer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

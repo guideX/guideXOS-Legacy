@@ -312,6 +312,26 @@ namespace guideXOS.GUI {
                     }
                 }
 
+                // Right-click on list -> Pin to Taskbar
+                if (Control.MouseButtons.HasFlag(MouseButtons.Right)) {
+                    if (mx >= listX && mx <= listX + listW && my >= listY && my <= listY + listH) {
+                        int cy = listY - _scroll; int cnt = _showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count;
+                        for (int i = 0; i < cnt; i++) {
+                            int ih; string appName = null;
+                            if (_showAllPrograms) {
+                                int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
+                                var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32); ih = icon.Height;
+                                if (my >= cy && my <= cy + ih) { appName = Desktop.Apps.Name(ai); }
+                            } else {
+                                RefreshRecentCacheIfNeeded(); if (i >= _recentCacheCount) break; var icon = _recentCache[i].Icon; ih = icon.Height;
+                                if (my >= cy && my <= cy + ih) { appName = _recentCache[i].Name; }
+                            }
+                            if (appName != null) { PinnedManager.PinApp(appName, Icons.DocumentIcon(32)); _frameDirty = true; return; }
+                            cy += Spacing;
+                        }
+                    }
+                }
+
                 // Click in list (Recent or All Programs)
                 if (mx >= listX && mx <= listX + listW && my >= listY && my <= listY + listH) {
                     int count = _showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count;

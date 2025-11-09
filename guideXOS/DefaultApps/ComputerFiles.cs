@@ -1,23 +1,37 @@
 using guideXOS.FS;
 using guideXOS.Kernel.Drivers;
-using guideXOS.Graph;
 using System.Windows.Forms;
-using guideXOS.Misc;
 using System.Collections.Generic;
 using System;
 using guideXOS.GUI;
-
 namespace guideXOS.DefaultApps {
+    /// <summary>
+    /// Computer Files Window
+    /// </summary>
     internal class ComputerFiles : Window {
-        private string _currentPath = ""; // empty means root of current drive (FileSystem)
+        /// <summary>
+        /// Empty means root of current drive (FileSystem)
+        /// </summary>
+        private string _currentPath = ""; 
+        /// <summary>
+        /// Show Drives
+        /// </summary>
         private bool _showDrives = true;
-
-        // History
+        /// <summary>
+        /// History
+        /// </summary>
         private string[] _history = new string[64];
+        /// <summary>
+        /// History Count
+        /// </summary>
         private int _historyCount = 0;
+        /// <summary>
+        /// History Index
+        /// </summary>
         private int _historyIndex = -1;
-
-        // Grid/icon sizes (available set)
+        /// <summary>
+        /// Grid/icon sizes (available set)
+        /// </summary>
         private int[] _sizes = new int[] { 16, 24, 32, 48, 128 };
         private int _sizeIndex = 3; // default 48px
         private System.Drawing.Image _iconFolder;
@@ -73,12 +87,9 @@ namespace guideXOS.DefaultApps {
 
         private void LoadIcons() {
             int px = _sizes[_sizeIndex];
-            // Match the rest of the project's asset paths: relative to Ramdisk, capital 'Images'
-            //string folderPath = 
-            //string folderPath = $"Images/BlueVelvet/{px}/folder.png";
-            //string docPath = $"Images/BlueVelvet/{px}/documents.png";
-            //try { _iconFolder = new PNG(File.ReadAllBytes(folderPath)); } catch { _iconFolder = Icons.FolderIcon(32); }
-            //try { _iconDoc = new PNG(File.ReadAllBytes(docPath)); } catch { _iconDoc = Icons.DocumentIcon(32); }
+            // Ensure valid icons (fallback to 32px if specific size unavailable)
+            try { _iconFolder = Icons.FolderIcon(px); } catch { _iconFolder = Icons.FolderIcon(32); }
+            try { _iconDoc = Icons.DocumentIcon(px); } catch { _iconDoc = Icons.DocumentIcon(32); }
         }
 
         private void ClearEntriesCache() {
@@ -328,6 +339,23 @@ namespace guideXOS.DefaultApps {
                 _scrollDrag = false;
             }
 
+            // Right-click pin support (after left click processing)
+            /*
+            if (Control.MouseButtons == MouseButtons.Right) {
+                int mx2 = Control.MousePosition.X; int my2 = Control.MousePosition.Y; int pad2 = CurrentPad();
+                if (_showDrives) {
+                    int icon = _iconFolder != null ? _iconFolder.Width : 48; int rowX = X + leftW + 8; int rowY = contentY; if (mx2 >= rowX && mx2 <= rowX + icon && my2 >= rowY && my2 <= rowY + icon) { PinnedManager.PinComputerFiles(); }
+                } else {
+                    EnsureEntries(); var list2 = _entriesCache; if (list2 != null) {
+                        int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad2 * 2; int rcX2 = X + leftW + 8; int rcW2 = contentW - leftW - 8; int cols = tileW > 0 ? rcW2 / tileW : 1; if (cols < 1) cols = 1;
+                        for (int i = 0; i < list2.Count; i++) {
+                            int gridX = i % cols; int gridY = i / cols; int gx = rcX2 + gridX * tileW + pad2; int gy = contentY + gridY * (icon + WindowManager.font.FontSize + pad2) + pad2 - _scroll; if (mx2 >= gx && mx2 <= gx + icon && my2 >= gy && my2 <= gy + icon) { var fi = list2[i]; if (fi.Attribute != guideXOS.FS.FileAttribute.Directory) { PinnedManager.PinFile(fi.Name, _currentPath + fi.Name, _iconDoc); } break; }
+                        }
+                    }
+                }
+            }
+            */
+
             // Scrollbar dragging update
             if (_scrollDrag) {
                 int cH = contentH;
@@ -442,13 +470,13 @@ namespace guideXOS.DefaultApps {
             int cursorY = contentY + 10;
             int maxLeftText = leftW2 - 2 - (_iconFolder != null ? _iconFolder.Width : 48) - 18;
             // Root/"Desktop"
-            Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
+            if (_iconFolder != null) Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
             string l1 = TruncateToWidth("Desktop", maxLeftText);
             WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + _iconFolder.Height / 2 - WindowManager.font.FontSize / 2, l1);
             l1.Dispose();
             cursorY += _iconFolder.Height + 10;
             // Computer Files root
-            Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
+            if (_iconFolder != null) Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
             string l2 = TruncateToWidth("Computer Files", maxLeftText);
             WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + _iconFolder.Height / 2 - WindowManager.font.FontSize / 2, l2);
             l2.Dispose();
@@ -479,7 +507,7 @@ namespace guideXOS.DefaultApps {
             } else {
                 EnsureEntries(); var list = _entriesCache; if (list != null) {
                     int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = icon + WindowManager.font.FontSize + pad; int cols = tileW > 0 ? rcW / tileW : 1; if (cols < 1) cols = 1;
-                    for (int i = 0; i < list.Count; i++) { string name = list[i].Name; bool matches = string.IsNullOrEmpty(_search) || ContainsIgnoreCase(name, _search); if (!matches) continue; int gridX = i % cols; int gridY = i / cols; int gx = rcX + gridX * tileW + pad; int gy = contentY + gridY * tileH + pad - _scroll; if (gy + tileH < contentY || gy > contentY + contentH) continue; bool isDir = list[i].Attribute == FileAttribute.Directory; if (isDir) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); else Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc); string shown = TruncateToWidth(name, tileW - pad); WindowManager.font.DrawString(gx, gy + icon + 6, shown); shown.Dispose(); }
+                    for (int i = 0; i < list.Count; i++) { string name = list[i].Name; bool matches = string.IsNullOrEmpty(_search) || ContainsIgnoreCase(name, _search); if (!matches) continue; int gridX = i % cols; int gridY = i / cols; int gx = rcX + gridX * tileW + pad; int gy = contentY + gridY * tileH + pad - _scroll; if (gy + tileH < contentY || gy > contentY + contentH) continue; bool isDir = list[i].Attribute == FileAttribute.Directory; if (isDir) { if (_iconFolder != null) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); } else { if (_iconDoc != null) Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc); } string shown = TruncateToWidth(name, tileW - pad); WindowManager.font.DrawString(gx, gy + icon + 6, shown); shown.Dispose(); }
                 }
             }
 

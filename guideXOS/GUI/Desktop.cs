@@ -157,7 +157,7 @@ namespace guideXOS.GUI {
         /// </summary>
         /// <param name="DocumentIcon32"></param>
         public static int IconSize = 48; // default desktop icon size changed from 32 to 48
-        public static void SetIconSize(int size){ if(size!=16 && size!=24 && size!=32 && size!=48 && size!=128) return; IconSize = size; }
+        public static void SetIconSize(int size) { if (size != 16 && size != 24 && size != 32 && size != 48 && size != 128) return; IconSize = size; }
         public static void Update(Image DocumentIcon32) {
             // Recompute document icon from current size selection (ignore passed image except for legacy callers)
             var docIcon = Icons.DocumentIcon(IconSize);
@@ -214,10 +214,7 @@ namespace guideXOS.GUI {
                     ClickEvent(n, isDir, x, y, i + 1000, clickable, leftDown);
                     uint bg = UI.ButtonFillColor(x, y, Icons.DocumentIcon(IconSize).Width, Icons.DocumentIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
                     Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.DocumentIcon(IconSize).Width + 8, Icons.DocumentIcon(IconSize).Height + 8, bg);
-                    if (n.EndsWith(".png") || n.EndsWith(".bmp")) { Framebuffer.Graphics.DrawImage(x, y, Icons.ImageIcon(IconSize)); }
-                    else if (n.EndsWith(".wav")) { Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon(IconSize)); }
-                    else if (isDir) { Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize)); }
-                    else { Framebuffer.Graphics.DrawImage(x, y, docIcon); }
+                    if (n.EndsWith(".png") || n.EndsWith(".bmp")) { Framebuffer.Graphics.DrawImage(x, y, Icons.ImageIcon(IconSize)); } else if (n.EndsWith(".wav")) { Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon(IconSize)); } else if (isDir) { Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize)); } else { Framebuffer.Graphics.DrawImage(x, y, docIcon); }
                     WindowManager.font.DrawString(x, y + fh, n, fw + 8, WindowManager.font.FontSize * 3);
                     y += fh + devide;
                 }
@@ -225,6 +222,26 @@ namespace guideXOS.GUI {
             // Selection marquee unchanged...
             // Draw taskbar and handle Start Menu interactions
             Taskbar.Draw();
+            // Right-click pinning for desktop items (apps/files)
+            if (Control.MouseButtons.HasFlag(MouseButtons.Right)) {
+                int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
+                int scanX = devide; int scanY = devide; int iconW = docIcon.Width; int iconH = docIcon.Height;
+                if (HomeMode) {
+                    // Computer Files first icon
+                    if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) { PinnedManager.PinComputerFiles(); }
+                } else {
+                    // iterate file entries in current directory
+                    for (int i = 0; i < names.Count; i++) {
+                        if (scanY + fh + devide > screenH - devide) { scanY = devide; scanX += fw + devide; }
+                        if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
+                            string fname = names[i].Name; bool dir = names[i].Attribute == FileAttribute.Directory;
+                            if (!dir) { PinnedManager.PinFile(fname, Dir + fname, docIcon); }
+                            break;
+                        }
+                        scanY += fh + devide;
+                    }
+                }
+            }
         }
         /// <summary>
         /// Last Point
@@ -240,14 +257,15 @@ namespace guideXOS.GUI {
         /// <param name="i"></param>
         /// <param name="clickable"></param>
         /// <param name="leftDown"></param>
+        private static bool _mouseClickLatch = false; // added latch to prevent repeated OnClick while mouse held
         private static void ClickEvent(string name, bool isDirectory, int X, int Y, int i, bool clickable, bool leftDown) {
             if (leftDown) {
-                if (!WindowManager.HasWindowMoving && clickable && !ClickLock &&
+                if (!WindowManager.HasWindowMoving && clickable && !ClickLock && !_mouseClickLatch &&
                     Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.DocumentIcon(IconSize).Width &&
                     Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.DocumentIcon(IconSize).Height) {
-                    IndexClicked = i; OnClick(name, isDirectory, X, Y);
+                    IndexClicked = i; OnClick(name, isDirectory, X, Y); _mouseClickLatch = true;
                 }
-            } else { ClickLock = false; }
+            } else { ClickLock = false; _mouseClickLatch = false; }
             if (IndexClicked == i) {
                 int w = (int)(Icons.DocumentIcon(IconSize).Width * 1.5f);
                 Framebuffer.Graphics.AFillRectangle(X + ((Icons.DocumentIcon(IconSize).Width / 2) - (w / 2)), Y, w, Icons.DocumentIcon(IconSize).Height * 2, 0x7F2E86C1);

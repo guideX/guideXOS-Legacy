@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using guideXOS.DefaultApps;
 namespace guideXOS.GUI {
     internal class Taskbar {
         public StartMenu StartMenu;
@@ -31,11 +32,13 @@ namespace guideXOS.GUI {
         // New: latches and references for Workspace Switcher and Show Desktop
         private bool _taskViewLatch = false;
         private bool _showDesktopLatch = false;
-        private WorkspaceSwitcher _switcher;
 
         // Track windows minimized by Show Desktop to restore them on toggle
         private bool _desktopShown = false;
         private readonly List<Window> _minimizedByShowDesktop = new List<Window>(32);
+
+        // Latch for pinned quicklaunch
+        private bool _pinnedClickLatch = false;
 
         public Taskbar(int barHeight, Image startIcon) { _barHeight = barHeight; _startIcon = startIcon; 
             // schedule: show animation for first 10 seconds after boot
@@ -48,18 +51,41 @@ namespace guideXOS.GUI {
         public void Draw() {
             int yTop = Framebuffer.Height - _barHeight;
             // Blur area behind taskbar, then tint
-            // Reduce blur radius to 3 (from 4) to save cycles, keeps look
             Framebuffer.Graphics.BlurRectangle(0, yTop, Framebuffer.Width, _barHeight, 3);
             Framebuffer.Graphics.AFillRectangle(0, yTop, Framebuffer.Width, _barHeight, 0x66111111);
 
             int startX = 12; int startY = Framebuffer.Height - _barHeight + 4;
-            // Draw Start icon on the taskbar
+            // Start icon
             if (_startIcon != null) {
                 Framebuffer.Graphics.DrawImage(startX, startY, _startIcon);
             }
 
-            // Draw task buttons for open windows
-            int btnX = startX + (_startIcon != null ? _startIcon.Width + 12 : 12);
+            // Quicklaunch pinned row
+            int qx = startX + (_startIcon != null ? _startIcon.Width + 8 : 0) + 8;
+            int qy = Framebuffer.Height - _barHeight + 6;
+            int qh = _barHeight - 12;
+            bool leftMousePinned = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            for (int i=0;i<PinnedManager.Count;i++){
+                var ic = PinnedManager.Icon(i);
+                int iw = ic.Width; int ih = ic.Height; int bx = qx; int by = qy + (qh/2 - ih/2);
+                // hover
+                bool hoverPinned = Control.MousePosition.X>=bx && Control.MousePosition.X<=bx+iw && Control.MousePosition.Y>=by && Control.MousePosition.Y<=by+ih;
+                if (hoverPinned) { UIPrimitives.AFillRoundedRect(bx-3, by-3, iw+6, ih+6, 0x333F7FBF, 4); }
+                Framebuffer.Graphics.DrawImage(bx, by, ic);
+                // edge-click to launch pinned item
+                if (hoverPinned && leftMousePinned && !_pinnedClickLatch) {
+                    _pinnedClickLatch = true;
+                    string nm = PinnedManager.Name(i); byte kind = PinnedManager.Kind(i);
+                    if (kind==0) { Desktop.Apps.Load(nm); }
+                    else if (kind==2) { var cf = new ComputerFiles(300,200,540,380); WindowManager.MoveToEnd(cf); cf.Visible=true; }
+                    else if (kind==1) { string path = PinnedManager.Path(i); if(path!=null){ byte[] buf = guideXOS.FS.File.ReadAllBytes(path); if(buf!=null){ string err; guideXOS.Misc.GXMLoader.TryExecute(buf, out err); buf.Dispose(); } } }
+                }
+                qx += iw + 8; if (qx > Framebuffer.Width - 420) break; // leave space for task buttons
+            }
+            if (!leftMousePinned) _pinnedClickLatch = false;
+
+            // Draw task buttons after pinned
+            int btnX = qx + 12;
             int btnY = Framebuffer.Height - _barHeight + 6;
             int btnH = _barHeight - 12;
             int btnW = 140; // fixed width
@@ -213,19 +239,9 @@ namespace guideXOS.GUI {
                         if (StartMenu != null && StartMenu.Visible && !_startClickLatch && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
                     }
                 }
-                // Workspace Switcher button click handling
+                // Workspace button click: just cycle to next workspace
                 if (mx2 >= tvX && mx2 <= tvX + tvSize && my2 >= tvY && my2 <= tvY + tvSize) {
-                    if (!_taskViewLatch) {
-                        if (_switcher == null) _switcher = new WorkspaceSwitcher();
-                        bool show = !_switcher.Visible;
-                        if (show) {
-                            WindowManager.MoveToEnd(_switcher);
-                            _switcher.Visible = true;
-                        } else {
-                            _switcher.Visible = false;
-                        }
-                        _taskViewLatch = true;
-                    }
+                    if (!_taskViewLatch) { WorkspaceManager.Next(); _taskViewLatch = true; }
                 }
                 // Show Desktop click handling (right sliver)
                 if (mx2 >= sdX && mx2 <= sdX + sdW && my2 >= sdY && my2 <= sdY + sdH) {

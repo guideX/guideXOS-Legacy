@@ -1,5 +1,5 @@
+//THIS FREEZES WHEN OPENING! TODO: PLEASE FIX IT!
 using System.Collections.Generic;
-
 namespace guideXOS.GUI {
     /// <summary>
     /// Simple virtual workspaces manager. Tracks which workspace a window belongs to and switches visibility
@@ -44,8 +44,7 @@ namespace guideXOS.GUI {
             if (workspaceIndex < 0 || workspaceIndex >= _count) return false;
             if (!w.ShowInTaskbar) return false;
             int idx = IndexOf(w);
-            if (idx < 0) { _keys.Add(w); _values.Add(workspaceIndex); }
-            else { _values[idx] = workspaceIndex; }
+            if (idx < 0) { _keys.Add(w); _values.Add(workspaceIndex); } else { _values[idx] = workspaceIndex; }
             // If moved away from current, hide/minimize it; if moved to current, show it.
             if (workspaceIndex != Current) {
                 if (w.Visible && !w.IsMinimized) { w.Minimize(); if (!ListContains(_minimizedBySwitch, w)) _minimizedBySwitch.Add(w); }
@@ -66,8 +65,7 @@ namespace guideXOS.GUI {
             // Remove trailing empty workspaces (except keep at least 1)
             bool changed = false;
             for (int i = _count - 1; i > 0; i--) {
-                if (!WorkspaceHasWindows(i)) { _count = i; changed = true; }
-                else break;
+                if (!WorkspaceHasWindows(i)) { _count = i; changed = true; } else break;
             }
             if (Current >= _count) Current = _count - 1;
             return changed;

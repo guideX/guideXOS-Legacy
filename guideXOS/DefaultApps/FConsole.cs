@@ -80,8 +80,8 @@ namespace guideXOS.DefaultApps {
         }
 
         private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
+            if (!Visible) { return; }
             if (_viMode){ HandleViKey(key); return; }
-            if (!Visible) return;
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
             if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // debounce same key while held
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
@@ -123,6 +123,7 @@ namespace guideXOS.DefaultApps {
 
         // ---- vi minimal implementation ----
         private void HandleViKey(ConsoleKeyInfo key){
+            if (!Visible) return; // don't process in background
             if (!_viMode) return; if (key.KeyState != ConsoleKeyState.Pressed) return;
             if (!_viInsert) { // command mode
                 if (key.Key == ConsoleKey.I) { _viInsert = true; StatusMsg("-- INSERT --"); return; }
@@ -132,7 +133,7 @@ namespace guideXOS.DefaultApps {
                 if (key.Key == ConsoleKey.Left) { if(_viCursor>0) _viCursor--; RedrawVi(); return; }
                 if (key.Key == ConsoleKey.Right) { if(_viCursor<_textBufferForVi.Length) _viCursor++; RedrawVi(); return; }
             } else { // insert mode
-                if (key.Key == ConsoleKey.Escape){ _viInsert=false; StatusMsg(""); return; }
+                if (key.Key == ConsoleKey.Escape){ _viInsert=false; StatusMsg(""); RedrawVi(); return; }
                 if (key.Key == ConsoleKey.Backspace){ if(_viCursor>0){ _textBufferForVi=_textBufferForVi.Substring(0,_viCursor-1)+_textBufferForVi.Substring(_viCursor); _viCursor--; RedrawVi(); } return; }
                 if (key.Key == ConsoleKey.Enter){ InsertVi('\n'); return; }
                 char ch = MapFromKey(key); if (ch!='\0'){ InsertVi(ch); }

@@ -1,3 +1,5 @@
+// THIS THING IS DANGEROUS! BE CAREFUL WHEN EDITING AND TESTING IT.
+
 using System;
 using System.Diagnostics;
 using System.IO;
