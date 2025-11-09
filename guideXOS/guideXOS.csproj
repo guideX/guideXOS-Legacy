@@ -144,4 +144,11 @@
 	<ItemGroup>
 	  <FrameworkAssemblies Remove="Portable\**" />
 	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Compile Remove="DefaultApps\Anomalocaris.cs" />
+	  <Compile Remove="DefaultApps\Audica.cs" />
+	  <Compile Remove="DefaultApps\Gorganopsid.cs" />
+	</ItemGroup>
 </Project>

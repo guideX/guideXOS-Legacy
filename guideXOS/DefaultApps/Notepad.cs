@@ -83,8 +83,16 @@ namespace guideXOS.DefaultApps {
                 int d = (int)(k - ConsoleKey.D0);
                 if (!shift) return (char)('0' + d);
                 switch (d) {
-                    case 0: return ')'; case 1: return '!'; case 2: return '@'; case 3: return '#'; case 4: return '$';
-                    case 5: return '%'; case 6: return '^'; case 7: return '&'; case 8: return '*'; case 9: return '(';
+                    case 0: return ')';
+                    case 1: return '!';
+                    case 2: return '@';
+                    case 3: return '#';
+                    case 4: return '$';
+                    case 5: return '%';
+                    case 6: return '^';
+                    case 7: return '&';
+                    case 8: return '*';
+                    case 9: return '(';
                 }
             }
             switch (k) {
@@ -113,9 +121,7 @@ namespace guideXOS.DefaultApps {
                 if (_k1 == make) _k1 = 0;
                 else if (_k2 == make) _k2 = 0;
             } else { // pressed
-                if (_k1 == 0 || _k1 == make) { _k1 = make; }
-                else if (_k2 == 0 || _k2 == make) { _k2 = make; }
-                else { _k2 = make; }
+                if (_k1 == 0 || _k1 == make) { _k1 = make; } else if (_k2 == 0 || _k2 == make) { _k2 = make; } else { _k2 = make; }
             }
         }
 
@@ -160,11 +166,10 @@ namespace guideXOS.DefaultApps {
             WindowManager.MoveToEnd(_dlg); _dlg.Visible = true;
         }
 
-        private static bool StartsWithFast(string s,string pref){ int l=pref.Length; if (s==null||s.Length<l) return false; for(int i=0;i<l;i++) if(s[i]!=pref[i]) return false; return true; }
-        public void OpenFile(string path){
-            if (string.IsNullOrEmpty(path)) return; string p = path; if (!StartsWithFast(p,"/") && !string.IsNullOrEmpty(Desktop.Dir)) p = Desktop.Dir + p; byte[] data = File.ReadAllBytes(p);
-            if (data != null) { char[] chars = new char[data.Length]; for(int i=0;i<data.Length;i++){ byte b=data[i]; chars[i]= b>=32 && b<127? (char)b : (b==10?'\n':'.'); } _text = new string(chars); data.Dispose(); _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/') + 1); _dirty = false; Title = "Notepad - " + _fileName; RecentManager.AddDocument(p, Icons.DocumentIcon(32)); }
-            else { _text = string.Empty; _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/')+1); _dirty=false; Title = "Notepad - " + _fileName; }
+        private static bool StartsWithFast(string s, string pref) { int l = pref.Length; if (s == null || s.Length < l) return false; for (int i = 0; i < l; i++) if (s[i] != pref[i]) return false; return true; }
+        public void OpenFile(string path) {
+            if (string.IsNullOrEmpty(path)) return; string p = path; if (!StartsWithFast(p, "/") && !string.IsNullOrEmpty(Desktop.Dir)) p = Desktop.Dir + p; byte[] data = File.ReadAllBytes(p);
+            if (data != null) { char[] chars = new char[data.Length]; for (int i = 0; i < data.Length; i++) { byte b = data[i]; chars[i] = b >= 32 && b < 127 ? (char)b : (b == 10 ? '\n' : '.'); } _text = new string(chars); data.Dispose(); _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/') + 1); _dirty = false; Title = "Notepad - " + _fileName; RecentManager.AddDocument(p, Icons.DocumentIcon(32)); } else { _text = string.Empty; _savedPath = p; _fileName = p.Substring(p.LastIndexOf('/') + 1); _dirty = false; Title = "Notepad - " + _fileName; }
         }
 
         public override void OnInput() {

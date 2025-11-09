@@ -1,3 +1,4 @@
+/*
 using guideXOS.GUI;
 using guideXOS.Misc;
 using guideXOS.Kernel.Drivers;
@@ -10,7 +11,7 @@ namespace guideXOS.DefaultApps {
         public Audica(int x, int y) : base(x, y, 360, 260) { Title = "Audica"; }
         public override void OnDraw() {
             base.OnDraw();
-            int pad = 12; int w = Width - pad*2; int h = Height - pad*2; int x = X + pad; int y = Y + pad;
+            int pad = 12; int w = Width - pad * 2; int h = Height - pad * 2; int x = X + pad; int y = Y + pad;
             Framebuffer.Graphics.AFillRectangle(x, y, w, h - 60, 0x80282828);
             WindowManager.font.DrawString(x + 8, y + 8, "Drop a .wav file from Computer Files or use WAV Player.", w - 16, WindowManager.font.FontSize * 3);
             // transport row placeholder
@@ -19,4 +20,4 @@ namespace guideXOS.DefaultApps {
         }
         public override void OnInput() { base.OnInput(); if (Control.MouseButtons.HasFlag(MouseButtons.Left)) _clickLock = true; else _clickLock = false; }
     }
-}
+}*/

@@ -1,7 +1,5 @@
 ﻿using guideXOS.DefaultApps;
-using guideXOS.FS;
 using guideXOS.GUI;
-using guideXOS.Misc;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -81,27 +79,17 @@ namespace guideXOS.OS {
         /// Load Default Apps
         /// </summary>
         private void LoadDefaultApps() {
-            var iconWidth = 32;
-            var path = "Images/BlueVelvet/" + iconWidth.ToString() + "/";
-            var icon = new PNG(File.ReadAllBytes(path + "documents.png"));
-            _apps.Add(new App("Calculator", new PNG(File.ReadAllBytes(path + "calculator.png"))));
-            _apps.Add(new App("Clock", new PNG(File.ReadAllBytes(path + "calendar.png"))));
-            _apps.Add(new App("Paint", new PNG(File.ReadAllBytes(path + "image.png"))));
-            _apps.Add(new App("Console", new PNG(File.ReadAllBytes(path + "edit.png"))));
-            _apps.Add(new App("Monitor", icon));
-            _apps.Add(new App("Lock", new PNG(File.ReadAllBytes(path + "lock.png"))));
-            _apps.Add(new App("Notepad", new PNG(File.ReadAllBytes(path + "notepad.png"))));
-            _apps.Add(new App("TaskManager", new PNG(File.ReadAllBytes(path + "applications.png"))));
-            _apps.Add(new App("Devices", new PNG(File.ReadAllBytes(path + "configure.png"))));
-            // New / restored apps
-            Image browserIcon; Image ircIcon; Image ircNetIcon;
-            try { browserIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/web.png")); } catch { browserIcon = icon; }
-            try { ircIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/chat.png")); } catch { ircIcon = icon; }
-            try { ircNetIcon = new PNG(File.ReadAllBytes("Images/BlueVelvet/32/network.png")); } catch { ircNetIcon = icon; }
-            _apps.Add(new App("Anomalocaris", browserIcon)); // web browser
-            _apps.Add(new App("nexIRC", ircIcon)); // IRC client
-            _apps.Add(new App("IRCNetworks", ircNetIcon)); // IRC connection/profile manager
-            _apps.Add(new App("GUISamples", new PNG(File.ReadAllBytes(path + "applications.png"))));
+            _apps.Add(new App("Calculator", Icons.CalculatorIcon(32)));
+            _apps.Add(new App("Clock", Icons.CalendarIcon(32)));
+            _apps.Add(new App("Paint", Icons.ImageIcon(32)));
+            _apps.Add(new App("Console", Icons.EditIcon(32)));
+            _apps.Add(new App("Monitor", Icons.DocumentIcon(32)));
+            _apps.Add(new App("Lock", Icons.LockIcon(32)));
+            _apps.Add(new App("Notepad", Icons.NotepadIcon(32)));
+            _apps.Add(new App("TaskManager", Icons.ApplicationsIcon(32)));
+            _apps.Add(new App("Devices", Icons.ConfigureIcon(32)));
+            _apps.Add(new App("nexIRC", Icons.ChatIcon(32)));
+            _apps.Add(new App("IRCNetworks", Icons.NetworkIcon(32)));
         }
         /// <summary>
         /// Load
@@ -122,7 +110,6 @@ namespace guideXOS.OS {
                         case "Notepad": _apps[i].AppObject = new Notepad(360, 200); b = true; break;
                         case "Console": if (Program.FConsole == null) Program.FConsole = new FConsole(160, 120); _apps[i].AppObject = Program.FConsole; b = true; break;
                         case "TaskManager": _apps[i].AppObject = new TaskManager(500, 500); b = true; break;
-                        case "Anomalocaris": _apps[i].AppObject = new Anomalocaris(220, 180); b = true; break;
                         case "nexIRC": _apps[i].AppObject = new nexIRC(260, 220); b = true; break;
                         case "IRCNetworks": _apps[i].AppObject = new IRCNetworks(300, 240); b = true; break;
                         case "GUISamples": _apps[i].AppObject = new GUISamples(220, 260); b = true; break;

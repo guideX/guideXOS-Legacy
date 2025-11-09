@@ -20,8 +20,13 @@ namespace guideXOS.DefaultApps {
 
         public WAVPlayer(int X, int Y) : base(X, Y, 200, 200) {
             ShowInTaskbar = true;
-            audiopause = new PNG(File.ReadAllBytes("Images/audiopause.png"));
-            audioplay = new PNG(File.ReadAllBytes("Images/audioplay.png"));
+            ShowMinimize = true;
+            ShowMaximize = true;
+            IsResizable = true;
+            ShowRestore = true;
+            ShowTombstone = true;
+            audiopause = Icons.AudioPauseIcon(32);
+            audioplay = Icons.AudioPlayIcon(32);
             Title = "WAV Player";
             _pcm = null;
             _index = 0;

@@ -74,10 +74,11 @@ namespace guideXOS.DefaultApps {
         private void LoadIcons() {
             int px = _sizes[_sizeIndex];
             // Match the rest of the project's asset paths: relative to Ramdisk, capital 'Images'
-            string folderPath = $"Images/BlueVelvet/{px}/folder.png";
-            string docPath = $"Images/BlueVelvet/{px}/documents.png";
-            try { _iconFolder = new PNG(File.ReadAllBytes(folderPath)); } catch { _iconFolder = Icons.FolderIcon(32); }
-            try { _iconDoc = new PNG(File.ReadAllBytes(docPath)); } catch { _iconDoc = Icons.DocumentIcon(32); }
+            //string folderPath = 
+            //string folderPath = $"Images/BlueVelvet/{px}/folder.png";
+            //string docPath = $"Images/BlueVelvet/{px}/documents.png";
+            //try { _iconFolder = new PNG(File.ReadAllBytes(folderPath)); } catch { _iconFolder = Icons.FolderIcon(32); }
+            //try { _iconDoc = new PNG(File.ReadAllBytes(docPath)); } catch { _iconDoc = Icons.DocumentIcon(32); }
         }
 
         private void ClearEntriesCache() {
@@ -316,9 +317,10 @@ namespace guideXOS.DefaultApps {
                         if (mx >= gx && mx <= gx + icon && my >= gy && my <= gy + icon) {
                             bool isDir = list[i].Attribute == FileAttribute.Directory;
                             if (isDir) { // open directory
-                                string newPath = _currentPath + name + "/"; _currentPath = newPath; PushHistory(_currentPath); _scroll=0; MarkEntriesDirty(); return; }
-                            else { // open file via Desktop handler
-                                Desktop.Dir = _currentPath; Desktop.OnClick(name, false, gx, gy); return; }
+                                string newPath = _currentPath + name + "/"; _currentPath = newPath; PushHistory(_currentPath); _scroll = 0; MarkEntriesDirty(); return;
+                            } else { // open file via Desktop handler
+                                Desktop.Dir = _currentPath; Desktop.OnClick(name, false, gx, gy); return;
+                            }
                         }
                     }
                 }
@@ -375,7 +377,7 @@ namespace guideXOS.DefaultApps {
         }
 
         public override void OnDraw() {
-            base.OnDraw(); if (WindowManager.font==null) return;
+            base.OnDraw(); if (WindowManager.font == null) return;
 
             int tbH = WindowManager.font.FontSize + 12;
             // toolbar
@@ -475,8 +477,9 @@ namespace guideXOS.DefaultApps {
                 if (_iconFolder != null) Framebuffer.Graphics.DrawImage(cx, cy, _iconFolder);
                 WindowManager.font.DrawString(cx - 24, cy + icon + 6, "Root");
             } else {
-                EnsureEntries(); var list=_entriesCache; if(list!=null){ int icon=_iconFolder!=null?_iconFolder.Width:48; int tileW=icon+pad*2; int tileH=icon+WindowManager.font.FontSize+pad; int cols= tileW>0? rcW/tileW:1; if(cols<1) cols=1;
-                    for(int i=0;i<list.Count;i++){ string name=list[i].Name; bool matches= string.IsNullOrEmpty(_search)||ContainsIgnoreCase(name,_search); if(!matches) continue; int gridX=i%cols; int gridY=i/cols; int gx= rcX+gridX*tileW+pad; int gy= contentY+gridY*tileH+pad-_scroll; if(gy+tileH<contentY||gy>contentY+contentH) continue; bool isDir=list[i].Attribute==FileAttribute.Directory; if(isDir) Framebuffer.Graphics.DrawImage(gx,gy,_iconFolder); else Framebuffer.Graphics.DrawImage(gx,gy,_iconDoc); string shown= TruncateToWidth(name, tileW-pad); WindowManager.font.DrawString(gx, gy+icon+6, shown); shown.Dispose(); }
+                EnsureEntries(); var list = _entriesCache; if (list != null) {
+                    int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = icon + WindowManager.font.FontSize + pad; int cols = tileW > 0 ? rcW / tileW : 1; if (cols < 1) cols = 1;
+                    for (int i = 0; i < list.Count; i++) { string name = list[i].Name; bool matches = string.IsNullOrEmpty(_search) || ContainsIgnoreCase(name, _search); if (!matches) continue; int gridX = i % cols; int gridY = i / cols; int gx = rcX + gridX * tileW + pad; int gy = contentY + gridY * tileH + pad - _scroll; if (gy + tileH < contentY || gy > contentY + contentH) continue; bool isDir = list[i].Attribute == FileAttribute.Directory; if (isDir) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); else Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc); string shown = TruncateToWidth(name, tileW - pad); WindowManager.font.DrawString(gx, gy + icon + 6, shown); shown.Dispose(); }
                 }
             }
 

@@ -27,10 +27,14 @@ namespace guideXOS.GUI {
             bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
             bool right = Control.MouseButtons.HasFlag(MouseButtons.Right);
 
-            // Left click: activate window or switch workspace
+            // Region constants (keep in sync with OnDraw)
+            int sideX = 16; int sideW = 100; int sideY = 60; int sideItemH = 46; int sideGap = 10;
+            int nWorkspaces = WorkspaceManager.Count;
+
             if (left) {
                 if (_clickLatch) return;
                 _clickLatch = true;
+                bool handled = false;
                 // Check window tiles first
                 for (int i = 0; i < _tiles.Count; i++) {
                     var t = _tiles[i];
@@ -39,40 +43,44 @@ namespace guideXOS.GUI {
                             if (t.Workspace != WorkspaceManager.Current) WorkspaceManager.SwitchTo(t.Workspace);
                             if (t.Win.IsMinimized) t.Win.Restore();
                             WindowManager.MoveToEnd(t.Win);
-                            t.Win.Visible = true;
-                            Visible = false; return;
+                            t.Win.Visible = true; Visible = false; return;
                         }
                     }
                 }
                 // Click in workspace sidebar selects workspace
-                int sideW = 100; int sideX = 16; int sideY = 60; int itemH = 46;
-                int n = WorkspaceManager.Count;
-                for (int i = 0; i < n; i++) {
-                    int iy = sideY + i * (itemH + 10);
-                    if (mx >= sideX && mx <= sideX + sideW && my >= iy && my <= iy + itemH) {
+                for (int i = 0; i < nWorkspaces; i++) {
+                    int iy = sideY + i * (sideItemH + sideGap);
+                    if (mx >= sideX && mx <= sideX + sideW && my >= iy && my <= iy + sideItemH) {
                         WorkspaceManager.SwitchTo(i);
-                        return;
+                        Visible = false; return; // auto-close after switch
                     }
                 }
                 // Add workspace button
-                int addY = sideY + n * (itemH + 10);
-                if (mx >= sideX && mx <= sideX + sideW && my >= addY && my <= addY + itemH) {
-                    if (WorkspaceManager.AddWorkspace()) { /* ok */ }
-                    return;
+                int addY = sideY + nWorkspaces * (sideItemH + sideGap);
+                if (mx >= sideX && mx <= sideX + sideW && my >= addY && my <= addY + sideItemH) {
+                    if (WorkspaceManager.AddWorkspace()) {
+                        WorkspaceManager.SwitchTo(WorkspaceManager.Count - 1); // jump to new workspace
+                    }
+                    Visible = false; return; // close overlay after add
                 }
-            } else {
-                _clickLatch = false;
-            }
+                // Background click outside side bar and tiles -> close
+                if (!handled) {
+                    bool inSidebar = (mx >= sideX && mx <= sideX + sideW && my >= sideY && my <= addY + sideItemH);
+                    bool inTile = false;
+                    for (int i = 0; i < _tiles.Count; i++) {
+                        var t = _tiles[i]; if (mx >= t.X && mx <= t.X + t.W && my >= t.Y && my <= t.Y + t.H) { inTile = true; break; }
+                    }
+                    if (!inSidebar && !inTile) { Visible = false; return; }
+                }
+            } else { _clickLatch = false; }
 
             // Right click: move hovered window to hovered/next workspace
             if (right) {
                 if (_rightClickLatch) return;
                 _rightClickLatch = true;
-                // detect hovered tile
                 int hoveredIndex = -1;
                 for (int i = 0; i < _tiles.Count; i++) {
-                    var t = _tiles[i];
-                    if (mx >= t.X && mx <= t.X + t.W && my >= t.Y && my <= t.Y + t.H) { hoveredIndex = i; break; }
+                    var t = _tiles[i]; if (mx >= t.X && mx <= t.X + t.W && my >= t.Y && my <= t.Y + t.H) { hoveredIndex = i; break; }
                 }
                 if (hoveredIndex >= 0) {
                     var t = _tiles[hoveredIndex];
@@ -81,9 +89,7 @@ namespace guideXOS.GUI {
                         WorkspaceManager.MoveWindowToWorkspace(t.Win, target);
                     }
                 }
-            } else {
-                _rightClickLatch = false;
-            }
+            } else { _rightClickLatch = false; }
         }
 
         public override void OnDraw() {

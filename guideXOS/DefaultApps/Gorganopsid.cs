@@ -1,3 +1,4 @@
+/*
 using guideXOS.GUI;
 using guideXOS.Misc;
 using guideXOS.Kernel.Drivers;
@@ -12,7 +13,7 @@ namespace guideXOS.DefaultApps {
         public Gorganopsid(int x, int y) : base(x, y, 740, 500) { Title = "Gorganopsid"; }
         public override void OnDraw() {
             base.OnDraw();
-            int pad = 10; int cx = X + pad; int cy = Y + pad; int cw = Width - pad*2; int ch = Height - pad*2;
+            int pad = 10; int cx = X + pad; int cy = Y + pad; int cw = Width - pad * 2; int ch = Height - pad * 2;
             // connection bar
             Framebuffer.Graphics.FillRectangle(cx, cy, cw, 28, 0xFF2E2E2E);
             WindowManager.font.DrawString(cx + 8, cy + 6, $"Host: {_host}  Status: {_status}");
@@ -30,3 +31,4 @@ namespace guideXOS.DefaultApps {
         public override void OnInput() { base.OnInput(); if (Control.MouseButtons.HasFlag(MouseButtons.Left)) _clickLock = true; else _clickLock = false; }
     }
 }
+*/

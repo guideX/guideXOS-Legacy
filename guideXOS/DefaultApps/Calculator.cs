@@ -204,8 +204,7 @@ namespace guideXOS.DefaultApps {
             g.FillRectangle(X, Y, 60, 20, 0xFF333333);
             int i = WindowManager.font.MeasureString(s);
             WindowManager.font.DrawString(X + 60 / 2 - i / 2, Y + 2, s, g);
-            Btns.Add(new Button()
-            {
+            Btns.Add(new Button() {
                 X = X,
                 Y = Y,
                 Width = 60,

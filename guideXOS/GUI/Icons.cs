@@ -31,16 +31,71 @@ namespace guideXOS.GUI {
         /// </summary>
         public Image StartIcon;
         /// <summary>
+        /// Audio Pause Icon
+        /// </summary>
+        public Image AudioPauseIcon;
+        /// <summary>
+        /// Audio Play Icon
+        /// </summary>
+        public Image AudioPlayIcon;
+        /// <summary>
+        /// Calculator Icon
+        /// </summary>
+        public Image CalculatorIcon;
+        /// <summary>
+        /// Calendar Icon
+        /// </summary>
+        public Image CalendarIcon;
+        /// <summary>
+        /// Edit Icon
+        /// </summary>
+        public Image EditIcon;
+        /// <summary>
+        /// Lock Icon
+        /// </summary>
+        public Image LockIcon;
+        /// <summary>
+        /// Notepad Icon
+        /// </summary>
+        public Image NotepadIcon;
+        /// <summary>
+        /// Applications Icon
+        /// </summary>
+        public Image ApplicationsIcon;
+        /// <summary>
+        /// Configure Icon
+        /// </summary>
+        public Image ConfigureIcon;
+        /// <summary>
+        /// Chat Icon
+        /// </summary>
+        public Image ChatIcon;
+        /// <summary>
+        /// Network Icon
+        /// </summary>
+        public Image NetworkIcon;
+        /// <summary>
         /// Icons Private
         /// </summary>
         /// <param name="size"></param>
         public IconsPrivate(int size) {
+            ConfigureIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/configure.png"));
+            NotepadIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/notepad.png"));
+            EditIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/edit.png"));
+            CalendarIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/calendar.png"));
+            CalculatorIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/calculator.png"));
             DocumentIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/documents.png"));
             AudioIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/music.png"));
             ImageIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/image.png"));
             FolderIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/folder.png"));
             TaskbarIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/up.png"));
             StartIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/play.png"));
+            AudioPauseIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/pause.png"));
+            AudioPlayIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/play.png"));
+            LockIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/lock.png"));
+            ApplicationsIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/applications.png"));
+            ChatIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/chat.png"));
+            NetworkIcon = new PNG(File.ReadAllBytes($"Images/BlueVelvet/{size}/network.png"));
         }
     }
     /// <summary>
@@ -67,6 +122,217 @@ namespace guideXOS.GUI {
         /// Icons Private 128
         /// </summary>
         private static IconsPrivate _iconsPrivate128 = new IconsPrivate(128);
+        /// <summary>
+        /// Network Icon
+        /// </summary>
+        public static Image NetworkIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.NetworkIcon;
+                case 24:
+                    return _iconsPrivate24.NetworkIcon;
+                case 32:
+                    return _iconsPrivate32.NetworkIcon;
+                case 48:
+                    return _iconsPrivate48.NetworkIcon;
+                case 128:
+                    return _iconsPrivate128.NetworkIcon;
+                default:
+                    return _iconsPrivate32.NetworkIcon;
+            }
+        }
+        /// <summary>
+        /// Chat Icon
+        /// </summary>
+        public static Image ChatIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.ChatIcon;
+                case 24:
+                    return _iconsPrivate24.ChatIcon;
+                case 32:
+                    return _iconsPrivate32.ChatIcon;
+                case 48:
+                    return _iconsPrivate48.ChatIcon;
+                case 128:
+                    return _iconsPrivate128.ChatIcon;
+                default:
+                    return _iconsPrivate32.ChatIcon;
+            }
+        }
+        /// <summary>
+        /// Configure Icon
+        /// </summary>
+        public static Image ConfigureIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.ConfigureIcon;
+                case 24:
+                    return _iconsPrivate24.ConfigureIcon;
+                case 32:
+                    return _iconsPrivate32.ConfigureIcon;
+                case 48:
+                    return _iconsPrivate48.ConfigureIcon;
+                case 128:
+                    return _iconsPrivate128.ConfigureIcon;
+                default:
+                    return _iconsPrivate32.ConfigureIcon;
+            }
+        }
+        /// <summary>
+        /// Notepad Icon
+        /// </summary>
+        public static Image NotepadIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.NotepadIcon;
+                case 24:
+                    return _iconsPrivate24.NotepadIcon;
+                case 32:
+                    return _iconsPrivate32.NotepadIcon;
+                case 48:
+                    return _iconsPrivate48.NotepadIcon;
+                case 128:
+                    return _iconsPrivate128.NotepadIcon;
+                default:
+                    return _iconsPrivate32.NotepadIcon;
+            }
+        }
+        /// <summary>
+        /// Applications Icon
+        /// </summary>
+        public static Image ApplicationsIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.ApplicationsIcon;
+                case 24:
+                    return _iconsPrivate24.ApplicationsIcon;
+                case 32:
+                    return _iconsPrivate32.ApplicationsIcon;
+                case 48:
+                    return _iconsPrivate48.ApplicationsIcon;
+                case 128:
+                    return _iconsPrivate128.ApplicationsIcon;
+                default:
+                    return _iconsPrivate32.ApplicationsIcon;
+            }
+        }
+
+
+        /// <summary>
+        /// Edit Icon
+        /// </summary>
+        public static Image EditIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.EditIcon;
+                case 24:
+                    return _iconsPrivate24.EditIcon;
+                case 32:
+                    return _iconsPrivate32.EditIcon;
+                case 48:
+                    return _iconsPrivate48.EditIcon;
+                case 128:
+                    return _iconsPrivate128.EditIcon;
+                default:
+                    return _iconsPrivate32.EditIcon;
+            }
+        }
+        /// <summary>
+        /// Edit Icon
+        /// </summary>
+        public static Image LockIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.LockIcon;
+                case 24:
+                    return _iconsPrivate24.LockIcon;
+                case 32:
+                    return _iconsPrivate32.LockIcon;
+                case 48:
+                    return _iconsPrivate48.LockIcon;
+                case 128:
+                    return _iconsPrivate128.LockIcon;
+                default:
+                    return _iconsPrivate32.LockIcon;
+            }
+        }
+        /// <summary>
+        /// Audio Pause Icon
+        /// </summary>
+        public static Image AudioPauseIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.AudioPauseIcon;
+                case 24:
+                    return _iconsPrivate24.AudioPauseIcon;
+                case 32:
+                    return _iconsPrivate32.AudioPauseIcon;
+                case 48:
+                    return _iconsPrivate48.AudioPauseIcon;
+                case 128:
+                    return _iconsPrivate128.AudioPauseIcon;
+                default:
+                    return _iconsPrivate32.AudioPauseIcon;
+            }
+        }
+        /// <summary>
+        /// Calculator Icon
+        /// </summary>
+        public static Image CalculatorIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.CalculatorIcon;
+                case 24:
+                    return _iconsPrivate24.CalculatorIcon;
+                case 32:
+                    return _iconsPrivate32.CalculatorIcon;
+                case 48:
+                    return _iconsPrivate48.CalculatorIcon;
+                case 128:
+                    return _iconsPrivate128.CalculatorIcon;
+                default:
+                    return _iconsPrivate32.CalculatorIcon;
+            }
+        }
+        /// <summary>
+        /// Calendar Icon
+        /// </summary>
+        public static Image CalendarIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.CalendarIcon;
+                case 24:
+                    return _iconsPrivate24.CalendarIcon;
+                case 32:
+                    return _iconsPrivate32.CalendarIcon;
+                case 48:
+                    return _iconsPrivate48.CalendarIcon;
+                case 128:
+                    return _iconsPrivate128.CalendarIcon;
+                default:
+                    return _iconsPrivate32.CalendarIcon;
+            }
+        }
+        /// <summary>
+        /// Audio Play Icon
+        /// </summary>
+        public static Image AudioPlayIcon(int size) {
+            switch (size) {
+                case 16:
+                    return _iconsPrivate16.AudioPlayIcon;
+                case 24:
+                    return _iconsPrivate24.AudioPlayIcon;
+                case 32:
+                    return _iconsPrivate32.AudioPlayIcon;
+                case 48:
+                    return _iconsPrivate48.AudioPlayIcon;
+                case 128:
+                    return _iconsPrivate128.AudioPlayIcon;
+                default:
+                    return _iconsPrivate32.AudioPlayIcon;
+            }
+        }
         /// <summary>
         /// Document Icon
         /// </summary>

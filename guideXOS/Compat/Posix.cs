@@ -36,10 +36,12 @@ namespace guideXOS.Compat {
         // Basic wrappers for listing and reading files (no permissions yet)
         public static string[] List(string path) {
             string p = path == "/" ? "" : EnsureDir(path);
+            // Strip leading '/' for underlying FS which expects relative paths
+            if (p.Length > 0 && p[0] == '/') p = p.Substring(1);
             var list = File.GetFiles(p);
             if (list == null) return Array.Empty<string>();
             string[] names = new string[list.Count];
-            for (int i=0;i<list.Count;i++){ names[i] = list[i].Name; list[i].Dispose(); }
+            for (int i=0;i<list.Count;i++){ var fi = list[i]; bool isDir = fi.Attribute == FileAttribute.Directory; names[i] = isDir ? (fi.Name + "/") : fi.Name; fi.Dispose(); }
             return names;
         }
         public static byte[] ReadFile(string path) { return File.ReadAllBytes(path); }
@@ -48,28 +50,32 @@ namespace guideXOS.Compat {
         public static bool DirectoryExists(string absolute){
             if (absolute == "/") return true;
             string p = EnsureDir(absolute);
-            int last = LastSlashBefore(p, p.Length-1); // ignore trailing slash
+            int last = LastSlashBefore(p, p.Length-1);
             string parent = last >=0 ? (last==0? "/" : p.Substring(0,last)) : "/";
             string baseName = p.Substring(last+1, p.Length - (last+1) - 1);
-            var list = File.GetFiles(parent=="/"?"":parent);
+            // Strip leading '/' for FS calls
+            string parentRel = parent=="/"?"": (parent.Length>0 && parent[0]=='/' ? parent.Substring(1): parent);
+            var list = File.GetFiles(parentRel);
             if (list != null){
                 for (int i=0;i<list.Count;i++){
                     var fi = list[i]; bool isDir = fi.Attribute == FileAttribute.Directory;
-                    if (isDir && fi.Name == baseName){ for(int j=0;j<list.Count;j++) list[j].Dispose(); return true; }
+                    if (isDir && fi.Name == baseName){ DisposeAll(list); return true; }
                 }
                 for (int i=0;i<list.Count;i++){
-                    var fi = list[i]; if (fi.Name.Length>baseName.Length && StartsWithString(fi.Name, baseName)) { for(int j=0;j<list.Count;j++) list[j].Dispose(); return true; }
+                    var fi = list[i]; if (fi.Name.Length>baseName.Length && StartsWithString(fi.Name, baseName)) { DisposeAll(list); return true; }
                 }
-                for (int j=0;j<list.Count;j++) list[j].Dispose();
+                DisposeAll(list);
             }
             return false;
         }
+        private static void DisposeAll(System.Collections.Generic.List<FileInfo> list){ for(int j=0;j<list.Count;j++) list[j].Dispose(); }
 
         // Fuzzy resolve: token without extension -> unique file whose name starts with token+".". Returns true if resolved.
         public static bool TryFuzzyResolve(string cwdAbsolute, string token, out string resolved, out string error){
-            resolved = null; error = null; if (string.IsNullOrEmpty(token) || token.IndexOf('.')>=0) return false; // only extensionless
+            resolved = null; error = null; if (string.IsNullOrEmpty(token) || token.IndexOf('.')>=0) return false;
             string dir = string.IsNullOrEmpty(cwdAbsolute)?"/":EnsureDir(cwdAbsolute);
-            var list = File.GetFiles(dir=="/"?"":dir);
+            string rel = dir=="/"?"": (dir.Length>0 && dir[0]=='/'? dir.Substring(1):dir);
+            var list = File.GetFiles(rel);
             if (list == null){ return false; }
             int matches = 0; string matchName = null;
             for(int i=0;i<list.Count;i++){
