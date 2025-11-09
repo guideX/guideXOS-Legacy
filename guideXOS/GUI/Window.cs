@@ -134,12 +134,12 @@ namespace guideXOS.GUI {
         /// </summary>
         public bool Visible {
             set {
-                _visible = value;
-                OnSetVisible(value);
+                // trigger fade animations on show/hide
+                if (value && !_visible) { _visible = true; BeginFadeIn(); OnSetVisible(true); return; }
+                if (!value && _visible) { BeginFadeOutClose(); OnSetVisible(false); return; }
+                _visible = value; OnSetVisible(value);
             }
-            get {
-                return _visible;
-            }
+            get { return _visible; }
         }
         /// <summary>
         /// Is Under Mouse
@@ -405,6 +405,10 @@ namespace guideXOS.GUI {
             if (Framebuffer.Graphics == null || WindowManager.font == null) return;
 
             UpdateAnimation();
+
+            // Soft glow behind window
+            int glowPad = 10; // radius for glow halo
+            UIPrimitives.AFillRoundedRect(X - glowPad, Y - BarHeight - glowPad, Width + glowPad * 2, Height + BarHeight + glowPad * 2, 0x221E90FF, 10);
 
             int barX = X; int barY = Y - BarHeight; int barW = Width; int barH = BarHeight;
             Framebuffer.Graphics.BlurRectangle(barX, barY, barW, barH, 3);

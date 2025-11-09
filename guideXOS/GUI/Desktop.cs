@@ -156,7 +156,7 @@ namespace guideXOS.GUI {
         /// Update
         /// </summary>
         /// <param name="DocumentIcon32"></param>
-        public static int IconSize = 32; // default desktop icon size
+        public static int IconSize = 48; // default desktop icon size changed from 32 to 48
         public static void SetIconSize(int size){ if(size!=16 && size!=24 && size!=32 && size!=48 && size!=128) return; IconSize = size; }
         public static void Update(Image DocumentIcon32) {
             // Recompute document icon from current size selection (ignore passed image except for legacy callers)

@@ -101,6 +101,7 @@ namespace guideXOS.OS {
             _apps.Add(new App("Anomalocaris", browserIcon)); // web browser
             _apps.Add(new App("nexIRC", ircIcon)); // IRC client
             _apps.Add(new App("IRCNetworks", ircNetIcon)); // IRC connection/profile manager
+            _apps.Add(new App("GUISamples", new PNG(File.ReadAllBytes(path + "applications.png"))));
         }
         /// <summary>
         /// Load
@@ -124,6 +125,7 @@ namespace guideXOS.OS {
                         case "Anomalocaris": _apps[i].AppObject = new Anomalocaris(220, 180); b = true; break;
                         case "nexIRC": _apps[i].AppObject = new nexIRC(260, 220); b = true; break;
                         case "IRCNetworks": _apps[i].AppObject = new IRCNetworks(300, 240); b = true; break;
+                        case "GUISamples": _apps[i].AppObject = new GUISamples(220, 260); b = true; break;
                     }
                     if (b) {
                         // record recents
