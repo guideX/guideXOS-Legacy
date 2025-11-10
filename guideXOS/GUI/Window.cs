@@ -209,18 +209,12 @@ namespace guideXOS.GUI {
         /// <param name="Width"></param>
         /// <param name="Height"></param>
         public Window(int X, int Y, int Width, int Height) {
-            this.X = X;
-            this.Y = Y;
-            this.Width = Width;
-            this.Height = Height;
-            _normX = X; _normY = Y; _normW = Width; _normH = Height;
-            ClampToScreen();
-            this.Visible = true;
-            WindowManager.Windows.Add(this);
-            Title = "Window1";
-            TaskbarIcon = Icons.DocumentIcon(32);
-            // Avoid heavy blur in title when window is large by using smaller radius
+            this.X = X; this.Y = Y; this.Width = Width; this.Height = Height; _normX = X; _normY = Y; _normW = Width; _normH = Height;
+            ClampToScreen(); this.Visible = true; WindowManager.Windows.Add(this); Title = "Window1"; TaskbarIcon = Icons.DocumentIcon(32);
+            _ownerId = WindowManager.Windows.IndexOf(this) + 1; // stable owner id
+            Allocator.CurrentOwnerId = _ownerId; // set current owner context during construction allocations
             BeginFadeIn();
+            Allocator.CurrentOwnerId = 0; // reset
         }
         /// <summary>
         /// Bar Height
@@ -250,8 +244,10 @@ namespace guideXOS.GUI {
         /// Index
         /// </summary>
         public int Index { get => WindowManager.Windows.IndexOf(this); }
-
-        // Title buttons state and layout
+        private int _ownerId; public int OwnerId => _ownerId;
+        /// <summary>
+        /// Title buttons state and layout
+        /// </summary>
         enum TitleButton { None, Minimize, Maximize, Restore, Tombstone, Close }
         TitleButton _hoverBtn = TitleButton.None;
         TitleButton _pressedBtn = TitleButton.None;

@@ -295,10 +295,10 @@ namespace guideXOS.DefaultApps {
         private void DrawProcesses(int x, int y, int w, int h) {
             int headerH = _rowHeight;
 
-            // columns: Name, CPU%, Memory%, Disk%, Network%
-            int colNameW = w - 320; if (colNameW < 120) colNameW = 120;
+            // columns: Name, CPU%, Memory, Disk%, Network%
+            int colNameW = w - 380; if (colNameW < 120) colNameW = 120;
             int colCpuW = 60;
-            int colMemW = 80;
+            int colMemW = 120; // show absolute usage
             int colDiskW = 80;
             int colNetW = 80;
 
@@ -307,7 +307,7 @@ namespace guideXOS.DefaultApps {
             int hy = y;
             DrawHeaderCell(hx, hy, colNameW, headerH, "Name"); hx += colNameW;
             DrawHeaderCell(hx, hy, colCpuW, headerH, "CPU%"); hx += colCpuW;
-            DrawHeaderCell(hx, hy, colMemW, headerH, "Memory%"); hx += colMemW;
+            DrawHeaderCell(hx, hy, colMemW, headerH, "Memory"); hx += colMemW;
             DrawHeaderCell(hx, hy, colDiskW, headerH, "Disk%"); hx += colDiskW;
             DrawHeaderCell(hx, hy, colNetW, headerH, "Network%");
 
@@ -330,9 +330,18 @@ namespace guideXOS.DefaultApps {
                 string name = wdw.Title ?? "(no title)";
                 WindowManager.font.DrawString(cx + 6, dy + 6, name, colNameW - 12, WindowManager.font.FontSize);
                 cx += colNameW;
-                // No per-window metrics available yet -> show dashes
+
+                // CPU: no per-window counter yet
                 WindowManager.font.DrawString(cx + 6, dy + 6, "-"); cx += colCpuW;
-                WindowManager.font.DrawString(cx + 6, dy + 6, "-"); cx += colMemW;
+
+                // Memory per window: use allocator per-owner accounting
+                // Each Window exposes a stable Index, use it as owner id
+                int ownerId = wdw.Index + 1; // make it > 0
+                ulong bytes = Allocator.GetOwnerBytes(ownerId);
+                string memText = bytes == 0 ? "-" : (bytes / (1024UL * 1024UL)).ToString() + " MB";
+                WindowManager.font.DrawString(cx + 6, dy + 6, memText); cx += colMemW;
+
+                // Disk/Net per-window not implemented
                 WindowManager.font.DrawString(cx + 6, dy + 6, "-"); cx += colDiskW;
                 WindowManager.font.DrawString(cx + 6, dy + 6, "-");
                 dy += _rowHeight;
