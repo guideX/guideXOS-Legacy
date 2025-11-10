@@ -1,3 +1,4 @@
+using guideXOS.DefaultApps;
 using guideXOS.Kernel.Drivers;
 using System.Windows.Forms;
 namespace guideXOS.GUI {

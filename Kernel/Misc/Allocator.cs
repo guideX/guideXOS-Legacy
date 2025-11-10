@@ -4,6 +4,8 @@ using System;
 /// Allocator
 /// </summary>
 abstract unsafe class Allocator {
+    // Synchronization object (was incorrectly locking on null)
+    private static readonly object _sync = new object();
     // Allocation tags to attribute page usage
     public enum AllocTag : byte {
         Unknown = 0,
@@ -44,7 +46,7 @@ abstract unsafe class Allocator {
     /// <param name="intPtr"></param>
     /// <returns></returns>
     internal static ulong Free(IntPtr intPtr) {
-        lock (null) {
+        lock (_sync) {
             long p = GetPageIndexStart(intPtr);
             if (p == -1) return 0;
             ulong pages = _Info.Pages[p];
@@ -59,7 +61,6 @@ abstract unsafe class Allocator {
                 for (ulong i = 0; i < pages; i++) {
                     _Info.Pages[(ulong)p + i] = 0;
                 }
-                _Info.Pages[p] = 0;
                 return pages * PageSize;
             }
             return 0;
@@ -136,7 +137,7 @@ abstract unsafe class Allocator {
     internal static unsafe IntPtr Allocate(ulong size) { return Allocate(size, AllocTag.Unknown); }
 
     internal static unsafe IntPtr Allocate(ulong size, AllocTag tag) {
-        lock (null) {
+        lock (_sync) {
             if (size == 0) size = 1; // avoid zero-page requests causing false leak
             // Hard guard against impossible requests
             if (size > MemorySize) {
@@ -154,19 +155,21 @@ abstract unsafe class Allocator {
                 if (_Info.Pages[i] == 0) {
                     found = true;
                     for (ulong k = 0; k < pages; k++) {
-                        if (i + k >= (ulong)NumPages || _Info.Pages[i + k] != 0) { // bounds check
+                        if (i + k >= (ulong)NumPages || _Info.Pages[i + k] != 0) { // bounds / free check
                             found = false;
                             break;
                         }
                     }
                     if (found) break;
                 } else if (_Info.Pages[i] != PageSignature) {
-                    i += _Info.Pages[i];
+                    // Skip entire allocated run. Original code skipped one extra page causing fragmentation and false OOM.
+                    ulong runPages = _Info.Pages[i];
+                    if (runPages == 0 || runPages == PageSignature) continue; // defensive
+                    i += runPages - 1; // -1 because for loop will ++i
                 }
             }
             if (!found) {
-                // Provide more diagnostic info before panic
-                string msg = "Memory leak: no free pages (in use=" + (MemoryInUse).ToString() + "/" + (MemorySize).ToString() + ", req=" + (pages * PageSize).ToString() + ")";
+                string msg = "Out of memory: no free pages (in use=" + (MemoryInUse).ToString() + "/" + (MemorySize).ToString() + ", req=" + (pages * PageSize).ToString() + ")";
                 Panic.Error(msg);
                 return IntPtr.Zero;
             }
