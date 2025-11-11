@@ -136,8 +136,11 @@ namespace guideXOS.DefaultApps {
             // Always update key status pair for statusbar
             UpdateStatusKeys(key);
 
-            Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2}");
-            Desktop.msgbox.Visible = true;
+            // Debug: show key info including modifiers
+            if (false) { // Set to true to enable debug
+                Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2} Char: '{key.KeyChar}' Mods: {key.Modifiers}");
+                Desktop.msgbox.Visible = true;
+            }
 
             if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return; // let dialog handle keys when visible
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }

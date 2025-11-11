@@ -220,7 +220,13 @@ namespace guideXOS.DefaultApps {
                             if (matches==1) target = Posix.NormalizePath(_cwd, match); else { WriteLine("cd: no such directory: " + rawTarget); return; }
                         }
                         if (target == "/") { _cwd = ""; } else { if (!target.EndsWith("/")) target += "/"; _cwd = target.Substring(1); }
-                        Desktop.Dir = _cwd; Desktop.InvalidateDirCache(); UpdateTitle(); WriteLine("Changed directory"); return; }
+                        Desktop.Dir = _cwd; 
+                        Desktop.HomeMode = false; // Exit HomeMode to show filesystem
+                        Desktop.InvalidateDirCache(); 
+                        UpdateTitle(); 
+                        WriteLine("Changed directory to: " + (string.IsNullOrEmpty(_cwd) ? "/" : "/" + _cwd)); 
+                        return; 
+                    }
             }
             // fall-through to remaining original commands
             switch (cmd) {

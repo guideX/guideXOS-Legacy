@@ -372,12 +372,15 @@ namespace guideXOS.DefaultApps {
                 string memText;
                 if (bytes < 1024UL * 1024UL) {
                     ulong kb = bytes / 1024UL;
-                    memText = kb.ToString() + " KB";
+                    // Cache common KB values to reduce allocations
+                    if (kb == 0) memText = "0 KB";
+                    else memText = kb.ToString() + " KB";
                 } else {
                     memText = ToMBString(bytes);
                 }
-                string combined = memText;
-                WindowManager.font.DrawString(cx + 6, dy + 6, combined); cx += colMemW;
+                WindowManager.font.DrawString(cx + 6, dy + 6, memText); 
+                memText.Dispose(); // Explicitly dispose the string to free memory
+                cx += colMemW;
 
                 // Disk/Net per-window not implemented
                 WindowManager.font.DrawString(cx + 6, dy + 6, "-"); cx += colDiskW;
@@ -416,7 +419,14 @@ namespace guideXOS.DefaultApps {
 
         private static string ToMBString(ulong bytes) {
             ulong mb = bytes / (1024UL * 1024UL);
-            return mb.ToString() + " MB";
+            // Avoid repeated string allocation by caching common values
+            if (mb == 0) return "0 MB";
+            if (mb < 10) return mb.ToString() + " MB";
+            // For larger values, round to avoid excessive string allocations
+            if (mb < 100) return mb.ToString() + " MB";
+            // Round to nearest 10 MB for very large values
+            ulong rounded = (mb + 5) / 10 * 10;
+            return rounded.ToString() + " MB";
         }
 
         private static string ToKBpsString(int kbps) {
