@@ -53,9 +53,9 @@ namespace guideXOS.Kernel.Drivers {
                 _extended = false; // consume prefix
             } else {
                 // Left-side modifiers and Caps
-                if (scanCode == 0x1D) { _ctrlPressed = !isRelease; }
-                if (scanCode == 0x2A || scanCode == 0x36) { _shiftPressed = !isRelease; }
-                if (scanCode == 0x38) { _altPressed = !isRelease; }
+                if (scanCode == 0x1D) { _ctrlPressed = !isRelease; } // LCtrl
+                if (scanCode == 0x2A || scanCode == 0x36) { _shiftPressed = !isRelease; } // LShift/RShift
+                if (scanCode == 0x38) { _altPressed = !isRelease; } // LAlt
                 if (scanCode == 0x3A && !isRelease) { _capsLockOn = !_capsLockOn; }
             }
 
@@ -68,6 +68,8 @@ namespace guideXOS.Kernel.Drivers {
                 if (_ctrlPressed) Keyboard.KeyInfo.Modifiers |= ConsoleModifiers.Control;
                 if (_altPressed) Keyboard.KeyInfo.Modifiers |= ConsoleModifiers.Alt;
                 if (_capsLockOn) Keyboard.KeyInfo.Modifiers |= ConsoleModifiers.CapsLock;
+                Keyboard.KeyInfo.KeyChar = '\0';
+                Keyboard.KeyInfo.Key = None;
                 Keyboard.InvokeOnKeyChanged(Keyboard.KeyInfo);
                 return;
             }

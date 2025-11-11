@@ -66,7 +66,7 @@ namespace guideXOS.GUI {
         }
         /// <summary>
         /// Disable performance tracking
-        /// </summary>
+        /// </summary>z
         public static void DisablePerfTracking() {
             _perfTrackingEnabled = false;
             _drawMs.Clear();
