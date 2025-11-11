@@ -2,6 +2,7 @@ using guideXOS.Kernel.Drivers;
 using System.Windows.Forms;
 using System.Drawing;
 using System;
+using guideXOS.Graph;
 namespace guideXOS.GUI {
     /// <summary>
     /// Window
@@ -46,6 +47,12 @@ namespace guideXOS.GUI {
         private int _resizeStartMouseX, _resizeStartMouseY;
         private int _resizeStartW, _resizeStartH;
         private const int _resizeGripSize = 16;
+
+        // Cached blurred title bar to prevent memory leak from repeated BlurRectangle calls
+        private Image _blurredBarCache;
+        private int _cachedBarX, _cachedBarY, _cachedBarW, _cachedBarH;
+        private ulong _blurCacheTick;
+        private const ulong BlurCacheMaxAge = 500; // ms - refresh blur cache every 500ms or on move/resize
 
         /// <summary>
         /// Begin Fade In
@@ -370,6 +377,8 @@ namespace guideXOS.GUI {
 
             if (Move) {
                 X = mx - OffsetX; Y = my - OffsetY; ClampToScreen(); _normX = X; _normY = Y; _normW = Width; _normH = Height;
+                // Invalidate blur cache when window moves
+                if (_blurredBarCache != null) { _blurredBarCache.Dispose(); _blurredBarCache = null; }
             }
 
             // Resize handling in bottom-right corner
@@ -388,7 +397,10 @@ namespace guideXOS.GUI {
                     int dw = mx - _resizeStartMouseX; int dh = my - _resizeStartMouseY;
                     int newW = _resizeStartW + dw; int newH = _resizeStartH + dh;
                     if (newW < 160) newW = 160; if (newH < 120) newH = 120;
-                    Width = newW; Height = newH; return;
+                    Width = newW; Height = newH;
+                    // Invalidate blur cache when window resizes
+                    if (_blurredBarCache != null) { _blurredBarCache.Dispose(); _blurredBarCache = null; }
+                    return;
                 }
             }
         }
@@ -407,7 +419,39 @@ namespace guideXOS.GUI {
             UIPrimitives.AFillRoundedRect(X - glowPad, Y - BarHeight - glowPad, Width + glowPad * 2, Height + BarHeight + glowPad * 2, 0x221E90FF, 10);
 
             int barX = X; int barY = Y - BarHeight; int barW = Width; int barH = BarHeight;
-            Framebuffer.Graphics.BlurRectangle(barX, barY, barW, barH, 3);
+            
+            // Use cached blurred title bar to prevent memory leak from repeated BlurRectangle calls
+            bool needsRefresh = _blurredBarCache == null 
+                || barX != _cachedBarX || barY != _cachedBarY || barW != _cachedBarW || barH != _cachedBarH
+                || (Timer.Ticks - _blurCacheTick) > BlurCacheMaxAge;
+            
+            if (needsRefresh) {
+                // Dispose old cache
+                if (_blurredBarCache != null) _blurredBarCache.Dispose();
+                
+                // Create new cache: capture the framebuffer region, blur it, and store
+                _blurredBarCache = new Image(barW, barH);
+                var g = Graphics.FromImage(_blurredBarCache);
+                // Copy the framebuffer region to our temp image
+                for (int yy = 0; yy < barH; yy++) {
+                    for (int xx = 0; xx < barW; xx++) {
+                        int sx = barX + xx; int sy = barY + yy;
+                        if (sx >= 0 && sy >= 0 && sx < Framebuffer.Width && sy < Framebuffer.Height) {
+                            _blurredBarCache.RawData[yy * barW + xx] = (int)Framebuffer.Graphics.GetPoint(sx, sy);
+                        }
+                    }
+                }
+                // Blur it in-place
+                g.BlurRectangle(0, 0, barW, barH, 3);
+                _cachedBarX = barX; _cachedBarY = barY; _cachedBarW = barW; _cachedBarH = barH;
+                _blurCacheTick = Timer.Ticks;
+            }
+            
+            // Draw the cached blurred bar
+            if (_blurredBarCache != null) {
+                Framebuffer.Graphics.DrawImage(barX, barY, _blurredBarCache, false);
+            }
+            
             UIPrimitives.AFillRoundedRectTop(barX, barY, barW, barH, 0x66111111, 4);
 
             string title = Title ?? string.Empty;

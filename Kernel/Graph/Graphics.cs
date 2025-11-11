@@ -277,16 +277,27 @@ namespace guideXOS.Graph {
             int rw = x1 - x0; int rh = y1 - y0;
             if (rw <= 0 || rh <= 0) return;
 
-            // Ensure buffers
+            // Ensure buffers - only grow, never shrink to reduce churn, but limit max size
+            const int MaxBlurW = 2048;
+            const int MaxBlurH = 2048;
+            if (rw > MaxBlurW || rh > MaxBlurH) {
+                // Request too large - reject to prevent massive allocations
+                return;
+            }
+            
             if (_blurSrc == null || rw > _blurCapW || rh > _blurCapH) {
                 // Dispose old buffers explicitly to avoid leaks on custom runtimes
                 if (_blurSrc != null) _blurSrc.Dispose();
                 if (_blurTmp != null) _blurTmp.Dispose();
                 if (_blurDst != null) _blurDst.Dispose();
-                _blurCapW = rw; _blurCapH = rh;
-                _blurSrc = new int[rw * rh];
-                _blurTmp = new int[rw * rh];
-                _blurDst = new int[rw * rh];
+                // Allocate slightly larger to reduce future reallocations
+                _blurCapW = (rw + 63) & ~63; // round up to multiple of 64
+                _blurCapH = (rh + 63) & ~63;
+                if (_blurCapW > MaxBlurW) _blurCapW = MaxBlurW;
+                if (_blurCapH > MaxBlurH) _blurCapH = MaxBlurH;
+                _blurSrc = new int[_blurCapW * _blurCapH];
+                _blurTmp = new int[_blurCapW * _blurCapH];
+                _blurDst = new int[_blurCapW * _blurCapH];
             }
 
             // Snapshot region

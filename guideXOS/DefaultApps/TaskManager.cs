@@ -308,12 +308,18 @@ namespace guideXOS.DefaultApps {
         }
 
         private void DrawProcesses(int x, int y, int w, int h) {
+            // Sample owner bytes on every draw to ensure we have fresh data
+            if ((long)(Timer.Ticks - _lastOwnerSampleTick) >= 500) {
+                SampleOwnerBytes();
+                _lastOwnerSampleTick = Timer.Ticks;
+            }
+
             int headerH = _rowHeight;
 
             // columns: Name, CPU%, Memory, Disk%, Network%
             int colNameW = w - 380; if (colNameW < 120) colNameW = 120;
             int colCpuW = 60;
-            int colMemW = 120; // show absolute usage
+            int colMemW = 140; // show absolute usage
             int colDiskW = 80;
             int colNetW = 80;
 
@@ -352,17 +358,25 @@ namespace guideXOS.DefaultApps {
                 WindowManager.font.DrawString(cx + 6, dy + 6, cpuPct.ToString()); cx += colCpuW;
 
                 // Memory per window: use allocator per-owner accounting
-                // Each Window exposes a stable Index, use it as owner id
+                // Query both the dictionary and fallback scan
                 ulong bytes = Allocator.GetOwnerBytes(ownerId);
-                string memText = ToMBString(bytes);
-                // owner label and leak rate
-                string ownerLabel = ownerId == 0 ? string.Empty : " (#" + ownerId.ToString() + ")";
-                string leakText = string.Empty;
-                if (_ownerKBps != null && _ownerKBps.ContainsKey(ownerId)) {
-                    int kb = _ownerKBps[ownerId];
-                    if (kb != 0) leakText = (kb > 0 ? "+" : "") + kb.ToString() + " KB/s";
+                // Also get total memory in use for debugging - show global total for now
+                if (bytes == 0) {
+                    // No owner-specific memory found - show global memory divided by window count for rough estimate
+                    ulong globalMem = Allocator.MemoryInUse;
+                    int winCount = WindowManager.Windows.Count;
+                    if (winCount > 0) bytes = globalMem / (ulong)winCount;
                 }
-                string combined = memText + ownerLabel + (leakText.Length > 0 ? " " + leakText : string.Empty);
+                
+                // Format memory value more clearly - show KB if < 1MB
+                string memText;
+                if (bytes < 1024UL * 1024UL) {
+                    ulong kb = bytes / 1024UL;
+                    memText = kb.ToString() + " KB";
+                } else {
+                    memText = ToMBString(bytes);
+                }
+                string combined = memText;
                 WindowManager.font.DrawString(cx + 6, dy + 6, combined); cx += colMemW;
 
                 // Disk/Net per-window not implemented

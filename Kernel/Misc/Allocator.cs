@@ -132,14 +132,17 @@ abstract unsafe class Allocator {
         if (ownerId == 0) return 0UL;
         lock (_sync) {
             if (_ownerLivePages != null && _ownerLivePages.ContainsKey(ownerId)) return _ownerLivePages[ownerId] * PageSize;
-            // Fallback: if dictionary doesn't have entry (possible if bookkeeping missed), scan Owners array
+            // Fallback: scan page run starts and accumulate pages owned by ownerId
             ulong pages = 0UL;
             for (int i = 0; i < NumPages; i++) {
-                if (_Info.Owners[i] == ownerId) pages += _Info.Pages[i] == PageSignature ? _Info.Pages[i] : _Info.Pages[i];
-                // Note: _Info.Pages[i] holds the run length at start index; for non-start indices it's PageSignature.
-                // To avoid double-counting, only count when Pages[i] != 0 and Owners[i] == ownerId and (Pages[i] != PageSignature)
+                ulong run = _Info.Pages[i];
+                if (run != 0 && run != PageSignature) {
+                    // This is a run start - check if owned by ownerId
+                    if (_Info.Owners[i] == ownerId) pages += run;
+                    // skip ahead by run-1 (loop will increment i++)
+                    i += (int)(run - 1);
+                }
             }
-            if (pages == 0UL) return 0UL;
             return pages * PageSize;
         }
     }
