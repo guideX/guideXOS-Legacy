@@ -273,12 +273,42 @@ namespace guideXOS.GUI {
 
         void ComputeButtonRects() {
             _btnSize = BarHeight - 12; if (_btnSize < 16) _btnSize = 16; _btnH = _btnSize; _btnY = Y - BarHeight + (BarHeight - _btnSize) / 2;
+            
+            // Position buttons from right to left, only for visible buttons
             int right = X + Width - 8;
-            _rcCloseX = right - _btnSize;
-            _rcTombX = _rcCloseX - _btnSpacing - _btnSize;
-            _rcRestoreX = _rcTombX - _btnSpacing - _btnSize;
-            _rcMaxX = _rcRestoreX - _btnSpacing - _btnSize;
-            _rcMinX = _rcMaxX - _btnSpacing - _btnSize;
+            int currentX = right - _btnSize;
+            
+            // Close button always present
+            _rcCloseX = currentX;
+            currentX -= (_btnSize + _btnSpacing);
+            
+            // Add other buttons only if they're shown
+            if (ShowTombstone) {
+                _rcTombX = currentX;
+                currentX -= (_btnSize + _btnSpacing);
+            } else {
+                _rcTombX = -1000; // off-screen
+            }
+            
+            if (ShowRestore) {
+                _rcRestoreX = currentX;
+                currentX -= (_btnSize + _btnSpacing);
+            } else {
+                _rcRestoreX = -1000; // off-screen
+            }
+            
+            if (ShowMaximize) {
+                _rcMaxX = currentX;
+                currentX -= (_btnSize + _btnSpacing);
+            } else {
+                _rcMaxX = -1000; // off-screen
+            }
+            
+            if (ShowMinimize) {
+                _rcMinX = currentX;
+            } else {
+                _rcMinX = -1000; // off-screen
+            }
         }
 
         bool Hit(int mx, int my, int x, int y, int w, int h) => (mx >= x && mx <= x + w && my >= y && my <= y + h);

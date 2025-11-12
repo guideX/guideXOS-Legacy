@@ -95,8 +95,8 @@ namespace guideXOS.DefaultApps {
             ShowInTaskbar = true;
             ShowMaximize = true;
             ShowMinimize = true;
-            ShowRestore = true;
-            ShowTombstone = true;
+            ShowRestore = false;
+            ShowTombstone = false;
             IsResizable = true;
             Title = "Task Manager";
             // Initial chart size - will be resized dynamically
