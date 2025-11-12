@@ -51,10 +51,14 @@ namespace guideXOS.DefaultApps {
         public void Rebind() { Keyboard.OnKeyChanged += Keyboard_OnKeyChanged; }
 
         private static char MapFromKey(ConsoleKeyInfo key) {
+            // First try to use KeyChar if it's set (from PS2 keyboard driver)
             if (key.KeyChar != '\0') return key.KeyChar;
+            
+            // Fallback: manually map from ConsoleKey
             var k = key.Key;
-            bool shift = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift);
-            bool caps = Keyboard.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.CapsLock);
+            bool shift = key.Modifiers.HasFlag(ConsoleModifiers.Shift);
+            bool caps = key.Modifiers.HasFlag(ConsoleModifiers.CapsLock);
+            
             if (k == ConsoleKey.Space) return ' ';
             if (k >= ConsoleKey.A && k <= ConsoleKey.Z) {
                 char c = (char)('a' + (k - ConsoleKey.A));
@@ -74,8 +78,8 @@ namespace guideXOS.DefaultApps {
                 case ConsoleKey.OemComma: return shift ? '<' : ',';
                 case ConsoleKey.OemMinus: return shift ? '_' : '-';
                 case ConsoleKey.OemPlus: return shift ? '+' : '=';
-                case ConsoleKey.Oem1: return shift ? ':' : ';'
-;                case ConsoleKey.Oem2: return shift ? '?' : '/';
+                case ConsoleKey.Oem1: return shift ? ':' : ';';
+                case ConsoleKey.Oem2: return shift ? '?' : '/';
                 case ConsoleKey.Oem3: return shift ? '~' : '`';
                 case ConsoleKey.Oem4: return shift ? '{' : '[';
                 case ConsoleKey.Oem5: return shift ? '|' : '\\';
@@ -86,11 +90,25 @@ namespace guideXOS.DefaultApps {
         }
 
         private void Keyboard_OnKeyChanged(object sender, ConsoleKeyInfo key) {
+            // Block keyboard input if workspace switcher is visible
+            if (Desktop.Taskbar != null && Desktop.Taskbar.IsWorkspaceSwitcherVisible) {
+                // Allow Escape key to pass through to close the switcher
+                if (key.Key == ConsoleKey.Escape && key.KeyState == ConsoleKeyState.Pressed) {
+                    // This is a bit of a hack, but it allows the switcher to close.
+                    // A better solution would be a more centralized input manager.
+                    Desktop.Taskbar.CloseWorkspaceSwitcher();
+                }
+                return;
+            }
+            
             if (!Visible) { return; }
             if (_viMode){ HandleViKey(key); return; }
             if (key.KeyState != ConsoleKeyState.Pressed) { _keyDown = false; _lastScan = 0; return; }
-            if (_keyDown && Keyboard.KeyInfo.ScanCode == _lastScan) return; // debounce same key while held
-            _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
+            
+            // Fix: improved debouncing - only block repeat if it's the same scan code AND same key state
+            // This allows special characters to work properly
+            if (_keyDown && key.ScanCode == _lastScan) return;
+            _keyDown = true; _lastScan = (byte)key.ScanCode;
 
             if (key.Key == ConsoleKey.Backspace) {
                 if (Cmd.Length > 0) {
@@ -179,6 +197,7 @@ namespace guideXOS.DefaultApps {
                 if (bLen < buf.Length) buf[bLen++] = c;
             }
             if (bLen>0) parts.Add(new string(buf,0,bLen));
+            buf.Dispose();
             return parts.ToArray();
         }
 

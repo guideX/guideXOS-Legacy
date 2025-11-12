@@ -50,6 +50,7 @@ namespace guideXOS.GUI {
 
         // Cached blurred title bar to prevent memory leak from repeated BlurRectangle calls
         private Image _blurredBarCache;
+        private Graphics _blurredBarG; // persistent graphics for cache to avoid repeated allocations
         private int _cachedBarX, _cachedBarY, _cachedBarW, _cachedBarH;
         private ulong _blurCacheTick;
         private const ulong BlurCacheMaxAge = 500; // ms - refresh blur cache every 500ms or on move/resize
@@ -379,6 +380,7 @@ namespace guideXOS.GUI {
                 X = mx - OffsetX; Y = my - OffsetY; ClampToScreen(); _normX = X; _normY = Y; _normW = Width; _normH = Height;
                 // Invalidate blur cache when window moves
                 if (_blurredBarCache != null) { _blurredBarCache.Dispose(); _blurredBarCache = null; }
+                if (_blurredBarG != null) { _blurredBarG.ResetBlurBuffers(); _blurredBarG = null; }
             }
 
             // Resize handling in bottom-right corner
@@ -400,6 +402,7 @@ namespace guideXOS.GUI {
                     Width = newW; Height = newH;
                     // Invalidate blur cache when window resizes
                     if (_blurredBarCache != null) { _blurredBarCache.Dispose(); _blurredBarCache = null; }
+                    if (_blurredBarG != null) { _blurredBarG.ResetBlurBuffers(); _blurredBarG = null; }
                     return;
                 }
             }
@@ -426,13 +429,11 @@ namespace guideXOS.GUI {
                 || (Timer.Ticks - _blurCacheTick) > BlurCacheMaxAge;
             
             if (needsRefresh) {
-                // Dispose old cache
-                if (_blurredBarCache != null) _blurredBarCache.Dispose();
-                
-                // Create new cache: capture the framebuffer region, blur it, and store
+                if (_blurredBarCache != null) { _blurredBarCache.Dispose(); _blurredBarCache = null; }
+                if (_blurredBarG != null) { _blurredBarG.ResetBlurBuffers(); _blurredBarG = null; }
                 _blurredBarCache = new Image(barW, barH);
-                var g = Graphics.FromImage(_blurredBarCache);
-                // Copy the framebuffer region to our temp image
+                _blurredBarG = Graphics.FromImage(_blurredBarCache);
+                // Copy region
                 for (int yy = 0; yy < barH; yy++) {
                     for (int xx = 0; xx < barW; xx++) {
                         int sx = barX + xx; int sy = barY + yy;
@@ -441,10 +442,9 @@ namespace guideXOS.GUI {
                         }
                     }
                 }
-                // Blur it in-place
-                g.BlurRectangle(0, 0, barW, barH, 3);
-                _cachedBarX = barX; _cachedBarY = barY; _cachedBarW = barW; _cachedBarH = barH;
-                _blurCacheTick = Timer.Ticks;
+                // Blur using persistent graphics buffers
+                _blurredBarG.BlurRectangle(0, 0, barW, barH, 3);
+                _cachedBarX = barX; _cachedBarY = barY; _cachedBarW = barW; _cachedBarH = barH; _blurCacheTick = Timer.Ticks;
             }
             
             // Draw the cached blurred bar

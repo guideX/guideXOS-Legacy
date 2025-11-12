@@ -23,8 +23,8 @@ namespace guideXOS.Kernel.Drivers {
                 'Q','W','E','R','T','Y','U','I','O','P','{','}','\n','\0',
                 'A','S','D','F','G','H','J','K','L',':','"','~','\0','|',
                 'Z','X','C','V','B','N','M','<','>','?','\0','*','\0',' ','\0',
-                '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','7','8','9','-',
-                '4','5','6','+','1','2','3','0','.', '\0','\0','\0','\0','\0'
+                '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','-',
+                '\0','\0','\0','+','\0','\0','\0','\0','.', '\0','\0','\0','\0','\0'
             };
             _keys = new[] {
                 None, Escape, D1, D2, D3, D4, D5, D6, D7, D8, D9, D0, OemMinus, OemPlus, Backspace, Tab,
@@ -85,10 +85,24 @@ namespace guideXOS.Kernel.Drivers {
             // Character mapping only when key is pressed
             char c = '\0';
             if (!isRelease && scanCode < _keyChars.Length) {
-                char baseChar = _keyChars[scanCode];
-                if (_shiftPressed && scanCode < _keyCharsShift.Length) c = _keyCharsShift[scanCode];
-                else if (_capsLockOn && baseChar >= 'a' && baseChar <= 'z') c = (char)(baseChar - 32);
-                else c = baseChar;
+                bool numLock = false; // Assume NumLock is off for simplicity
+                bool isNumpad = (scanCode >= 71 && scanCode <= 83) && scanCode != 74 && scanCode != 78;
+
+                if (_shiftPressed && scanCode < _keyCharsShift.Length) {
+                    // If shift is pressed and it's a numpad key without numlock, it's a navigation key, so no char
+                    if (isNumpad && !numLock) c = '\0';
+                    else c = _keyCharsShift[scanCode];
+                }
+                else if (_capsLockOn) {
+                    char baseChar = _keyChars[scanCode];
+                    if (baseChar >= 'a' && baseChar <= 'z') c = (char)(baseChar - 32);
+                    else c = baseChar;
+                }
+                else {
+                    // If no shift and it's a numpad key without numlock, it's a navigation key, so no char
+                    if (isNumpad && !numLock) c = '\0';
+                    else c = _keyChars[scanCode];
+                }
             }
             Keyboard.KeyInfo.KeyChar = c;
 

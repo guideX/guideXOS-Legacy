@@ -359,5 +359,13 @@ namespace guideXOS.Graph {
                 }
             }
         }
+
+        // Explicitly release blur buffers to free memory on custom runtimes without GC.
+        public void ResetBlurBuffers() {
+            if (_blurSrc != null) { _blurSrc.Dispose(); _blurSrc = null; }
+            if (_blurTmp != null) { _blurTmp.Dispose(); _blurTmp = null; }
+            if (_blurDst != null) { _blurDst.Dispose(); _blurDst = null; }
+            _blurCapW = 0; _blurCapH = 0;
+        }
     }
 }

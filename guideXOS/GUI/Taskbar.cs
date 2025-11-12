@@ -32,6 +32,13 @@ namespace guideXOS.GUI {
         // New: latches and references for Workspace Switcher and Show Desktop
         private bool _taskViewLatch = false;
         private bool _showDesktopLatch = false;
+        
+        // DON'T use singleton - let it be created fresh but DELAY the creation
+        private bool _needsWorkspaceSwitcher = false;
+        private WorkspaceSwitcher _workspaceSwitcher; // Add field for the switcher instance
+
+        // Public property to check if workspace switcher is visible (blocks input to windows)
+        public bool IsWorkspaceSwitcherVisible => _workspaceSwitcher != null && _workspaceSwitcher.Visible;
 
         // Track windows minimized by Show Desktop to restore them on toggle
         private bool _desktopShown = false;
@@ -40,7 +47,9 @@ namespace guideXOS.GUI {
         // Latch for pinned quicklaunch
         private bool _pinnedClickLatch = false;
 
-        public Taskbar(int barHeight, Image startIcon) { _barHeight = barHeight; _startIcon = startIcon; 
+        public Taskbar(int barHeight, Image startIcon) { 
+            _barHeight = barHeight; 
+            _startIcon = startIcon; 
             // schedule: show animation for first 10 seconds after boot
             _bootTicks = Timer.Ticks;
             _animWindowStart = _bootTicks;
@@ -48,7 +57,42 @@ namespace guideXOS.GUI {
             _nextCycleStart = _bootTicks + FiveMinutes;
         }
 
+        public void CloseWorkspaceSwitcher() {
+            if (_workspaceSwitcher != null) {
+                _workspaceSwitcher.Visible = false;
+            }
+        }
+
         public void Draw() {
+            // Handle delayed workspace switcher creation at the START of Draw()
+            // This ensures it's created OUTSIDE of any mouse button handling
+            if (_needsWorkspaceSwitcher) {
+                _needsWorkspaceSwitcher = false;
+                
+                // Create the workspace switcher (now it's NOT a Window!)
+                if (_workspaceSwitcher == null) {
+                    _workspaceSwitcher = new WorkspaceSwitcher();
+                }
+                
+                // Build the cache BEFORE showing
+                _workspaceSwitcher.RefreshWindowCache();
+                
+                // Make it visible
+                _workspaceSwitcher.Visible = true;
+            }
+            
+            // Handle workspace switcher input FIRST (if visible)
+            if (_workspaceSwitcher != null && _workspaceSwitcher.Visible) {
+                _workspaceSwitcher.OnInput();
+            }
+            
+            // Draw workspace switcher BEFORE taskbar (if visible)
+            if (_workspaceSwitcher != null && _workspaceSwitcher.Visible) {
+                _workspaceSwitcher.OnDraw();
+                // If workspace switcher is visible, skip drawing the rest of taskbar
+                return;
+            }
+            
             int yTop = Framebuffer.Height - _barHeight;
             // Blur area behind taskbar, then tint
             Framebuffer.Graphics.BlurRectangle(0, yTop, Framebuffer.Width, _barHeight, 3);
@@ -239,13 +283,18 @@ namespace guideXOS.GUI {
                         if (StartMenu != null && StartMenu.Visible && !_startClickLatch && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
                     }
                 }
-                // Workspace button click: just cycle to next workspace
+                // Workspace button click: SET FLAG instead of creating directly
                 if (mx2 >= tvX && mx2 <= tvX + tvSize && my2 >= tvY && my2 <= tvY + tvSize) {
                     if (!_taskViewLatch) { 
+<<<<<<< HEAD
+                        // Just set flag - will be created at the start of next Draw()
+                        _needsWorkspaceSwitcher = true;
+=======
                         // Open workspace switcher overlay instead of calling Next() (which freezes)
                         var switcher = new WorkspaceSwitcher();
                         WindowManager.MoveToEnd(switcher);
                         switcher.Visible = true;
+>>>>>>> 22925cd52525686aecc7943cb94186b7502460fe
                         _taskViewLatch = true; 
                     }
                 }
