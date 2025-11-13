@@ -139,7 +139,7 @@ namespace guideXOS.GUI {
             bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
             bool right = Control.MouseButtons.HasFlag(MouseButtons.Right);
 
-            // Handle right click -> show menu
+            // Handle right click -> show menu and mark mouse as handled
             int barTop = Framebuffer.Height - _barHeight;
             bool onBar = (my >= barTop && my <= Framebuffer.Height);
             if (right && onBar) {
@@ -147,6 +147,8 @@ namespace guideXOS.GUI {
                     if (_menu == null) _menu = new TaskbarMenu(mx, my);
                     else { _menu.Visible = true; _menu.OnSetVisible(true); }
                     _rightClickLatch = true;
+                    // Mark mouse as handled to prevent desktop context menu from also appearing
+                    WindowManager.MouseHandled = true;
                 }
             } else {
                 _rightClickLatch = false;

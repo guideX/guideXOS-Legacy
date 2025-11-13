@@ -90,6 +90,9 @@ namespace guideXOS.DefaultApps {
         private Dictionary<int, ulong> _lastOwnerBytes;
         private Dictionary<int, int> _ownerKBps; // KB per second (positive = growth)
         private ulong _lastOwnerSampleTick;
+        
+        // Flag to enable perf tracking on first draw (not in constructor to prevent freeze)
+        private bool _perfTrackingInitialized = false;
 
         public TaskManager(int X, int Y, int Width = 760, int Height = 520) : base(X, Y, Width, Height) {
             ShowInTaskbar = true;
@@ -105,8 +108,10 @@ namespace guideXOS.DefaultApps {
             _memChart = new Chart(chartW, chartH, "Memory");
             _diskChart = new Chart(chartW, chartH, "Disk");
             _netChart = new Chart(chartW, chartH, "Network");
-            // Enable perf tracking now that Task Manager is active
-            WindowManager.EnablePerfTracking();
+            
+            // DON'T enable perf tracking here - it causes freeze during construction
+            // It will be enabled on first OnDraw call instead
+            // WindowManager.EnablePerfTracking();
 
             // initialize owner sampling
             _lastOwnerBytes = new Dictionary<int, ulong>();
@@ -244,6 +249,12 @@ namespace guideXOS.DefaultApps {
         public override void OnDraw() {
             base.OnDraw();
 
+            // Enable perf tracking on first draw (safe after construction)
+            if (!_perfTrackingInitialized) {
+                _perfTrackingInitialized = true;
+                //WindowManager.EnablePerfTracking();
+            }
+
             int cx = X + _padding;
             int cy = Y + _padding;
             int cw = Width - _padding * 2;
@@ -346,10 +357,14 @@ namespace guideXOS.DefaultApps {
         }
 
         private void DrawProcesses(int x, int y, int w, int h) {
-            // Sample owner bytes on every draw to ensure we have fresh data
-            if ((long)(Timer.Ticks - _lastOwnerSampleTick) >= 500) {
-                SampleOwnerBytes();
-                _lastOwnerSampleTick = Timer.Ticks;
+            // Sample owner bytes less frequently to avoid freezing - changed from 500ms to 2000ms
+            if ((long)(Timer.Ticks - _lastOwnerSampleTick) >= 2000) {
+                try {
+                    SampleOwnerBytes();
+                    _lastOwnerSampleTick = Timer.Ticks;
+                } catch {
+                    // If sampling fails, skip it this frame to prevent freeze
+                }
             }
 
             int headerH = _rowHeight;
@@ -395,15 +410,20 @@ namespace guideXOS.DefaultApps {
                 int cpuPct = WindowManager.GetWindowCpuPct(ownerId);
                 WindowManager.font.DrawString(cx + 6, dy + 6, cpuPct.ToString()); cx += colCpuW;
 
-                // Memory per window: use allocator per-owner accounting
-                // Query both the dictionary and fallback scan
-                ulong bytes = Allocator.GetOwnerBytes(ownerId);
-                // Also get total memory in use for debugging - show global total for now
-                if (bytes == 0) {
-                    // No owner-specific memory found - show global memory divided by window count for rough estimate
-                    ulong globalMem = Allocator.MemoryInUse;
-                    int winCount = WindowManager.Windows.Count;
-                    if (winCount > 0) bytes = globalMem / (ulong)winCount;
+                // Memory per window: use allocator per-owner accounting with try-catch to prevent freeze
+                ulong bytes = 0;
+                try {
+                    bytes = Allocator.GetOwnerBytes(ownerId);
+                    // Also get total memory in use for debugging - show global total for now
+                    if (bytes == 0) {
+                        // No owner-specific memory found - show global memory divided by window count for rough estimate
+                        ulong globalMem = Allocator.MemoryInUse;
+                        int winCount = WindowManager.Windows.Count;
+                        if (winCount > 0) bytes = globalMem / (ulong)winCount;
+                    }
+                } catch {
+                    // If memory query fails, show 0
+                    bytes = 0;
                 }
                 
                 // Format memory value more clearly - show KB if < 1MB
@@ -885,37 +905,50 @@ namespace guideXOS.DefaultApps {
 
         private void SampleOwnerBytes() {
             var snap = Allocator.GetOwnerListSnapshot();
-            // Build new snapshot values into local arrays to avoid allocating temporary dictionaries
-            // Compute deltas (bytes per ~1s) and update _ownerKBps and _lastOwnerBytes in-place
-            lock (_lastOwnerBytes) {
-                // Mark all owners in _lastOwnerBytes as unseen initially by setting a sentinel
-                // We'll build a new set from snap and compute diffs.
-                // Compute diffs for owners present in snap
-                _ownerKBps.Clear();
-                for (int i = 0; i < snap.Length; i++) {
-                    int owner = snap[i].OwnerId;
-                    ulong bytes = snap[i].Bytes;
-                    ulong prev = _lastOwnerBytes.ContainsKey(owner) ? _lastOwnerBytes[owner] : 0UL;
-                    long diff = (long)bytes - (long)prev; // bytes per ~1s
-                    int kbs = (int)(diff / 1024L);
-                    _ownerKBps[owner] = kbs;
+            if (snap == null || snap.Length == 0) return;
+            
+            // Build new snapshot values - removed lock to prevent deadlock
+            // Compute diffs for owners present in snap
+            _ownerKBps.Clear();
+            for (int i = 0; i < snap.Length; i++) {
+                int owner = snap[i].OwnerId;
+                ulong bytes = snap[i].Bytes;
+                ulong prev = _lastOwnerBytes.ContainsKey(owner) ? _lastOwnerBytes[owner] : 0UL;
+                long diff = (long)bytes - (long)prev; // bytes per ~1s
+                int kbs = (int)(diff / 1024L);
+                _ownerKBps[owner] = kbs;
+            }
+            
+            // Owners that disappeared -> negative freed rate
+            // Create a temporary list to avoid modifying dictionary during iteration
+            var keysToCheck = new List<int>(_lastOwnerBytes.Keys.Count);
+            for (int i = 0; i < _lastOwnerBytes.Keys.Count; i++) {
+                keysToCheck.Add(_lastOwnerBytes.Keys[i]);
+            }
+            
+            for (int i = 0; i < keysToCheck.Count; i++) {
+                int owner = keysToCheck[i];
+                bool found = false;
+                for (int j = 0; j < snap.Length; j++) { 
+                    if (snap[j].OwnerId == owner) { 
+                        found = true; 
+                        break; 
+                    } 
                 }
-                // Owners that disappeared -> negative freed rate
-                for (int i = 0; i < _lastOwnerBytes.Keys.Count; i++) {
-                    int owner = _lastOwnerBytes.Keys[i];
-                    bool found = false;
-                    for (int j = 0; j < snap.Length; j++) { if (snap[j].OwnerId == owner) { found = true; break; } }
-                    if (!found) {
-                        int freed = (int)(-((long)_lastOwnerBytes[owner] / 1024L));
-                        _ownerKBps[owner] = freed;
-                    }
-                }
-                // Replace _lastOwnerBytes with new snapshot
-                _lastOwnerBytes.Clear();
-                for (int i = 0; i < snap.Length; i++) {
-                    _lastOwnerBytes[snap[i].OwnerId] = snap[i].Bytes;
+                if (!found) {
+                    int freed = (int)(-((long)_lastOwnerBytes[owner] / 1024L));
+                    _ownerKBps[owner] = freed;
                 }
             }
+            
+            // Replace _lastOwnerBytes with new snapshot
+            _lastOwnerBytes.Clear();
+            for (int i = 0; i < snap.Length; i++) {
+                _lastOwnerBytes[snap[i].OwnerId] = snap[i].Bytes;
+            }
+            
+            // Dispose the temporary list
+            keysToCheck.Dispose();
         }
     }
 }
