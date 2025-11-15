@@ -263,7 +263,19 @@ unsafe class Program {
             }
             Desktop.Update(Icons.DocumentIcon(32));
             //Desktop.Draw();
-            WindowManager.DrawAll();
+            
+            // Draw windows in layers to control z-order:
+            // 1. Regular windows (except Task Manager)
+            WindowManager.DrawAllExceptTaskManager();
+            
+            // 2. Workspace switcher (if visible) - appears on top of regular windows
+            if (Desktop.Taskbar != null) {
+                Desktop.Taskbar.DrawWorkspaceSwitcher();
+            }
+            
+            // 3. Task Manager (always on top)
+            WindowManager.DrawTaskManager();
+            
             //draw cursor
             var img = Control.MouseButtons.HasFlag(MouseButtons.Left) ? CursorMoving : Cursor;
             if (img != null) Framebuffer.Graphics.DrawImage(Control.MousePosition.X, Control.MousePosition.Y, img);

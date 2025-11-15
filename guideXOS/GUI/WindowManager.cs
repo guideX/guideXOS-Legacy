@@ -148,6 +148,50 @@ namespace guideXOS.GUI {
             if (_perfTrackingEnabled)
                 UpdateCpuPercents();
         }
+
+        /// <summary>
+        /// Draw all windows except Task Manager (allows workspace switcher to be drawn on top)
+        /// </summary>
+        public static void DrawAllExceptTaskManager() {
+            for (int i = 0; i < Windows.Count; i++) {
+                var w = Windows[i];
+                if (!w.Visible)
+                    continue;
+                // Skip Task Manager - it will be drawn later to stay on top
+                if (w is guideXOS.DefaultApps.TaskManager)
+                    continue;
+                    
+                if (!_perfTrackingEnabled) {
+                    w.OnDraw();
+                    continue;
+                }
+                Allocator.CurrentOwnerId = w.OwnerId;
+                ulong t0 = Timer.Ticks;
+                w.OnDraw();
+                ulong t1 = Timer.Ticks;
+                ulong dt = t1 >= t0 ? t1 - t0 : 0UL;
+                Allocator.CurrentOwnerId = 0;
+            }
+            if (_perfTrackingEnabled)
+                UpdateCpuPercents();
+        }
+
+        /// <summary>
+        /// Draw only Task Manager (always on top)
+        /// </summary>
+        public static void DrawTaskManager() {
+            for (int i = 0; i < Windows.Count; i++) {
+                var w = Windows[i];
+                if (!w.Visible)
+                    continue;
+                // Only draw Task Manager
+                if (w is guideXOS.DefaultApps.TaskManager) {
+                    w.OnDraw();
+                    break; // Only one Task Manager should exist
+                }
+            }
+        }
+
         /// <summary>
         /// Update CPU Percents
         /// </summary>

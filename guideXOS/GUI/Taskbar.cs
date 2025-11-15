@@ -77,6 +77,18 @@ namespace guideXOS.GUI {
             _needsWorkspaceSwitcher = true;
         }
 
+        /// <summary>
+        /// Draw the workspace switcher if visible (called separately to control z-order)
+        /// </summary>
+        public void DrawWorkspaceSwitcher() {
+            // Handle workspace switcher input FIRST (if visible)
+            if (_workspaceSwitcher != null && _workspaceSwitcher.Visible) {
+                _workspaceSwitcher.OnInput();
+                // Draw the workspace switcher
+                _workspaceSwitcher.OnDraw();
+            }
+        }
+
         public void Draw() {
             // Handle delayed workspace switcher creation at the START of Draw()
             // This ensures it's created OUTSIDE of any mouse button handling
@@ -95,15 +107,8 @@ namespace guideXOS.GUI {
                 _workspaceSwitcher.Visible = true;
             }
             
-            // Handle workspace switcher input FIRST (if visible)
+            // Skip drawing the taskbar if workspace switcher is visible
             if (_workspaceSwitcher != null && _workspaceSwitcher.Visible) {
-                _workspaceSwitcher.OnInput();
-            }
-            
-            // Draw workspace switcher BEFORE taskbar (if visible)
-            if (_workspaceSwitcher != null && _workspaceSwitcher.Visible) {
-                _workspaceSwitcher.OnDraw();
-                // If workspace switcher is visible, skip drawing the rest of taskbar
                 return;
             }
             
