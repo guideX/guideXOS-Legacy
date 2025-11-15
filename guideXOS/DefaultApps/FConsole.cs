@@ -417,7 +417,7 @@ namespace guideXOS.DefaultApps {
             string cmd = parts[0];
             switch (cmd) {
                 case "help":
-                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, netinit, ipconfig, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk");
+                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, netinit, ipconfig, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk, workspaces");
                     break;
                 case "exit": {
                         this.Visible = false;
@@ -931,6 +931,16 @@ namespace guideXOS.DefaultApps {
                         if (guideXOS.OS.Firewall.Window != null) {
                             WindowManager.MoveToEnd(guideXOS.OS.Firewall.Window);
                             guideXOS.OS.Firewall.Window.Visible = true;
+                        }
+                        break;
+                    }
+                case "workspaces": {
+                        // Show the workspace switcher overlay
+                        if (Desktop.Taskbar != null) {
+                            Desktop.Taskbar.ShowWorkspaceSwitcher();
+                            WriteLine("Workspace switcher opened");
+                        } else {
+                            WriteLine("Taskbar not available");
                         }
                         break;
                     }

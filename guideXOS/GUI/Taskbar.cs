@@ -70,6 +70,13 @@ namespace guideXOS.GUI {
             }
         }
 
+        /// <summary>
+        /// Show the workspace switcher overlay
+        /// </summary>
+        public void ShowWorkspaceSwitcher() {
+            _needsWorkspaceSwitcher = true;
+        }
+
         public void Draw() {
             // Handle delayed workspace switcher creation at the START of Draw()
             // This ensures it's created OUTSIDE of any mouse button handling
@@ -317,11 +324,9 @@ namespace guideXOS.GUI {
                 // Workspace button click: SET FLAG instead of creating directly
                 if (mx2 >= tvX && mx2 <= tvX + tvSize && my2 >= tvY && my2 <= tvY + tvSize) {
                     if (!_taskViewLatch) { 
-                        // Open workspace switcher overlay instead of calling Next() (which freezes)
-                        //var switcher = new WorkspaceSwitcher();
-                        //WindowManager.MoveToEnd(switcher);
-                        //switcher.Visible = true;
-                        //_taskViewLatch = true; 
+                        // Set flag to create workspace switcher on next Draw() cycle
+                        _needsWorkspaceSwitcher = true;
+                        _taskViewLatch = true; 
                     }
                 }
                 // Show Desktop click handling (right sliver)
