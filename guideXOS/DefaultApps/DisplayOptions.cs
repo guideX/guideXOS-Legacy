@@ -479,24 +479,24 @@ namespace guideXOS.DefaultApps {
         }
         
         private void CreateGradient(Image img, uint startColor, uint endColor, bool vertical) {
-            byte startA = (byte)(startColor >> 24);
-            byte startR = (byte)(startColor >> 16);
-            byte startG = (byte)(startColor >> 8);
-            byte startB = (byte)(startColor);
+            int startA = (int)(startColor >> 24);
+            int startR = (int)((startColor >> 16) & 0xFF);
+            int startG = (int)((startColor >> 8) & 0xFF);
+            int startB = (int)(startColor & 0xFF);
             
-            byte endA = (byte)(endColor >> 24);
-            byte endR = (byte)(endColor >> 16);
-            byte endG = (byte)(endColor >> 8);
-            byte endB = (byte)(endColor);
+            int endA = (int)(endColor >> 24);
+            int endR = (int)((endColor >> 16) & 0xFF);
+            int endG = (int)((endColor >> 8) & 0xFF);
+            int endB = (int)(endColor & 0xFF);
             
             if (vertical) {
                 // Top to bottom gradient
                 for (int y = 0; y < img.Height; y++) {
                     float t = (float)y / img.Height;
-                    byte a = (byte)(startA + (endA - startA) * t);
-                    byte r = (byte)(startR + (endR - startR) * t);
-                    byte g = (byte)(startG + (endG - startG) * t);
-                    byte b = (byte)(startB + (endB - startB) * t);
+                    int a = (int)(startA + (endA - startA) * t);
+                    int r = (int)(startR + (endR - startR) * t);
+                    int g = (int)(startG + (endG - startG) * t);
+                    int b = (int)(startB + (endB - startB) * t);
                     uint color = (uint)((a << 24) | (r << 16) | (g << 8) | b);
                     
                     for (int x = 0; x < img.Width; x++) {
@@ -507,10 +507,10 @@ namespace guideXOS.DefaultApps {
                 // Left to right gradient
                 for (int x = 0; x < img.Width; x++) {
                     float t = (float)x / img.Width;
-                    byte a = (byte)(startA + (endA - startA) * t);
-                    byte r = (byte)(startR + (endR - startR) * t);
-                    byte g = (byte)(startG + (endG - startG) * t);
-                    byte b = (byte)(startB + (endB - startB) * t);
+                    int a = (int)(startA + (endA - startA) * t);
+                    int r = (int)(startR + (endR - startR) * t);
+                    int g = (int)(startG + (endG - startG) * t);
+                    int b = (int)(startB + (endB - startB) * t);
                     uint color = (uint)((a << 24) | (r << 16) | (g << 8) | b);
                     
                     for (int y = 0; y < img.Height; y++) {
@@ -777,23 +777,23 @@ namespace guideXOS.DefaultApps {
                 case 11: startColor = 0xFF1E3A8A; endColor = 0xFF0EA5E9; vertical = false; break;
             }
             
-            byte startA = (byte)(startColor >> 24);
-            byte startR = (byte)(startColor >> 16);
-            byte startG = (byte)(startColor >> 8);
-            byte startB = (byte)(startColor);
+            int startA = (int)(startColor >> 24);
+            int startR = (int)((startColor >> 16) & 0xFF);
+            int startG = (int)((startColor >> 8) & 0xFF);
+            int startB = (int)(startColor & 0xFF);
             
-            byte endA = (byte)(endColor >> 24);
-            byte endR = (byte)(endColor >> 16);
-            byte endG = (byte)(endColor >> 8);
-            byte endB = (byte)(endColor);
+            int endA = (int)(endColor >> 24);
+            int endR = (int)((endColor >> 16) & 0xFF);
+            int endG = (int)((endColor >> 8) & 0xFF);
+            int endB = (int)(endColor & 0xFF);
             
             if (vertical) {
                 for (int py = 0; py < h; py++) {
                     float t = (float)py / h;
-                    byte a = (byte)(startA + (endA - startA) * t);
-                    byte r = (byte)(startR + (endR - startR) * t);
-                    byte g = (byte)(startG + (endG - startG) * t);
-                    byte b = (byte)(startB + (endB - startB) * t);
+                    int a = (int)(startA + (endA - startA) * t);
+                    int r = (int)(startR + (endR - startR) * t);
+                    int g = (int)(startG + (endG - startG) * t);
+                    int b = (int)(startB + (endB - startB) * t);
                     uint color = (uint)((a << 24) | (r << 16) | (g << 8) | b);
                     
                     Framebuffer.Graphics.FillRectangle(x, y + py, w, 1, color);
@@ -801,10 +801,10 @@ namespace guideXOS.DefaultApps {
             } else {
                 for (int px = 0; px < w; px++) {
                     float t = (float)px / w;
-                    byte a = (byte)(startA + (endA - startA) * t);
-                    byte r = (byte)(startR + (endR - startR) * t);
-                    byte g = (byte)(startG + (endG - startG) * t);
-                    byte b = (byte)(startB + (endB - startB) * t);
+                    int a = (int)(startA + (endA - startA) * t);
+                    int r = (int)(startR + (endR - startR) * t);
+                    int g = (int)(startG + (endG - startG) * t);
+                    int b = (int)(startB + (endB - startB) * t);
                     uint color = (uint)((a << 24) | (r << 16) | (g << 8) | b);
                     
                     Framebuffer.Graphics.FillRectangle(x + px, y, 1, h, color);

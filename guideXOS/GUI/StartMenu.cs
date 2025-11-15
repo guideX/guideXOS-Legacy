@@ -442,8 +442,17 @@ namespace guideXOS.GUI {
                     var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32);
                     string name = Desktop.Apps.Name(ai);
                     int ih = icon.Height; int iw = icon.Width;
+                    
+                    // Skip items that are completely outside the visible area
+                    if (y + ih < listY || y > listY + listH) {
+                        y += Spacing;
+                        name.Dispose();
+                        continue;
+                    }
+                    
                     // Hover effect backdrop (constrain to list region, avoid separator overlap)
-                    if (mouseX >= listX && mouseX <= listX + listW && mouseY >= y && mouseY <= y + ih) {
+                    if (mouseX >= listX && mouseX <= listX + listW && mouseY >= y && mouseY <= y + ih && 
+                        y >= listY && y + ih <= listY + listH) {
                         int hx = listX; // do not extend left
                         int hy = y - 2; // slightly tighter padding
                         int hw = listW - 4; // reserve gap so it doesn't cross separator
@@ -466,7 +475,15 @@ namespace guideXOS.GUI {
                     var icon = _recentCache[i].Icon;
                     var name = _recentCache[i].Name;
                     int ih = icon.Height; int iw = icon.Width;
-                    if (mouseX >= listX && mouseX <= listX + listW && mouseY >= y && mouseY <= y + ih) {
+                    
+                    // Skip items that are completely outside the visible area
+                    if (y + ih < listY || y > listY + listH) {
+                        y += Spacing;
+                        continue;
+                    }
+                    
+                    if (mouseX >= listX && mouseX <= listX + listW && mouseY >= y && mouseY <= y + ih &&
+                        y >= listY && y + ih <= listY + listH) {
                         int hx = listX; int hy = y - 2; int hw = listW - 4; if (hw < 0) hw = listW; int hh = ih + 4;
                         UIPrimitives.AFillRoundedRect(hx, hy, hw, hh, 0x333F7FBF, 6);
                         UIPrimitives.DrawRoundedRect(hx, hy, hw, hh, 0xFF3F7FBF, 1, 6);
