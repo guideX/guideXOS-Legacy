@@ -90,6 +90,7 @@ namespace guideXOS.OS {
             _apps.Add(new App("Devices", Icons.ConfigureIcon(32)));
             _apps.Add(new App("nexIRC", Icons.ChatIcon(32)));
             _apps.Add(new App("IRCNetworks", Icons.NetworkIcon(32)));
+            _apps.Add(new App("GUISamples", Icons.ApplicationsIcon(32)));
         }
         /// <summary>
         /// Load

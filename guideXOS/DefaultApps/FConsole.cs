@@ -417,7 +417,7 @@ namespace guideXOS.DefaultApps {
             string cmd = parts[0];
             switch (cmd) {
                 case "help":
-                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, netinit, ipconfig, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk, workspaces");
+                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, apps, launch <app>, netinit, ipconfig, ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk, workspaces");
                     break;
                 case "exit": {
                         this.Visible = false;
@@ -941,6 +941,80 @@ namespace guideXOS.DefaultApps {
                             WriteLine("Workspace switcher opened");
                         } else {
                             WriteLine("Taskbar not available");
+                        }
+                        break;
+                    }
+                case "apps":
+                case "listapps": {
+                        if (Desktop.Apps == null) {
+                            WriteLine("App system not initialized");
+                            break;
+                        }
+                        WriteLine("Available Applications:");
+                        WriteLine("----------------------");
+                        for (int i = 0; i < Desktop.Apps.Length; i++) {
+                            WriteLine("  " + Desktop.Apps.Name(i));
+                        }
+                        WriteLine("");
+                        WriteLine("Usage: launch <appname>");
+                        break;
+                    }
+                case "launch":
+                case "run":
+                case "start": {
+                        if (parts.Length < 2) {
+                            WriteLine("Usage: launch <appname>");
+                            WriteLine("Use 'apps' to see available applications");
+                            break;
+                        }
+                        if (Desktop.Apps == null) {
+                            WriteLine("App system not initialized");
+                            break;
+                        }
+                        
+                        string appName = parts[1];
+                        bool found = false;
+                        string match = null;
+                        
+                        // Try exact match first
+                        for (int i = 0; i < Desktop.Apps.Length; i++) {
+                            if (EqualsIgnoreCase(Desktop.Apps.Name(i), appName)) {
+                                appName = Desktop.Apps.Name(i);
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        // Try partial match if not found
+                        if (!found) {
+                            int matches = 0;
+                            for (int i = 0; i < Desktop.Apps.Length; i++) {
+                                if (StartsWithIgnoreCase(Desktop.Apps.Name(i), appName)) {
+                                    match = Desktop.Apps.Name(i);
+                                    matches++;
+                                }
+                            }
+                            
+                            if (matches == 1) {
+                                appName = match;
+                                found = true;
+                            } else if (matches > 1) {
+                                WriteLine("Ambiguous: multiple apps match '" + appName + "'");
+                                for (int i = 0; i < Desktop.Apps.Length; i++) {
+                                    if (StartsWithIgnoreCase(Desktop.Apps.Name(i), appName)) {
+                                        WriteLine("  " + Desktop.Apps.Name(i));
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        
+                        if (found) {
+                            WriteLine("Launching " + appName + "...");
+                            Desktop.Apps.Load(appName);
+                        } else {
+                            WriteLine("App not found: " + parts[1]);
+                            WriteLine("Use 'apps' to see available applications");
                         }
                         break;
                     }
