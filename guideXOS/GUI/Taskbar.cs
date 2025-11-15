@@ -28,6 +28,10 @@ namespace guideXOS.GUI {
         private ulong _nextCycleStart;
         private const ulong TenSeconds = 10_000;       // ms
         private const ulong FiveMinutes = 300_000;     // ms
+        
+        // Track actual network activity for animation
+        private ulong _lastNetActivity = 0;
+        private const ulong NetActivityWindow = 3_000; // show animation for 3 seconds after activity
 
         // New: latches and references for Workspace Switcher and Show Desktop
         private bool _taskViewLatch = false;
@@ -46,6 +50,9 @@ namespace guideXOS.GUI {
 
         // Latch for pinned quicklaunch
         private bool _pinnedClickLatch = false;
+        
+        // On-Screen Keyboard button latch
+        private bool _oskClickLatch = false;
 
         public Taskbar(int barHeight, Image startIcon) { 
             _barHeight = barHeight; 
@@ -217,18 +224,10 @@ namespace guideXOS.GUI {
 #else
             connected = false;
 #endif
-            // Determine if animation window is active
             ulong now = Timer.Ticks;
-            if (now >= _nextCycleStart) {
-                // start a new 10s animation window, then schedule next in 5 minutes
-                _animWindowStart = now;
-                _animWindowEnd = now + TenSeconds;
-                _nextCycleStart = now + FiveMinutes;
-            }
-            bool animActive = (now >= _animWindowStart && now <= _animWindowEnd);
 
             if (connected) {
-                // draw 3 bars
+                // draw 3 bars - only animate when network is connected (implies activity)
                 int bw = 3; int gap2 = 2;
                 for (int i = 0; i < 3; i++) {
                     int h2 = 4 + i * 4;
@@ -237,6 +236,14 @@ namespace guideXOS.GUI {
                 _netConnectedShown = true;
             } else {
                 // show animated dots only during the allowed window; otherwise static dim dots
+                if (now >= _nextCycleStart) {
+                    // start a new 10s animation window, then schedule next in 5 minutes
+                    _animWindowStart = now;
+                    _animWindowEnd = now + TenSeconds;
+                    _nextCycleStart = now + FiveMinutes;
+                }
+                bool animActive = (now >= _animWindowStart && now <= _animWindowEnd);
+                
                 int dot = 3; int gap2 = 4;
                 for (int i = 0; i < 3; i++) {
                     uint c;
@@ -249,9 +256,24 @@ namespace guideXOS.GUI {
                 }
             }
 
-            // Workspace Switcher button (left of time/date)
+            // On-Screen Keyboard button (left of network indicator)
+            int oskSize = _barHeight - 12; if (oskSize < 18) oskSize = 18; if (oskSize > 24) oskSize = 24;
+            int oskX = netX - oskSize - 10;
+            int oskY = Framebuffer.Height - _barHeight + (_barHeight - oskSize) / 2;
+            bool overOSK = (mx >= oskX && mx <= oskX + oskSize && my >= oskY && my <= oskY + oskSize);
+            uint oskBg = overOSK ? 0xFF3A3A3A : 0xFF303030;
+            Framebuffer.Graphics.FillRectangle(oskX, oskY, oskSize, oskSize, oskBg);
+            Framebuffer.Graphics.DrawRectangle(oskX, oskY, oskSize, oskSize, 0xFF454545, 1);
+            // draw keyboard glyph (simple representation)
+            int kbPad = 4;
+            Framebuffer.Graphics.FillRectangle(oskX + kbPad, oskY + kbPad, oskSize - kbPad * 2, 2, 0xFFAAAAAA);
+            Framebuffer.Graphics.FillRectangle(oskX + kbPad, oskY + kbPad + 4, oskSize - kbPad * 2, 2, 0xFFAAAAAA);
+            Framebuffer.Graphics.FillRectangle(oskX + kbPad, oskY + kbPad + 8, oskSize - kbPad * 2, 2, 0xFFAAAAAA);
+            Framebuffer.Graphics.FillRectangle(oskX + kbPad + 2, oskY + oskSize - kbPad - 4, oskSize - kbPad * 2 - 4, 3, 0xFFAAAAAA);
+
+            // Workspace Switcher button (left of OSK)
             int tvSize = _barHeight - 12; if (tvSize < 18) tvSize = 18; if (tvSize > 24) tvSize = 24;
-            int tvX = netX - tvSize - 10;
+            int tvX = oskX - tvSize - 10;
             int tvY = Framebuffer.Height - _barHeight + (_barHeight - tvSize) / 2;
             bool overTV = (mx >= tvX && mx <= tvX + tvSize && my >= tvY && my <= tvY + tvSize);
             uint tvBg = overTV ? 0xFF3A3A3A : 0xFF303030;
@@ -285,6 +307,13 @@ namespace guideXOS.GUI {
                         if (StartMenu != null && StartMenu.Visible && !_startClickLatch && !StartMenu.IsUnderMouse()) { StartMenu.Visible = false; }
                     }
                 }
+                // On-Screen Keyboard button click
+                if (mx2 >= oskX && mx2 <= oskX + oskSize && my2 >= oskY && my2 <= oskY + oskSize) {
+                    if (!_oskClickLatch) {
+                        OpenOnScreenKeyboard();
+                        _oskClickLatch = true;
+                    }
+                }
                 // Workspace button click: SET FLAG instead of creating directly
                 if (mx2 >= tvX && mx2 <= tvX + tvSize && my2 >= tvY && my2 <= tvY + tvSize) {
                     if (!_taskViewLatch) { 
@@ -302,7 +331,7 @@ namespace guideXOS.GUI {
                         _showDesktopLatch = true;
                     }
                 }
-            } else { _clockClickLatch = false; _startClickLatch = false; _taskViewLatch = false; _showDesktopLatch = false; }
+            } else { _clockClickLatch = false; _startClickLatch = false; _taskViewLatch = false; _showDesktopLatch = false; _oskClickLatch = false; }
 
             time.Dispose(); date.Dispose();
         }
@@ -331,6 +360,29 @@ namespace guideXOS.GUI {
                 _minimizedByShowDesktop.Clear();
                 _desktopShown = false;
             }
+        }
+
+        public void OpenOnScreenKeyboard() {
+            // Check if OSK is already open
+            for (int i = 0; i < WindowManager.Windows.Count; i++) {
+                if (WindowManager.Windows[i] is OnScreenKeyboard osk) {
+                    if (!osk.Visible) {
+                        osk.Visible = true;
+                        WindowManager.MoveToEnd(osk);
+                    }
+                    return;
+                }
+            }
+            
+            // Create new OSK window at bottom center of screen
+            int oskW = 800;
+            int oskH = 280;
+            int oskX = (Framebuffer.Width - oskW) / 2;
+            int oskY = Framebuffer.Height - _barHeight - oskH - 10;
+            
+            var keyboard = new OnScreenKeyboard(oskX, oskY);
+            WindowManager.MoveToEnd(keyboard);
+            keyboard.Visible = true;
         }
     }
 }

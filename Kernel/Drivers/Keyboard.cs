@@ -31,6 +31,14 @@ namespace guideXOS.Kernel.Drivers {
             OnKeyChanged?.Invoke(null, info);
         }
         /// <summary>
+        /// Simulate Key - for On-Screen Keyboard
+        /// </summary>
+        /// <param name="info"></param>
+        public static void SimulateKey(ConsoleKeyInfo info) {
+            KeyInfo = info;
+            OnKeyChanged?.Invoke(null, info);
+        }
+        /// <summary>
         /// Clean Key Info
         /// </summary>
         /// <param name="NoModifiers"></param>
