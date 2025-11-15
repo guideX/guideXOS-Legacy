@@ -68,7 +68,7 @@ namespace guideXOS.DefaultApps {
         private Chart _diskChart;
         private Chart _netChart;
 
-        private const int ChartLineWidth = 1; // thinner column to reduce fill cost
+        private const int ChartLineWidth = 4; // wider column to make updates more visible
         private ulong _lastPerfTick = 0;
 
         // Synthetic/derived perf counters for labels and to animate idle systems
