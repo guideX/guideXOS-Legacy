@@ -17,12 +17,12 @@ namespace guideXOS.DefaultApps {
         /// <param name="Y"></param>
         public Clock(int X, int Y) : base(X, Y, 200, 200) {
             Title = "Clock";
-            IsResizable = true;
+            IsResizable = false;
             ShowInTaskbar = true;
-            ShowMaximize = true;
-            ShowMinimize = true;
-            ShowRestore = true;
-            ShowTombstone = true;
+            ShowMaximize = false;
+            ShowMinimize = false;
+            ShowRestore = false;
+            ShowTombstone = false;
             sine = new int[16] {
         		0,
         		27,
