@@ -8,6 +8,11 @@
 <img alt="" src="screenshots/console.jpg" />
 </p>
 <p>
+<h3>Clock</h3>
+<img alt="" src="screenshots/clock.jpg" />
+</p>
+
+<p>
 <h3>Task Manager Performance Tab/CPU</h3>
 <img alt="" src="screenshots/task_manager.jpg" />
 </p>
