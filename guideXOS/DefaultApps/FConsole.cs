@@ -322,7 +322,7 @@ namespace guideXOS.DefaultApps {
             d.Dispose();
             StatusMsg("Written");
         }
-        private void StatusMsg(string msg) {
+        private void StatusMsg(String msg) {
             /* optional */
         }
         private void ExitVi() {
@@ -775,30 +775,30 @@ namespace guideXOS.DefaultApps {
                     }
                     break;
                 case "netinit":
-                    // Check if network is already initialized by checking if MAC is set
+                    // Check if network is already initialized
                     unsafe {
                         if (NETv4.Sender != null) {
-                            Console.WriteLine("[NET] Network already initialized");
-                            Console.WriteLine($"[NET] IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
+                            WriteLine("[NET] Network already initialized");
+                            WriteLine($"[NET] IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
                             break;
                         }
                     }
                     
-                    Console.WriteLine("[NET] Initializing stack");
+                    WriteLine("[NET] Initializing stack");
                     try {
                         NETv4.Initialize();
                     } catch {
-                        Console.WriteLine("[NET] Stack initialization failed");
+                        WriteLine("[NET] Stack initialization failed");
                         break;
                     }
                     
-                    Console.WriteLine("[NET] Scanning for NICs");
+                    WriteLine("[NET] Scanning for NICs");
                     bool nicFound = false;
                     try {
                         Intel825xx.Initialize();
                         unsafe {
                             if (NETv4.Sender != null) {
-                                Console.WriteLine("[NET] Intel825xx found");
+                                WriteLine("[NET] Intel825xx found");
                                 nicFound = true;
                             }
                         }
@@ -807,65 +807,62 @@ namespace guideXOS.DefaultApps {
                     try {
                         RTL8111.Initialize();
                         unsafe {
-                            // Fixed: Check only if Sender was set, regardless of nicFound flag
                             if (NETv4.Sender != null && !nicFound) {
-                                Console.WriteLine("[NET] RTL8111 found");
+                                WriteLine("[NET] RTL8111 found");
                                 nicFound = true;
                             }
                         }
                     } catch { }
                     
                     if (!nicFound) {
-                        Console.WriteLine("[NET] No supported NIC found");
+                        WriteLine("[NET] No supported NIC found");
                         break;
                     }
                     
-                    Console.WriteLine("[NET] Attempting DHCP (this may take a few seconds)...");
+                    WriteLine("[NET] Attempting DHCP (this may take a few seconds)...");
                     try {
                         bool dhcp = NETv4.DHCPDiscover();
                         if (dhcp) {
-                            Console.WriteLine("[NET] DHCP successful");
-                            Console.WriteLine($"[NET] IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
+                            WriteLine("[NET] DHCP successful");
+                            WriteLine($"[NET] IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
                         } else {
-                            Console.WriteLine("[NET] DHCP failed");
+                            WriteLine("[NET] DHCP failed");
                         }
                     } catch {
-                        Console.WriteLine("[NET] DHCP error");
+                        WriteLine("[NET] DHCP error");
                     }
                     break;
                 case "ifconfig":
-                    Console.WriteLine($"IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
-                    Console.WriteLine($"Mask: {NETv4.Mask.P1}.{NETv4.Mask.P2}.{NETv4.Mask.P3}.{NETv4.Mask.P4}");
-                    Console.WriteLine($"Gateway: {NETv4.GatewayIP.P1}.{NETv4.GatewayIP.P2}.{NETv4.GatewayIP.P3}.{NETv4.GatewayIP.P4}");
-                    Console.WriteLine($"MAC: {NETv4.MAC.P1:x2}:{NETv4.MAC.P2:x2}:{NETv4.MAC.P3:x2}:{NETv4.MAC.P4:x2}:{NETv4.MAC.P5:x2}:{NETv4.MAC.P6:x2}");
+                    WriteLine($"IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
+                    WriteLine($"Mask: {NETv4.Mask.P1}.{NETv4.Mask.P2}.{NETv4.Mask.P3}.{NETv4.Mask.P4}");
+                    WriteLine($"Gateway: {NETv4.GatewayIP.P1}.{NETv4.GatewayIP.P2}.{NETv4.GatewayIP.P3}.{NETv4.GatewayIP.P4}");
+                    WriteLine($"MAC: {NETv4.MAC.P1:x2}:{NETv4.MAC.P2:x2}:{NETv4.MAC.P3:x2}:{NETv4.MAC.P4:x2}:{NETv4.MAC.P5:x2}:{NETv4.MAC.P6:x2}");
                     break;
-                case "ipconfig": // Alias for ifconfig
-                    Console.WriteLine($"IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
-                    Console.WriteLine($"Mask: {NETv4.Mask.P1}.{NETv4.Mask.P2}.{NETv4.Mask.P3}.{NETv4.Mask.P4}");
-                    Console.WriteLine($"Gateway: {NETv4.GatewayIP.P1}.{NETv4.GatewayIP.P2}.{NETv4.GatewayIP.P3}.{NETv4.GatewayIP.P4}");
-                    Console.WriteLine($"MAC: {NETv4.MAC.P1:x2}:{NETv4.MAC.P2:x2}:{NETv4.MAC.P3:x2}:{NETv4.MAC.P4:x2}:{NETv4.MAC.P5:x2}:{NETv4.MAC.P6:x2}");
+                case "ipconfig":
+                    WriteLine($"IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
+                    WriteLine($"Mask: {NETv4.Mask.P1}.{NETv4.Mask.P2}.{NETv4.Mask.P3}.{NETv4.Mask.P4}");
+                    WriteLine($"Gateway: {NETv4.GatewayIP.P1}.{NETv4.GatewayIP.P2}.{NETv4.GatewayIP.P3}.{NETv4.GatewayIP.P4}");
+                    WriteLine($"MAC: {NETv4.MAC.P1:x2}:{NETv4.MAC.P2:x2}:{NETv4.MAC.P3:x2}:{NETv4.MAC.P4:x2}:{NETv4.MAC.P5:x2}:{NETv4.MAC.P6:x2}");
                     break;
                 case "arp":
                     if (NETv4.ARPTable == null) {
-                        Console.WriteLine("ARP table not initialized");
+                        WriteLine("ARP table not initialized");
                         break;
                     }
                     for (int i = 0; i < NETv4.ARPTable.Count; i++) {
                         var e = NETv4.ARPTable[i];
-                        Console.WriteLine($"{e.IP.P1}.{e.IP.P2}.{e.IP.P3}.{e.IP.P4} -> {e.MAC.P1:x2}:{e.MAC.P2:x2}:{e.MAC.P3:x2}:{e.MAC.P4:x2}:{e.MAC.P5:x2}:{e.MAC.P6:x2}");
-
+                        WriteLine($"{e.IP.P1}.{e.IP.P2}.{e.IP.P3}.{e.IP.P4} -> {e.MAC.P1:x2}:{e.MAC.P2:x2}:{e.MAC.P3:x2}:{e.MAC.P4:x2}:{e.MAC.P5:x2}:{e.MAC.P6:x2}");
                     }
                     break;
                 case "dns":
                     if (parts.Length < 2) {
-                        Console.WriteLine("Usage: dns <host>");
+                        WriteLine("Usage: dns <host>");
                         break;
                     }
                     
-                    // Check if network is initialized
                     unsafe {
                         if (NETv4.Sender == null) {
-                            Console.WriteLine("Network not initialized. Run 'netinit' first.");
+                            WriteLine("Network not initialized. Run 'netinit' first.");
                             break;
                         }
                     }
@@ -873,45 +870,45 @@ namespace guideXOS.DefaultApps {
                     try {
                         var ip = NETv4.DNSQuery(parts[1]);
                         if (ip.P1 == 0 && ip.P2 == 0 && ip.P3 == 0 && ip.P4 == 0) {
-                            Console.WriteLine("DNS failed");
+                            WriteLine("DNS failed");
                         } else {
-                            Console.WriteLine($"Resolved: {ip.P1}.{ip.P2}.{ip.P3}.{ip.P4}");
+                            WriteLine($"Resolved: {ip.P1}.{ip.P2}.{ip.P3}.{ip.P4}");
                         }
                     } catch {
-                        Console.WriteLine("DNS error");
+                        WriteLine("DNS error");
                     }
                     break;
                 case "ping":
                     if (parts.Length < 2) {
-                        Console.WriteLine("Usage: ping <hostOrIp>");
+                        WriteLine("Usage: ping <hostOrIp>");
                         break;
                     }
                     
                     // Check if network is initialized
                     unsafe {
                         if (NETv4.Sender == null) {
-                            Console.WriteLine("Network not initialized. Run 'netinit' first.");
+                            WriteLine("Network not initialized. Run 'netinit' first.");
                             break;
                         }
                     }
                     
                     NETv4.IPAddress dip;
                     if (!TryParseIp(parts[1], out dip)) {
-                        Console.WriteLine($"Resolving {parts[1]}...");
+                        WriteLine($"Resolving {parts[1]}...");
                         try {
                             dip = NETv4.DNSQuery(parts[1]);
                             if (dip.P1 == 0 && dip.P2 == 0 && dip.P3 == 0 && dip.P4 == 0) {
-                                Console.WriteLine("DNS resolution failed");
+                                WriteLine("DNS resolution failed");
                                 break;
                             }
                         } catch {
-                            Console.WriteLine("DNS error");
+                            WriteLine("DNS error");
                             break;
                         }
                     }
                     
-                    Console.WriteLine($"Pinging {dip.P1}.{dip.P2}.{dip.P3}.{dip.P4} with {NETv4.ICMPPingBytes} bytes of data:");
-                    Console.WriteLine("(Note: ICMP ping may not work in QEMU user-mode networking)");
+                    WriteLine($"Pinging {dip.P1}.{dip.P2}.{dip.P3}.{dip.P4} with {NETv4.ICMPPingBytes} bytes of data:");
+                    WriteLine("(Note: ICMP ping may not work in QEMU user-mode networking)");
                     
                     // Reset ICMP state
                     NETv4.IsICMPRespond = false;
@@ -921,39 +918,42 @@ namespace guideXOS.DefaultApps {
                     try {
                         NETv4.ICMPPing(dip);
                         
-                        // Wait for response with shorter timeout and check every 50ms
+                        // Wait for response with timeout - use spin-wait to avoid blocking GUI thread
                         ulong start = Timer.Ticks;
                         int timeout = 1000; // 1 second timeout
-                        int checks = 0;
-                        int maxChecks = 20; // Check 20 times max (1 second / 50ms)
+                        ulong checkInterval = 10; // Check time every 10ms worth of iterations
+                        ulong nextCheck = start + checkInterval;
                         
-                        while (!NETv4.IsICMPRespond && checks < maxChecks) {
-                            if ((long)(Timer.Ticks - start) > timeout) break;
-                            ACPITimer.Sleep(50); // Sleep for shorter periods
-                            checks++;
+                        while (!NETv4.IsICMPRespond) {
+                            ulong now = Timer.Ticks;
+                            // Only check timeout periodically to reduce overhead
+                            if (now >= nextCheck) {
+                                if ((long)(now - start) > timeout) break;
+                                nextCheck = now + checkInterval;
+                            }
                         }
                         
                         if (NETv4.IsICMPRespond) {
                             ulong elapsed = Timer.Ticks - start;
-                            Console.WriteLine($"Reply from {dip.P1}.{dip.P2}.{dip.P3}.{dip.P4}: bytes={NETv4.ICMPReplyBytes} ttl={NETv4.ICMPReplyTTL} time={elapsed}ms");
+                            WriteLine($"Reply from {dip.P1}.{dip.P2}.{dip.P3}.{dip.P4}: bytes={NETv4.ICMPReplyBytes} ttl={NETv4.ICMPReplyTTL} time={elapsed}ms");
                         } else {
-                            Console.WriteLine("Request timed out.");
+                            WriteLine("Request timed out.");
                         }
                     } catch {
-                        Console.WriteLine("Ping failed (network error)");
+                        WriteLine("Ping failed (network error)");
                     }
                     break;
                 case "authurl":
                     if (parts.Length < 2) {
-                        Console.WriteLine("Usage: authurl <http://host:port>");
+                        WriteLine("Usage: authurl <http://host:port>");
                         break;
                     }
                     Session.ServiceBaseUrl = parts[1];
-                    Console.WriteLine("ServiceBaseUrl set to: " + Session.ServiceBaseUrl);
+                    WriteLine("ServiceBaseUrl set to: " + Session.ServiceBaseUrl);
                     break;
                 case "authlogin":
                     if (parts.Length < 3) {
-                        Console.WriteLine("Usage: authlogin <username> <password>");
+                        WriteLine("Usage: authlogin <username> <password>");
                         break;
                     } {
                         string token;
@@ -961,29 +961,29 @@ namespace guideXOS.DefaultApps {
                         bool ok = AuthClient.TryLogin(parts[1], parts[2], out token, out msg);
                         if (ok) {
                             Session.LoginToken = token;
-                            Console.WriteLine("Login OK. Token=" + token);
+                            WriteLine("Login OK. Token=" + token);
                         } else {
-                            Console.WriteLine("Login failed: " + (msg ?? ""));
+                            WriteLine("Login failed: " + (msg ?? ""));
                         }
                     }
                     break;
                 case "authregister":
                     if (parts.Length < 3) {
-                        Console.WriteLine("Usage: authregister <username> <password>");
+                        WriteLine("Usage: authregister <username> <password>");
                         break;
                     } {
                         string msg;
                         bool ok = AuthClient.TryRegister(parts[1], parts[2], out msg);
-                        if (ok) Console.WriteLine("Register OK. Now run authlogin.");
-                        else Console.WriteLine("Register failed: " + (msg ?? ""));
+                        if (ok) WriteLine("Register OK. Now run authlogin.");
+                        else WriteLine("Register failed: " + (msg ?? ""));
                     }
                     break;
                 case "authtoken":
-                    Console.WriteLine("Token: " + (Session.LoginToken ?? ""));
+                    WriteLine("Token: " + (Session.LoginToken ?? ""));
                     break;
                 case "logout":
                     Session.LoginToken = string.Empty;
-                    Console.WriteLine("Logged out.");
+                    WriteLine("Logged out.");
                     break;
                 case "fwmode": {
                         if (parts.Length < 2) {

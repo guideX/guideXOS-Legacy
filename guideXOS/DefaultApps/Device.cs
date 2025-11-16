@@ -1,19 +1,30 @@
 using guideXOS.GUI;
 using guideXOS.Kernel.Drivers;
 using guideXOS.Misc;
+using guideXOS.DefaultApps;
 using System;
 using System.Windows.Forms;
 
 namespace guideXOS.DefaultApps {
     // Simple Device Manager-like window showing expected and detected devices
     internal class Devices : Window {
-        private struct Row { public string Name; public string Status; public string Detail; public uint Color; }
+        private struct Row { 
+            public string Name; 
+            public string Status; 
+            public string Detail; 
+            public uint Color;
+            public bool IsNetworkDevice; // Track if this row is a network device
+            public bool IsEnabled; // Track if device is detected
+        }
         private Row[] _rows;
         private int _count;
         private int _scroll;
         private bool _scrollDrag;
         private int _scrollStartY;
         private int _scrollStartScroll;
+        
+        // Hover state for configure buttons
+        private int _hoverConfigRow = -1;
 
         private const int RowH = 26;
         private const int Pad = 12;
@@ -38,12 +49,14 @@ namespace guideXOS.DefaultApps {
             }
         }
 
-        private void AddRow(string name, string status, string detail, uint color) {
+        private void AddRow(string name, string status, string detail, uint color, bool isNetworkDevice = false, bool isEnabled = false) {
             EnsureRowsCapacity(_count + 1);
             _rows[_count].Name = name;
             _rows[_count].Status = status;
             _rows[_count].Detail = detail;
             _rows[_count].Color = color;
+            _rows[_count].IsNetworkDevice = isNetworkDevice;
+            _rows[_count].IsEnabled = isEnabled;
             _count++;
         }
 
@@ -68,10 +81,10 @@ namespace guideXOS.DefaultApps {
             for (int i = 0; i < PCI.Devices.Count; i++) {
                 var d = PCI.Devices[i]; if (d == null) continue;
                 if (d.VendorID == 0x8086 && d.ClassID == 0x02) intelNet = true;
-                if (d.VendorID == 0x10EC && (d.DeviceID == 0x8161 || d.DeviceID == 0x8168 || d.DeviceID == 0x8169)) realtekNet = true;
+                if (d.VendorID == 0x10EC && (d.DeviceID == 0x8139 || d.DeviceID == 0x8161 || d.DeviceID == 0x8168 || d.DeviceID == 0x8169)) realtekNet = true;
             }
-            AddRow("Network: Intel 825xx", intelNet ? "Detected" : "Not found", "Vendor 8086 Class 02", intelNet ? 0xFF5FB878u : 0xFFD96C6Cu);
-            AddRow("Network: Realtek 8111/8168", realtekNet ? "Detected" : "Not found", "Vendor 10EC Dev 8168/8169", realtekNet ? 0xFF5FB878u : 0xFFD96C6Cu);
+            AddRow("Network: Intel 825xx", intelNet ? "Detected" : "Not found", "Vendor 8086 Class 02", intelNet ? 0xFF5FB878u : 0xFFD96C6Cu, true, intelNet);
+            AddRow("Network: Realtek 8111/8168", realtekNet ? "Detected" : "Not found", "Vendor 10EC Dev 8168/8169", realtekNet ? 0xFF5FB878u : 0xFFD96C6Cu, true, realtekNet);
 
             // USB Mass Storage count
             int usbCount = 0;
@@ -107,8 +120,15 @@ namespace guideXOS.DefaultApps {
             // Scrollbar drag start
             int sbW = 10; int sbX = X + Width - Pad - sbW;
             if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
-                if (mx >= sbX && mx <= sbX + sbW && my >= listY && my <= listY + listH) { _scrollDrag = true; _scrollStartY = my; _scrollStartScroll = _scroll; return; }
-            } else { _scrollDrag = false; }
+                if (mx >= sbX && mx <= sbX + sbW && my >= listY && my <= listY + listH) { 
+                    _scrollDrag = true; 
+                    _scrollStartY = my; 
+                    _scrollStartScroll = _scroll; 
+                    return; 
+                }
+            } else { 
+                _scrollDrag = false; 
+            }
 
             // Drag update
             if (_scrollDrag) {
@@ -118,6 +138,40 @@ namespace guideXOS.DefaultApps {
                 int newScroll = _scrollStartScroll + dy;
                 if (newScroll < 0) newScroll = 0; if (newScroll > maxScroll) newScroll = maxScroll;
                 _scroll = newScroll;
+            }
+            
+            // Check for configure button clicks
+            _hoverConfigRow = -1;
+            int nameW = (int)(cw * 0.34f);
+            int statusW = (int)(cw * 0.22f);
+            int detailsW = cw - nameW - statusW - 6;
+            int btnWidth = 80;
+            int btnHeight = 20;
+            
+            int y = listY - _scroll;
+            for (int i = 0; i < _count; i++) {
+                if (y + RowH < listY) { y += RowH; continue; }
+                if (y > listY + listH) break;
+                
+                // Only show configure button for enabled network devices
+                if (_rows[i].IsNetworkDevice && _rows[i].IsEnabled) {
+                    int btnX = cx + nameW + statusW + detailsW - btnWidth - 8;
+                    int btnY = y + (RowH - btnHeight) / 2;
+                    
+                    if (mx >= btnX && mx <= btnX + btnWidth && my >= btnY && my <= btnY + btnHeight) {
+                        _hoverConfigRow = i;
+                        
+                        if (Control.MouseButtons.HasFlag(MouseButtons.Left) && !WindowManager.MouseHandled) {
+                            // Open network configuration dialog
+                            var configDialog = new NetworkConfigurationDialog();
+                            WindowManager.MoveToEnd(configDialog);
+                            configDialog.Visible = true;
+                            WindowManager.MouseHandled = true;
+                        }
+                    }
+                }
+                
+                y += RowH;
             }
         }
 
@@ -163,7 +217,29 @@ namespace guideXOS.DefaultApps {
                 UIPrimitives.AFillRoundedRect(sx, sy - 2, statusW - 8, WindowManager.font.FontSize + 4, 0x33222222, 4);
                 WindowManager.font.DrawString(sx + 6, sy, _rows[i].Status, statusW - 16, WindowManager.font.FontSize);
                 // details
-                WindowManager.font.DrawString(cx + nameW + statusW + 6, y + (RowH / 2 - WindowManager.font.FontSize / 2), _rows[i].Detail, detailsW - 8, WindowManager.font.FontSize);
+                int detailX = cx + nameW + statusW + 6;
+                WindowManager.font.DrawString(detailX, y + (RowH / 2 - WindowManager.font.FontSize / 2), _rows[i].Detail, detailsW - 8, WindowManager.font.FontSize);
+                
+                // Draw configure button for enabled network devices
+                if (_rows[i].IsNetworkDevice && _rows[i].IsEnabled) {
+                    int btnWidth = 80;
+                    int btnHeight = 20;
+                    int btnX = cx + nameW + statusW + detailsW - btnWidth - 8;
+                    int btnY = y + (RowH - btnHeight) / 2;
+                    
+                    bool isHover = (_hoverConfigRow == i);
+                    uint btnBg = isHover ? 0xFF4A6A8Au : 0xFF3A5A7Au;
+                    uint btnBorder = 0xFF2A4A6Au;
+                    
+                    Framebuffer.Graphics.FillRectangle(btnX, btnY, btnWidth, btnHeight, btnBg);
+                    Framebuffer.Graphics.DrawRectangle(btnX, btnY, btnWidth, btnHeight, btnBorder);
+                    
+                    string btnText = "Configure";
+                    int textX = btnX + (btnWidth - (btnText.Length * (WindowManager.font.FontSize / 2))) / 2;
+                    int textY = btnY + (btnHeight - WindowManager.font.FontSize) / 2 + 2;
+                    WindowManager.font.DrawString(textX, textY, btnText);
+                }
+                
                 y += RowH;
             }
 
