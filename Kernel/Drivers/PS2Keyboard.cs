@@ -19,6 +19,9 @@ namespace guideXOS.Kernel.Drivers {
         
         // Extended scancode flag (0xE0 prefix)
         private static bool _extended = false;
+        // PS/2 Set 2 handling
+        private static bool _set2 = false;          // Seen 0xF0 break prefix => device uses Set 2
+        private static bool _breakPending = false;   // Last byte was 0xF0 => next code is a release
         
         /// <summary>
         /// Initialize PS/2 Keyboard
@@ -43,22 +46,56 @@ namespace guideXOS.Kernel.Drivers {
         public static void OnInterrupt() {
             byte scancode = Native.In8(DataPort);
             
+            // QEMU workaround: Filter out spurious 0x00 scancodes
+            if (scancode == 0x00) {
+                return;
+            }
+            
             // Handle extended scancodes (0xE0 prefix)
             if (scancode == 0xE0) {
                 _extended = true;
                 return;
             }
+            // Handle Set 2 break prefix (0xF0)
+            if (scancode == 0xF0) {
+                _breakPending = true;
+                return;
+            }
             
-            // Check if this is a key release (bit 7 set)
-            bool released = (scancode & 0x80) != 0;
-            byte makeCode = (byte)(scancode & 0x7F);
+            bool released;
+            byte rawCode;
             
-            // Update modifier states
+            // If we saw 0xF0 prefix, this is a Set 2 release
+            if (_breakPending) {
+                _set2 = true; // Keyboard is using Set 2
+                released = true;
+                rawCode = scancode;
+            } else if (_set2) {
+                // We know keyboard uses Set 2, no 0xF0 means press
+                released = false;
+                rawCode = scancode;
+            } else {
+                // Set 1: releases have bit 7 set
+                released = (scancode & 0x80) != 0;
+                rawCode = (byte)(scancode & 0x7F);
+            }
+            
+            // Translate Set 2 make codes into Set 1 equivalents so downstream logic can stay in Set 1
+            byte makeCode = _set2 ? TranslateSet2ToSet1(rawCode, _extended) : rawCode;
+            
+            // QEMU workaround: Ignore modifier-only interrupts with invalid makeCodes
+            // Sometimes QEMU sends spurious interrupts that corrupt modifier states
+            if (!released && makeCode > 0x58 && makeCode != 0x5B && makeCode != 0x5C && makeCode != 0x5D) {
+                return;
+            }
+            
+            // Update modifier states FIRST
             UpdateModifiers(makeCode, released);
             
             // Get the ConsoleKey and character
             ConsoleKey key = ScancodeToKey(makeCode, _extended);
-            char keyChar = GetChar(makeCode, _extended);
+            // Only produce characters on key press, not release
+            char keyChar = released ? '\0' : GetChar(makeCode, _extended);
             
             // Build modifiers flags
             ConsoleModifiers mods = ConsoleModifiers.None;
@@ -67,7 +104,7 @@ namespace guideXOS.Kernel.Drivers {
             if (_leftAlt || _rightAlt) mods |= ConsoleModifiers.Alt;
             if (_capsLock) mods |= ConsoleModifiers.CapsLock;
             
-            // Create ConsoleKeyInfo
+            // Create ConsoleKeyInfo (keep original scancode for diagnostics/debouncing)
             Keyboard.KeyInfo = new ConsoleKeyInfo {
                 Key = key,
                 KeyChar = keyChar,
@@ -76,8 +113,9 @@ namespace guideXOS.Kernel.Drivers {
                 ScanCode = scancode
             };
             
-            // Reset extended flag
+            // Reset prefix flags
             _extended = false;
+            _breakPending = false;
             
             // Invoke keyboard events
             Keyboard.InvokeOnKeyChanged(Keyboard.KeyInfo);
@@ -85,11 +123,139 @@ namespace guideXOS.Kernel.Drivers {
         }
         
         /// <summary>
-        /// Update modifier key states
+        /// Translate PS/2 Set 2 make codes to Set 1 equivalents (partial but covers US layout alphanumerics and symbols)
+        /// </summary>
+        private static byte TranslateSet2ToSet1(byte code, bool extended) {
+            // This is a simplified translation table. A full one is very large.
+            // It covers a standard US QWERTY layout.
+            
+            // Extended codes are often consistent, so we pass them through
+            // unless they are known right-side modifiers
+            if (extended) {
+                switch (code) {
+                    case 0x14: return 0x1D; // RCtrl (E0,1D)
+                    case 0x11: return 0x38; // RAlt (E0,38)
+                    case 0x5A: return 0x1C; // Numpad Enter
+                    case 0x4A: return 0x35; // Numpad /
+                    // Arrow keys and other extended keys generally map 1:1
+                    default: return code;   // Pass through others like arrow keys, etc.
+                }
+            }
+
+            // Non-extended codes - comprehensive translation for US QWERTY
+            switch (code) {
+                // Modifiers
+                case 0x12: return 0x2A; // LShift
+                case 0x59: return 0x36; // RShift
+                case 0x14: return 0x1D; // LCtrl
+                case 0x11: return 0x38; // LAlt
+                case 0x58: return 0x3A; // CapsLock
+                case 0x77: return 0x45; // NumLock
+                case 0x7E: return 0x46; // ScrollLock
+                
+                // Escape and Function keys
+                case 0x76: return 0x01; // Escape
+                case 0x05: return 0x3B; // F1
+                case 0x06: return 0x3C; // F2
+                case 0x04: return 0x3D; // F3
+                case 0x0C: return 0x3E; // F4
+                case 0x03: return 0x3F; // F5
+                case 0x0B: return 0x40; // F6
+                case 0x83: return 0x41; // F7
+                case 0x0A: return 0x42; // F8
+                case 0x01: return 0x43; // F9
+                case 0x09: return 0x44; // F10
+                case 0x78: return 0x57; // F11
+                case 0x07: return 0x58; // F12
+                
+                // Top row (numbers and symbols)
+                case 0x0E: return 0x29; // ` (backtick)
+                case 0x16: return 0x02; // 1
+                case 0x1E: return 0x03; // 2
+                case 0x26: return 0x04; // 3
+                case 0x25: return 0x05; // 4
+                case 0x2E: return 0x06; // 5
+                case 0x36: return 0x07; // 6
+                case 0x3D: return 0x08; // 7
+                case 0x3E: return 0x09; // 8
+                case 0x46: return 0x0A; // 9
+                case 0x45: return 0x0B; // 0
+                case 0x4E: return 0x0C; // - (minus)
+                case 0x55: return 0x0D; // = (equals)
+                case 0x66: return 0x0E; // Backspace
+                
+                // Top letter row (QWERTY)
+                case 0x0D: return 0x0F; // Tab
+                case 0x15: return 0x10; // Q
+                case 0x1D: return 0x11; // W
+                case 0x24: return 0x12; // E
+                case 0x2D: return 0x13; // R
+                case 0x2C: return 0x14; // T
+                case 0x35: return 0x15; // Y
+                case 0x3C: return 0x16; // U
+                case 0x43: return 0x17; // I
+                case 0x44: return 0x18; // O
+                case 0x4D: return 0x19; // P
+                case 0x54: return 0x1A; // [ (left bracket)
+                case 0x5B: return 0x1B; // ] (right bracket)
+                case 0x5D: return 0x2B; // \ (backslash)
+                
+                // Middle letter row (ASDF)
+                case 0x1C: return 0x1E; // A
+                case 0x1B: return 0x1F; // S
+                case 0x23: return 0x20; // D
+                case 0x2B: return 0x21; // F
+                case 0x34: return 0x22; // G
+                case 0x33: return 0x23; // H
+                case 0x3B: return 0x24; // J
+                case 0x42: return 0x25; // K
+                case 0x4B: return 0x26; // L
+                case 0x4C: return 0x27; // ; (semicolon)
+                case 0x52: return 0x28; // ' (apostrophe)
+                case 0x5A: return 0x1C; // Enter
+                
+                // Bottom letter row (ZXCV)
+                case 0x1A: return 0x2C; // Z
+                case 0x22: return 0x2D; // X
+                case 0x21: return 0x2E; // C
+                case 0x2A: return 0x2F; // V
+                case 0x32: return 0x30; // B
+                case 0x31: return 0x31; // N
+                case 0x3A: return 0x32; // M
+                case 0x41: return 0x33; // , (comma)
+                case 0x49: return 0x34; // . (period)
+                case 0x4A: return 0x35; // / (slash)
+                
+                // Bottom row
+                case 0x29: return 0x39; // Space
+                
+                // Numeric keypad
+                case 0x70: return 0x52; // Numpad 0 (Ins)
+                case 0x69: return 0x4F; // Numpad 1 (End)
+                case 0x72: return 0x50; // Numpad 2 (Down)
+                case 0x7A: return 0x51; // Numpad 3 (PgDn)
+                case 0x6B: return 0x4B; // Numpad 4 (Left)
+                case 0x73: return 0x4C; // Numpad 5
+                case 0x74: return 0x4D; // Numpad 6 (Right)
+                case 0x6C: return 0x47; // Numpad 7 (Home)
+                case 0x75: return 0x48; // Numpad 8 (Up)
+                case 0x7D: return 0x49; // Numpad 9 (PgUp)
+                case 0x71: return 0x53; // Numpad . (Del)
+                case 0x7C: return 0x37; // Numpad *
+                case 0x7B: return 0x4A; // Numpad -
+                case 0x79: return 0x4E; // Numpad +
+                
+                // If not in our table, return original code (might work for some keys)
+                default: return code;
+            }
+        }
+        
+        /// <summary>
+        /// Update modifier key states (Set 1 codes)
         /// </summary>
         private static void UpdateModifiers(byte makeCode, bool released) {
             if (_extended) {
-                // Extended keys
+                // Extended keys (E0 prefix) - right-side modifiers
                 switch (makeCode) {
                     case 0x1D: // Right Ctrl
                         _rightCtrl = !released;
@@ -99,7 +265,7 @@ namespace guideXOS.Kernel.Drivers {
                         break;
                 }
             } else {
-                // Normal keys
+                // Normal keys (left-side modifiers and locks)
                 switch (makeCode) {
                     case 0x2A: // Left Shift
                         _leftShift = !released;
@@ -114,20 +280,26 @@ namespace guideXOS.Kernel.Drivers {
                         _leftAlt = !released;
                         break;
                     case 0x3A: // Caps Lock - toggle on press
-                        if (!released) _capsLock = !_capsLock;
+                        if (!released) {
+                            _capsLock = !_capsLock;
+                        }
                         break;
                     case 0x45: // Num Lock - toggle on press
-                        if (!released) _numLock = !_numLock;
+                        if (!released) {
+                            _numLock = !_numLock;
+                        }
                         break;
                     case 0x46: // Scroll Lock - toggle on press
-                        if (!released) _scrollLock = !_scrollLock;
+                        if (!released) {
+                            _scrollLock = !_scrollLock;
+                        }
                         break;
                 }
             }
         }
         
         /// <summary>
-        /// Convert scancode to ConsoleKey
+        /// Convert scancode to ConsoleKey (Set 1 codes)
         /// </summary>
         private static ConsoleKey ScancodeToKey(byte makeCode, bool extended) {
             if (extended) {
@@ -154,7 +326,7 @@ namespace guideXOS.Kernel.Drivers {
                 }
             }
             
-            // Normal scancodes
+            // Normal scancodes (Set 1)
             switch (makeCode) {
                 case 0x01: return Escape;
                 case 0x02: return D1;
@@ -246,14 +418,17 @@ namespace guideXOS.Kernel.Drivers {
         }
         
         /// <summary>
-        /// Get the character for a scancode with current modifiers
+        /// Get the character for a scancode with current modifiers (Set 1 codes)
         /// </summary>
         private static char GetChar(byte makeCode, bool extended) {
             bool shift = _leftShift || _rightShift;
             bool caps = _capsLock;
             
-            // Extended keys don't produce characters
-            if (extended) return '\0';
+            // Extended keys don't produce characters (except numpad enter)
+            if (extended) {
+                if (makeCode == 0x1C) return '\n'; // Numpad Enter
+                return '\0';
+            }
             
             // Special keys that produce characters
             switch (makeCode) {
@@ -263,82 +438,76 @@ namespace guideXOS.Kernel.Drivers {
                 case 0x0E: return '\b'; // Backspace
             }
             
-            // Letters (A-Z)
-            if (makeCode >= 0x1E && makeCode <= 0x2C) {
-                char[] letters = new char[] { 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l' };
-                if (makeCode <= 0x26) {
-                    char c = letters[makeCode - 0x1E];
-                    if (shift ^ caps) c = (char)(c - 32); // Convert to uppercase
-                    return c;
-                }
-            }
+            // Letters (A-Z) - proper scancode mapping
+            // Row 1: Q W E R T Y U I O P (scannodes 0x10-0x19)
             if (makeCode >= 0x10 && makeCode <= 0x19) {
                 char[] letters = new char[] { 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' };
                 char c = letters[makeCode - 0x10];
-                if (shift ^ caps) c = (char)(c - 32);
+                if (shift ^ caps) c = (char)(c - 32); // Convert to uppercase
                 return c;
             }
+            // Row 2: A S D F G H J K L (scannodes 0x1E-0x26)
+            if (makeCode >= 0x1E && makeCode <= 0x26) {
+                char[] letters = new char[] { 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l' };
+                char c = letters[makeCode - 0x1E];
+                if (shift ^ caps) c = (char)(c - 32); // Convert to uppercase
+                return c;
+            }
+            // Row 3: Z X C V B N M (scannodes 0x2C-0x32)
             if (makeCode >= 0x2C && makeCode <= 0x32) {
                 char[] letters = new char[] { 'z', 'x', 'c', 'v', 'b', 'n', 'm' };
                 char c = letters[makeCode - 0x2C];
-                if (shift ^ caps) c = (char)(c - 32);
+                if (shift ^ caps) c = (char)(c - 32); // Convert to uppercase
                 return c;
             }
             
-            // Numbers and symbols on number row
+            // Numbers and symbols on number row (scannodes 0x02-0x0B)
+            if (makeCode >= 0x02 && makeCode <= 0x0B) {
+                // Number keys 1-0
+                if (!shift) {
+                    // Unshifted: 1234567890
+                    return (char)('1' + (makeCode - 0x02));
+                } else {
+                    // Shifted: !@#$%^&*()
+                    char[] shiftedNumbers = new char[] { '!', '@', '#', '$', '%', '^', '&', '*', '(', ')' };
+                    return shiftedNumbers[makeCode - 0x02];
+                }
+            }
+            
+            // Remaining special keys with shift variants
             if (!shift) {
                 switch (makeCode) {
-                    case 0x02: return '1';
-                    case 0x03: return '2';
-                    case 0x04: return '3';
-                    case 0x05: return '4';
-                    case 0x06: return '5';
-                    case 0x07: return '6';
-                    case 0x08: return '7';
-                    case 0x09: return '8';
-                    case 0x0A: return '9';
-                    case 0x0B: return '0';
-                    case 0x0C: return '-';
-                    case 0x0D: return '=';
-                    case 0x1A: return '[';
-                    case 0x1B: return ']';
-                    case 0x2B: return '\\';
-                    case 0x27: return ';';
-                    case 0x28: return '\'';
-                    case 0x29: return '`';
-                    case 0x33: return ',';
-                    case 0x34: return '.';
-                    case 0x35: return '/';
+                    case 0x0C: return '-';  // -
+                    case 0x0D: return '=';  // =
+                    case 0x1A: return '[';  // [
+                    case 0x1B: return ']';  // ]
+                    case 0x2B: return '\\'; // \
+                    case 0x27: return ';';  // ;
+                    case 0x28: return '\''; // '
+                    case 0x29: return '`';  // `
+                    case 0x33: return ',';  // ,
+                    case 0x34: return '.';  // .
+                    case 0x35: return '/';  // /
                 }
             } else {
                 // Shifted symbols
                 switch (makeCode) {
-                    case 0x02: return '!';
-                    case 0x03: return '@';
-                    case 0x04: return '#';
-                    case 0x05: return '$';
-                    case 0x06: return '%';
-                    case 0x07: return '^';
-                    case 0x08: return '&';
-                    case 0x09: return '*';
-                    case 0x0A: return '(';
-                    case 0x0B: return ')';
-                    case 0x0C: return '_';
-                    case 0x0D: return '+';
-                    case 0x1A: return '{';
-                    case 0x1B: return '}';
-                    case 0x2B: return '|';
-                    case 0x27: return ':';
-                    case 0x28: return '"';
-                    case 0x29: return '~';
-                    case 0x33: return '<';
-                    case 0x34: return '>';
-                    case 0x35: return '?';
+                    case 0x0C: return '_';  // _
+                    case 0x0D: return '+';  // +
+                    case 0x1A: return '{';  // {
+                    case 0x1B: return '}';  // }
+                    case 0x2B: return '|';  // |
+                    case 0x27: return ':';  // :
+                    case 0x28: return '"';  // "
+                    case 0x29: return '~';  // ~
+                    case 0x33: return '<';  // <
+                    case 0x34: return '>';  // >
+                    case 0x35: return '?';  // ?
                 }
             }
             
             // Numeric keypad (when NumLock is on)
-            if (_numLock && !extended) {
+            if (_numLock) {
                 switch (makeCode) {
                     case 0x47: return '7';
                     case 0x48: return '8';

@@ -138,7 +138,7 @@ namespace guideXOS.DefaultApps {
 
             // Debug: show key info including modifiers
             if (false) { // Set to true to enable debug
-                Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2} Char: '{key.KeyChar}' Mods: {key.Modifiers}");
+                Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2} Char: '{key.KeyChar}' Key: {key.Key} Mods: {key.Modifiers}");
                 Desktop.msgbox.Visible = true;
             }
 

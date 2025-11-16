@@ -91,11 +91,6 @@ namespace guideXOS.GUI {
 
             _switching = true;
             try {
-                // Capture screenshot of current workspace before switching
-                if (Desktop.Taskbar != null && Desktop.Taskbar.WorkspaceSwitcher != null) {
-                    Desktop.Taskbar.WorkspaceSwitcher.CaptureCurrentWorkspace();
-                }
-
                 EnsureAllWindowsTracked();
                 // Don't minimize/restore windows - just hide/show them to avoid animation issues
                 var wins = WindowManager.Windows;
