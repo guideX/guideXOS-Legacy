@@ -92,45 +92,84 @@ namespace guideXOS.DefaultApps {
                         bool isJpg = name.EndsWith(".jpg") || name.EndsWith(".JPG") || name.EndsWith(".jpeg") || name.EndsWith(".JPEG");
                         bool isBmp = name.EndsWith(".bmp") || name.EndsWith(".BMP");
                         
+                        // Skip thumbnail files themselves
+                        if (name.EndsWith("_thumb.png") || name.EndsWith("_thumb.PNG")) {
+                            continue;
+                        }
+                        
                         if (isPng || isJpg || isBmp) {
                             string path = "Backgrounds/" + name;
                             _backgroundPaths.Add(path);
                             
-                            // Create thumbnail
-                            try {
-                                byte[] data = File.ReadAllBytes(path);
-                                if (data != null && data.Length > 0) {
-                                    // Create PNG from data
-                                    var fullImg = new PNG(data);
-                                    data.Dispose();
-                                    
-                                    // Calculate aspect-fit resize for thumbnail
-                                    int thumbW = _thumbSize;
-                                    int thumbH = _thumbSize;
-                                    
-                                    if (fullImg.Width > fullImg.Height) {
-                                        thumbH = (fullImg.Height * _thumbSize) / fullImg.Width;
-                                    } else if (fullImg.Height > fullImg.Width) {
-                                        thumbW = (fullImg.Width * _thumbSize) / fullImg.Height;
-                                    }
-                                    
-                                    // Ensure we don't have zero dimensions
-                                    if (thumbW < 1) thumbW = 1;
-                                    if (thumbH < 1) thumbH = 1;
-                                    
-                                    // Resize to thumbnail
-                                    var thumb = fullImg.ResizeImage(thumbW, thumbH);
-                                    fullImg.Dispose();
-                                    
-                                    _thumbnails.Add(thumb);
-                                } else {
-                                    // Add null placeholder
-                                    _thumbnails.Add(null);
-                                }
-                            } catch {
-                                // Add null placeholder for failed loads
-                                _thumbnails.Add(null);
+                            // Try to find existing thumbnail first
+                            string thumbPath = null;
+                            if (isPng) {
+                                // Remove .png extension and add _thumb.png
+                                string baseName = name.Substring(0, name.Length - 4);
+                                thumbPath = "Backgrounds/" + baseName + "_thumb.png";
+                            } else if (isJpg) {
+                                // Remove .jpg/.jpeg extension and add _thumb.png
+                                int extLen = name.EndsWith(".jpeg") || name.EndsWith(".JPEG") ? 5 : 4;
+                                string baseName = name.Substring(0, name.Length - extLen);
+                                thumbPath = "Backgrounds/" + baseName + "_thumb.png";
+                            } else if (isBmp) {
+                                // Remove .bmp extension and add _thumb.png
+                                string baseName = name.Substring(0, name.Length - 4);
+                                thumbPath = "Backgrounds/" + baseName + "_thumb.png";
                             }
+                            
+                            Image thumb = null;
+                            bool thumbLoaded = false;
+                            
+                            // Try to load existing thumbnail
+                            if (thumbPath != null) {
+                                try {
+                                    byte[] thumbData = File.ReadAllBytes(thumbPath);
+                                    if (thumbData != null && thumbData.Length > 0) {
+                                        var thumbImg = new PNG(thumbData);
+                                        thumbData.Dispose();
+                                        thumb = thumbImg;
+                                        thumbLoaded = true;
+                                    }
+                                } catch {
+                                    // Thumbnail doesn't exist or failed to load, will generate instead
+                                }
+                            }
+                            
+                            // If no thumbnail exists, generate one from the full image
+                            if (!thumbLoaded) {
+                                try {
+                                    byte[] data = File.ReadAllBytes(path);
+                                    if (data != null && data.Length > 0) {
+                                        // Create PNG from data
+                                        var fullImg = new PNG(data);
+                                        data.Dispose();
+                                        
+                                        // Calculate aspect-fit resize for thumbnail
+                                        int thumbW = _thumbSize;
+                                        int thumbH = _thumbSize;
+                                        
+                                        if (fullImg.Width > fullImg.Height) {
+                                            thumbH = (fullImg.Height * _thumbSize) / fullImg.Width;
+                                        } else if (fullImg.Height > fullImg.Width) {
+                                            thumbW = (fullImg.Width * _thumbSize) / fullImg.Height;
+                                        }
+                                        
+                                        // Ensure we don't have zero dimensions
+                                        if (thumbW < 1) thumbW = 1;
+                                        if (thumbH < 1) thumbH = 1;
+                                        
+                                        // Resize to thumbnail
+                                        thumb = fullImg.ResizeImage(thumbW, thumbH);
+                                        fullImg.Dispose();
+                                    }
+                                } catch {
+                                    // Failed to load or generate thumbnail
+                                }
+                            }
+                            
+                            // Add thumbnail (or null if failed)
+                            _thumbnails.Add(thumb);
                         }
                     }
                     fi.Dispose();
