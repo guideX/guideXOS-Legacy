@@ -44,6 +44,7 @@ namespace guideXOS.GUI {
         // All Programs view
         private bool _showAllPrograms = false;
         private List<int> _allProgramsOrder; // indices into Desktop.Apps sorted by name
+        private List<Window> _allProgramsWindows; // windows with ShowInStartMenu = true
 
         // Cache for recent program entries to avoid ToArray() each frame
         private AppEntry[] _recentCache;
@@ -271,9 +272,14 @@ namespace guideXOS.GUI {
                     // Console
                     int cwh = Icons.DocumentIcon(32).Height; int cww = Icons.DocumentIcon(32).Width;
                     if (mx >= rcX && mx <= rcX + cww && my >= iy && my <= iy + cwh) {
-                        if (Program.FConsole == null) Program.FConsole = new FConsole(160, 120);
-                        WindowManager.MoveToEnd(Program.FConsole);
-                        Program.FConsole.Visible = true;
+                        // Recreate console if it doesn't exist or was disposed
+                        if (Program.FConsole == null || !Program.FConsole.Visible) {
+                            if (Program.FConsole == null) {
+                                Program.FConsole = new FConsole(160, 120);
+                            }
+                            WindowManager.MoveToEnd(Program.FConsole);
+                            Program.FConsole.Visible = true;
+                        }
                         Visible = false;
                         return;
                     }
@@ -334,23 +340,42 @@ namespace guideXOS.GUI {
 
                 // Click in list (Recent or All Programs)
                 if (mx >= listX && mx <= listX + listW && my >= listY && my <= listY + listH) {
-                    int count = _showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count;
+                    int count2 = _showAllPrograms ? (Desktop.Apps.Length + (_allProgramsWindows != null ? _allProgramsWindows.Count : 0)) : RecentManager.Programs.Count;
                     int y = listY - _scroll;
-                    for (int i = 0; i < count; i++) {
+                    for (int i = 0; i < count2; i++) {
                         int ih;
                         int ix = listX;
                         int iy2 = y;
-                        string appName;
+                        
                         if (_showAllPrograms) {
-                            int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
-                            var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32);
-                            ih = icon.Height;
-                            if (my >= iy2 && my <= iy2 + ih) {
-                                appName = Desktop.Apps.Name(ai);
-                                Desktop.Apps.Load(appName);
-                                appName.Dispose();
-                                Visible = false;
-                                return;
+                            // Determine if this is a Desktop.App or a Window
+                            if (i < Desktop.Apps.Length) {
+                                // Regular Desktop.App
+                                int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
+                                var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32);
+                                ih = icon.Height;
+                                if (my >= iy2 && my <= iy2 + ih) {
+                                    string appName = Desktop.Apps.Name(ai);
+                                    Desktop.Apps.Load(appName);
+                                    appName.Dispose();
+                                    Visible = false;
+                                    return;
+                                }
+                            } else {
+                                // Window with ShowInStartMenu = true
+                                int windowIndex = i - Desktop.Apps.Length;
+                                if (_allProgramsWindows != null && windowIndex < _allProgramsWindows.Count) {
+                                    var window = _allProgramsWindows[windowIndex];
+                                    var icon = window.TaskbarIcon ?? Icons.DocumentIcon(32);
+                                    ih = icon.Height;
+                                    if (my >= iy2 && my <= iy2 + ih) {
+                                        // Show/activate the window
+                                        window.Visible = true;
+                                        WindowManager.MoveToEnd(window);
+                                        Visible = false;
+                                        return;
+                                    }
+                                }
                             }
                         } else {
                             // use cache
@@ -434,7 +459,7 @@ namespace guideXOS.GUI {
             int listH = rcH;
 
             // Recent programs or All Programs
-            int count = _showAllPrograms ? Desktop.Apps.Length : RecentManager.Programs.Count;
+            int count = _showAllPrograms ? (Desktop.Apps.Length + (_allProgramsWindows != null ? _allProgramsWindows.Count : 0)) : RecentManager.Programs.Count;
             int y = listY - _scroll;
             
             // Scrollbar width to account for in hover area
@@ -442,15 +467,35 @@ namespace guideXOS.GUI {
             
             if (_showAllPrograms) {
                 for (int i = 0; i < count; i++) {
-                    int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
-                    var icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32);
-                    string name = Desktop.Apps.Name(ai);
+                    Image icon;
+                    string name;
+                    bool isWindow = false;
+                    
+                    // Determine if this is a Desktop.App or a Window
+                    if (i < Desktop.Apps.Length) {
+                        // Regular Desktop.App
+                        int ai = _allProgramsOrder != null && i < _allProgramsOrder.Count ? _allProgramsOrder[i] : i;
+                        icon = Desktop.Apps.Icon(ai) ?? Icons.DocumentIcon(32);
+                        name = Desktop.Apps.Name(ai);
+                    } else {
+                        // Window with ShowInStartMenu = true
+                        int windowIndex = i - Desktop.Apps.Length;
+                        if (_allProgramsWindows != null && windowIndex < _allProgramsWindows.Count) {
+                            var window = _allProgramsWindows[windowIndex];
+                            icon = window.TaskbarIcon ?? Icons.DocumentIcon(32);
+                            name = window.Title;
+                            isWindow = true;
+                        } else {
+                            continue; // Skip if index is out of range
+                        }
+                    }
+                    
                     int ih = icon.Height; int iw = icon.Width;
                     
                     // Skip items that are completely outside the visible area
                     if (y + ih < listY || y > listY + listH) {
                         y += Spacing;
-                        name.Dispose();
+                        if (!isWindow) name.Dispose();
                         continue;
                     }
                     
@@ -470,7 +515,7 @@ namespace guideXOS.GUI {
                     Framebuffer.Graphics.DrawImage(listX, y, icon);
                     WindowManager.font.DrawString(listX + iw + 10, y + (ih / 2) - (WindowManager.font.FontSize / 2), name, listW - (iw + 22), WindowManager.font.FontSize);
                     y += Spacing;
-                    name.Dispose();
+                    if (!isWindow) name.Dispose();
                 }
             } else {
                 // use cached entries
@@ -694,6 +739,10 @@ namespace guideXOS.GUI {
             _allProgramsOrder = _allProgramsOrder ?? new List<int>(n);
             _allProgramsOrder.Clear();
             for (int i = 0; i < n; i++) _allProgramsOrder.Add(i);
+            
+            // Get windows with ShowInStartMenu = true
+            _allProgramsWindows = WindowManager.GetStartMenuWindows();
+            
             // simple selection sort by name (case-insensitive)
             for (int i = 0; i < n - 1; i++) {
                 int min = i;

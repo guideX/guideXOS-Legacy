@@ -63,6 +63,7 @@ namespace guideXOS.DefaultApps {
             ShowMaximize = true;
             ShowMinimize = true;
             ShowTombstone = true;
+            ShowInStartMenu = true;
             IsResizable = true;
             Keyboard.OnKeyChanged += OnKey;
 

@@ -19,6 +19,11 @@ namespace guideXOS.DefaultApps {
             _program = program;
             _action = action;
             ShowInTaskbar = false;
+            ShowMinimize = false;
+            ShowTombstone = false;
+            ShowInStartMenu = false;
+            ShowMaximize = false;
+            IsResizable = false;
         }
         public override void OnInput() {
             base.OnInput();

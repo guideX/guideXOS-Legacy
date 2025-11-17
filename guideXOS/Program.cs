@@ -1,5 +1,6 @@
 using guideXOS;
 using guideXOS.DefaultApps;
+using guideXOS.DockableWidgets;
 using guideXOS.FS;
 using guideXOS.GUI;
 using guideXOS.Kernel.Drivers;
@@ -124,7 +125,8 @@ unsafe class Program {
         //try { Wallpaper = new PNG(File.ReadAllBytes("Images/tronporche.png")); } catch { Wallpaper = new Image(Framebuffer.Width, Framebuffer.Height); }
         BitFont.Initialize();
         string CustomCharset = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-        BitFont.RegisterBitFont(new BitFontDescriptor("Song", CustomCharset, File.ReadAllBytes("Fonts/Song.btf"), 16));
+        //BitFont.RegisterBitFont(new BitFontDescriptor("Song", CustomCharset, File.ReadAllBytes("Fonts/Song.btf"), 16));
+        BitFont.RegisterBitFont(new BitFontDescriptor("Enludo", CustomCharset, File.ReadAllBytes("Fonts/enludo.btf"), 16));
         FConsole = null;
         WindowManager.Initialize();
         Desktop.Initialize();
@@ -191,19 +193,59 @@ unsafe class Program {
                 Wallpaper = wall.ResizeImage(Framebuffer.Width, Framebuffer.Height);
                 wall.Dispose();
             } else {
-                // Create default wallpaper with dark slate gray background
+                // Create default wallpaper with teal gradient (top to bottom)
                 Wallpaper = new Image(Framebuffer.Width, Framebuffer.Height);
-                uint darkSlateGray = unchecked((uint)0xFF2F4F4F); // RGB(47, 79, 79) - Dark Slate Gray
-                for (int i = 0; i < Wallpaper.RawData.Length; i++) {
-                    Wallpaper.RawData[i] = (int)darkSlateGray;
+                
+                // Teal gradient colors - lighter at top, darker at bottom
+                uint topColor = 0xFF5FD4C4;      // Light teal/cyan
+                uint bottomColor = 0xFF0D7D77;   // Darker teal
+                
+                int topR = (int)((topColor >> 16) & 0xFF);
+                int topG = (int)((topColor >> 8) & 0xFF);
+                int topB = (int)(topColor & 0xFF);
+                
+                int bottomR = (int)((bottomColor >> 16) & 0xFF);
+                int bottomG = (int)((bottomColor >> 8) & 0xFF);
+                int bottomB = (int)(bottomColor & 0xFF);
+                
+                // Create vertical gradient
+                for (int y = 0; y < Wallpaper.Height; y++) {
+                    float t = (float)y / Wallpaper.Height;
+                    int r = (int)(topR + (bottomR - topR) * t);
+                    int g = (int)(topG + (bottomG - topG) * t);
+                    int b = (int)(topB + (bottomB - topB) * t);
+                    uint color = (uint)(0xFF000000 | (r << 16) | (g << 8) | b);
+                    
+                    for (int x = 0; x < Wallpaper.Width; x++) {
+                        Wallpaper.RawData[y * Wallpaper.Width + x] = (int)color;
+                    }
                 }
             }
         } catch { 
-            // Fallback: create wallpaper with dark slate gray
+            // Fallback: create wallpaper with teal gradient
             Wallpaper = new Image(Framebuffer.Width, Framebuffer.Height);
-            uint darkSlateGray = unchecked((uint)0xFF2F4F4F);
-            for (int i = 0; i < Wallpaper.RawData.Length; i++) {
-                Wallpaper.RawData[i] = (int)darkSlateGray;
+            
+            uint topColor = 0xFF5FD4C4;      // Light teal/cyan
+            uint bottomColor = 0xFF0D7D77;   // Darker teal
+            
+            int topR = (int)((topColor >> 16) & 0xFF);
+            int topG = (int)((topColor >> 8) & 0xFF);
+            int topB = (int)(topColor & 0xFF);
+            
+            int bottomR = (int)((bottomColor >> 16) & 0xFF);
+            int bottomG = (int)((bottomColor >> 8) & 0xFF);
+            int bottomB = (int)(bottomColor & 0xFF);
+            
+            for (int y = 0; y < Wallpaper.Height; y++) {
+                float t = (float)y / Wallpaper.Height;
+                int r = (int)(topR + (bottomR - topR) * t);
+                int g = (int)(topG + (bottomG - topG) * t);
+                int b = (int)(topB + (bottomB - topB) * t);
+                uint color = (uint)(0xFF000000 | (r << 16) | (g << 8) | b);
+                
+                for (int x = 0; x < Wallpaper.Width; x++) {
+                    Wallpaper.RawData[y * Wallpaper.Width + x] = (int)color;
+                }
             }
         }
 
@@ -218,8 +260,32 @@ unsafe class Program {
 
         // Create performance widget (initially visible)
         perfWidget = new PerformanceWidget();
-        perfWidget.Visible = true;
+        perfWidget.Visible = false; // Don't show standalone - will be in container
         WindowManager.MoveToEnd(perfWidget);
+
+        // Create clock widget positioned below performance widget
+        var clockWidget = new guideXOS.DockableWidgets.Clock(
+            perfWidget.X,  // Same X position as performance widget
+            perfWidget.Y + perfWidget.Height + 10  // Below performance widget with 10px gap
+        );
+        clockWidget.Visible = false; // Don't show standalone - will be in container
+        WindowManager.MoveToEnd(clockWidget);
+
+        // Create monitor widget for system charts
+        var monitorWidget = new guideXOS.DockableWidgets.Monitor();
+        monitorWidget.Visible = false; // Don't show standalone - will be in container
+        WindowManager.MoveToEnd(monitorWidget);
+
+        // Create a container and dock all widgets together
+        var widgetContainer = new WidgetContainer(
+            Framebuffer.Width - 220,  // Position more to the left (was -160)
+            80  // Y position from top
+        );
+        widgetContainer.AddWidget(perfWidget);
+        widgetContainer.AddWidget(clockWidget);
+        widgetContainer.AddWidget(monitorWidget);
+        widgetContainer.Visible = true;
+        WindowManager.MoveToEnd(widgetContainer);
 
         // Automatically show console on startup
         FConsole = new FConsole(160, 120);
@@ -267,7 +333,14 @@ unsafe class Program {
             } else if (!Control.MouseButtons.HasFlag(MouseButtons.Right)) {
                 rightClicked = false;
             }
-            Desktop.Update(Icons.DocumentIcon(32));
+            int iconSize = 48;
+            Desktop.Update(
+                Icons.DocumentIcon(iconSize), 
+                Icons.FolderIcon(iconSize), 
+                Icons.ImageIcon(iconSize), 
+                Icons.AudioIcon(iconSize),
+                iconSize
+            );
             //Desktop.Draw();
             
             // Draw windows in layers to control z-order:

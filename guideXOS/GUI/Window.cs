@@ -41,8 +41,10 @@ namespace guideXOS.GUI {
         /// </summary>
         bool IsAnimating => _animType != WindowAnimationType.None;
 
-        // New: resizable support
-        public bool IsResizable = false;
+        /// <summary>
+        /// Is Resizable
+        /// </summary>
+        public bool IsResizable = true;
         private bool _resizing;
         private int _resizeStartMouseX, _resizeStartMouseY;
         private int _resizeStartW, _resizeStartH;
@@ -199,19 +201,19 @@ namespace guideXOS.GUI {
         /// <summary>
         /// Controls whether this window shows in the taskbar
         /// </summary>
-        public bool ShowInTaskbar = false;
+        public bool ShowInTaskbar = true;
         /// <summary>
         /// Controls visibility of Minimize/Maximize buttons
         /// </summary>
-        public bool ShowMinimize = false;
+        public bool ShowMinimize = true;
         /// <summary>
         /// Show Maximize/Restore button (will automatically switch based on state)
         /// </summary>
-        public bool ShowMaximize = false;
+        public bool ShowMaximize = true;
         /// <summary>
         /// Show Tombstone Button
         /// </summary>
-        public bool ShowTombstone = false;
+        public bool ShowTombstone = true;
         /// <summary>
         /// Constructor
         /// </summary>
@@ -236,7 +238,11 @@ namespace guideXOS.GUI {
         /// </summary>
         public string Title;
         /// <summary>
-        /// Icon used on taskbar for this window
+        /// Show In Start Menu
+        /// </summary>
+        public bool ShowInStartMenu = true;
+        /// <summary>
+        /// Taskbar Icon
         /// </summary>
         public Image TaskbarIcon;
         /// <summary>
@@ -486,11 +492,22 @@ namespace guideXOS.GUI {
             
             UIPrimitives.AFillRoundedRectTop(barX, barY, barW, barH, 0x66111111, 4);
 
-            string title = Title ?? string.Empty;
-            int measured = WindowManager.font.MeasureString(title);
-            int tx = X + (Width / 2) - (measured / 2);
-            int ty = Y - BarHeight + (BarHeight / 4);
-            WindowManager.font.DrawString(tx, ty, title);
+            // FIXED: Properly dispose title string if it was allocated
+            bool titleIsEmpty = string.IsNullOrEmpty(Title);
+            if (!titleIsEmpty) {
+                int measured = WindowManager.font.MeasureString(Title);
+                int tx = X + (Width / 2) - (measured / 2);
+                int ty = Y - BarHeight + (BarHeight / 4);
+                WindowManager.font.DrawString(tx, ty, Title);
+            } else {
+                // Only allocate string.Empty if needed
+                string title = string.Empty;
+                int measured = WindowManager.font.MeasureString(title);
+                int tx = X + (Width / 2) - (measured / 2);
+                int ty = Y - BarHeight + (BarHeight / 4);
+                WindowManager.font.DrawString(tx, ty, title);
+                title.Dispose(); // FIXED: Dispose allocated string.Empty
+            }
 
             // Custom title buttons with glow and press states (honor Show* flags)
             ComputeButtonRects();

@@ -12,8 +12,18 @@ namespace guideXOS.GUI {
     /// </summary>
     internal static class Desktop {
         // Helpers for fuzzy executable resolution
-        private static bool HasDot(string s) { for (int i = 0; i < s.Length; i++) if (s[i] == '.') return true; return false; }
-        private static bool StartsWithStr(string s, string pref) { int l = pref.Length; if (s.Length < l) return false; for (int i = 0; i < l; i++) if (s[i] != pref[i]) return false; return true; }
+        private static bool HasDot(string s) {
+            for (int i = 0; i < s.Length; i++)
+                if (s[i] == '.') return true;
+            return false;
+        }
+        private static bool StartsWithStr(string s, string pref) {
+            int l = pref.Length;
+            if (s.Length < l) return false;
+            for (int i = 0; i < l; i++)
+                if (s[i] != pref[i]) return false;
+            return true;
+        }
         /// <summary>
         /// Try Fuzzy Exec
         /// </summary>
@@ -23,8 +33,33 @@ namespace guideXOS.GUI {
         /// <param name="ambiguous"></param>
         /// <returns></returns>
         private static bool TryFuzzyExec(string dir, string token, out string match, out bool ambiguous) {
-            match = null; ambiguous = false; var list = File.GetFiles(dir); int matches = 0; if (list != null) { for (int i = 0; i < list.Count; i++) { var fi = list[i]; if (fi.Attribute != FileAttribute.Directory) { string nm = fi.Name; if (nm.Length > token.Length + 1 && StartsWithStr(nm, token) && nm[token.Length] == '.') { int len = nm.Length; bool gxm = len >= 4 && nm[len - 1] == 'm' && nm[len - 2] == 'x' && nm[len - 3] == 'g' && nm[len - 4] == '.'; bool mue = len >= 4 && nm[len - 1] == 'e' && nm[len - 2] == 'u' && nm[len - 3] == 'm' && nm[len - 4] == '.'; if (gxm || mue) { matches++; match = nm; } } } fi.Dispose(); } list.Dispose(); }
-            if (matches == 1) return true; if (matches > 1) { ambiguous = true; }
+            match = null;
+            ambiguous = false;
+            var list = File.GetFiles(dir);
+            int matches = 0;
+            if (list != null) {
+                for (int i = 0; i < list.Count; i++) {
+                    var fi = list[i];
+                    if (fi.Attribute != FileAttribute.Directory) {
+                        string nm = fi.Name;
+                        if (nm.Length > token.Length + 1 && StartsWithStr(nm, token) && nm[token.Length] == '.') {
+                            int len = nm.Length;
+                            bool gxm = len >= 4 && nm[len - 1] == 'm' && nm[len - 2] == 'x' && nm[len - 3] == 'g' && nm[len - 4] == '.';
+                            bool mue = len >= 4 && nm[len - 1] == 'e' && nm[len - 2] == 'u' && nm[len - 3] == 'm' && nm[len - 4] == '.';
+                            if (gxm || mue) {
+                                matches++;
+                                match = nm;
+                            }
+                        }
+                    }
+                    fi.Dispose();
+                }
+                list.Dispose();
+            }
+            if (matches == 1) return true;
+            if (matches > 1) {
+                ambiguous = true;
+            }
             return false;
         }
 
@@ -154,71 +189,121 @@ namespace guideXOS.GUI {
             return match;
         }
         */
-
         /// <summary>
         /// Update
         /// </summary>
         /// <param name="DocumentIcon32"></param>
         public static int IconSize = 48; // default desktop icon size changed from 32 to 48
-        public static void SetIconSize(int size) { if (size != 16 && size != 24 && size != 32 && size != 48 && size != 128) return; IconSize = size; }
-        public static void Update(Image DocumentIcon32) {
+        /// <summary>
+        /// Set Icon Size
+        /// </summary>
+        /// <param name="size"></param>
+        public static void SetIconSize(int size) {
+            if (size != 16 && size != 24 && size != 32 && size != 48 && size != 128) return;
+            IconSize = size;
+        }
+        /// <summary>
+        /// Update
+        /// </summary>
+        /// <param name="documentIcon"></param>
+        /// <param name="folderIcon"></param>
+        /// <param name="imageIcon"></param>
+        /// <param name="audioIcon"></param>
+        /// <param name="iconSize"></param>
+        public static void Update(Image documentIcon, Image folderIcon, Image imageIcon, Image audioIcon, int iconSize) {
             // Recompute document icon from current size selection (ignore passed image except for legacy callers)
-            var docIcon = Icons.DocumentIcon(IconSize);
+            SetIconSize(iconSize);
+            var docIcon = documentIcon;
             var names = GetDirectoryEntries();
             int devide = 60; // could scale later
             int fw = docIcon.Width;
             int fh = docIcon.Height;
-            int screenH = Framebuffer.Graphics.Height; int x = devide; int y = devide;
+            int screenH = Framebuffer.Graphics.Height;
+            int x = devide;
+            int y = devide;
             bool leftDown = Control.MouseButtons.HasFlag(MouseButtons.Left);
             bool mouseOverWindow = IsMouseOverAnyVisibleWindow();
             bool mouseBlocked = WindowManager.HasWindowMoving || WindowManager.MouseHandled || mouseOverWindow;
             bool clickable = leftDown && !mouseBlocked;
             if (leftDown && mouseOverWindow) clickable = false;
             if (HomeMode) {
-                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                if (y + fh + devide > screenH - devide) {
+                    y = devide;
+                    x += fw + devide;
+                }
                 ClickEvent("Computer Files", false, x, y, Apps.Length, clickable, leftDown);
-                { uint col = UI.ButtonFillColor(x, y, Icons.FolderIcon(IconSize).Width, Icons.FolderIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A); Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon(IconSize).Width + 8, Icons.FolderIcon(IconSize).Height + 8, col); }
-                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize));
-                WindowManager.font.DrawString(x, y + fh, "Computer Files", fw + 8, WindowManager.font.FontSize * 3);
-                y += Icons.DocumentIcon(IconSize).Height + devide;
+                uint col98 = UI.ButtonFillColor(x, y, folderIcon.Width, folderIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                Framebuffer.Graphics.FillRectangle(x - 4, y - 4, folderIcon.Width + 8, folderIcon.Height + 8, col98);
+                Framebuffer.Graphics.DrawImage(x, y, folderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Computer Files", fw + 32, WindowManager.font.FontSize * 3);
+                y += documentIcon.Height + devide;
                 // USB mass storage icons, one per connected device
                 if (Kernel.Drivers.USBStorage.Count > 0) {
                     int count = Kernel.Drivers.USBStorage.Count;
                     for (int u = 0; u < count; u++) {
-                        if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
-                        string label = count == 1 ? "USB Drive" : ("USB Drive " + (u + 1).ToString());
+                        if (y + fh + devide > screenH - devide) {
+                            y = devide;
+                            x += fw + devide;
+                        }
+                        string label;
+                        if (count == 1) {
+                            label = "USB Drive";
+                        } else {
+                            string uNum = (u + 1).ToString();
+                            label = "USB Drive " + uNum;
+                            uNum.Dispose(); // FIXED: Dispose intermediate string
+                        }
                         ClickEvent(label, true, x, y, 20000 + u, clickable, leftDown);
-                        uint col = UI.ButtonFillColor(x, y, Icons.FolderIcon(IconSize).Width, Icons.FolderIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
-                        Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon(IconSize).Width + 8, Icons.FolderIcon(IconSize).Height + 8, col);
-                        Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize));
-                        WindowManager.font.DrawString(x, y + fh, label, fw + 8, WindowManager.font.FontSize * 3);
-                        y += Icons.DocumentIcon(IconSize).Height + devide; label.Dispose();
+                        uint col = UI.ButtonFillColor(x, y, folderIcon.Width, folderIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                        Framebuffer.Graphics.FillRectangle(x - 4, y - 4, folderIcon.Width + 8, folderIcon.Height + 8, col);
+                        Framebuffer.Graphics.DrawImage(x, y, folderIcon);
+                        WindowManager.font.DrawString(x, y + fh, label, fw + 32, WindowManager.font.FontSize * 3);
+                        y += documentIcon.Height + devide;
+                        label.Dispose();
                     }
                 }
-                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                if (y + fh + devide > screenH - devide) {
+                    y = devide;
+                    x += fw + devide;
+                }
                 ClickEvent("Root", true, x, y, Apps.Length + 1, clickable, leftDown);
-                uint colRoot = UI.ButtonFillColor(x, y, Icons.FolderIcon(IconSize).Width, Icons.FolderIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
-                Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon(IconSize).Width + 8, Icons.FolderIcon(IconSize).Height + 8, colRoot);
-                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize));
-                WindowManager.font.DrawString(x, y + fh, "Root", fw + 8, WindowManager.font.FontSize * 3);
-                y += Icons.DocumentIcon(IconSize).Height + devide;
+                uint colRoot = UI.ButtonFillColor(x, y, folderIcon.Width, folderIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                Framebuffer.Graphics.FillRectangle(x - 4, y - 4, folderIcon.Width + 8, folderIcon.Height + 8, colRoot);
+                Framebuffer.Graphics.DrawImage(x, y, folderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Root", fw + 32, WindowManager.font.FontSize * 3);
+                y += documentIcon.Height + devide;
             }
             if (!HomeMode) {
-                if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
+                if (y + fh + devide > screenH - devide) {
+                    y = devide;
+                    x += fw + devide;
+                }
                 ClickEvent("Desktop", false, x, y, -100, clickable, leftDown);
-                uint cDesk = UI.ButtonFillColor(x, y, Icons.FolderIcon(IconSize).Width, Icons.FolderIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
-                Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.FolderIcon(IconSize).Width + 8, Icons.FolderIcon(IconSize).Height + 8, cDesk);
-                Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize));
-                WindowManager.font.DrawString(x, y + fh, "Desktop", fw + 8, WindowManager.font.FontSize * 3);
+                uint cDesk = UI.ButtonFillColor(x, y, folderIcon.Width, folderIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                Framebuffer.Graphics.FillRectangle(x - 4, y - 4, folderIcon.Width + 8, folderIcon.Height + 8, cDesk);
+                Framebuffer.Graphics.DrawImage(x, y, folderIcon);
+                WindowManager.font.DrawString(x, y + fh, "Desktop", fw + 32, WindowManager.font.FontSize * 3);
                 y += fh + devide;
                 for (int i = 0; i < names.Count; i++) {
-                    if (y + fh + devide > screenH - devide) { y = devide; x += fw + devide; }
-                    string n = names[i].Name; bool isDir = names[i].Attribute == FileAttribute.Directory;
+                    if (y + fh + devide > screenH - devide) {
+                        y = devide;
+                        x += fw + devide;
+                    }
+                    string n = names[i].Name;
+                    bool isDir = names[i].Attribute == FileAttribute.Directory;
                     ClickEvent(n, isDir, x, y, i + 1000, clickable, leftDown);
-                    uint bg = UI.ButtonFillColor(x, y, Icons.DocumentIcon(IconSize).Width, Icons.DocumentIcon(IconSize).Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
-                    Framebuffer.Graphics.FillRectangle(x - 4, y - 4, Icons.DocumentIcon(IconSize).Width + 8, Icons.DocumentIcon(IconSize).Height + 8, bg);
-                    if (n.EndsWith(".png") || n.EndsWith(".bmp")) { Framebuffer.Graphics.DrawImage(x, y, Icons.ImageIcon(IconSize)); } else if (n.EndsWith(".wav")) { Framebuffer.Graphics.DrawImage(x, y, Icons.AudioIcon(IconSize)); } else if (isDir) { Framebuffer.Graphics.DrawImage(x, y, Icons.FolderIcon(IconSize)); } else { Framebuffer.Graphics.DrawImage(x, y, docIcon); }
-                    WindowManager.font.DrawString(x, y + fh, n, fw + 8, WindowManager.font.FontSize * 3);
+                    uint bg = UI.ButtonFillColor(x, y, documentIcon.Width, documentIcon.Height, 0xFF2B2B2B, 0xFF343434, 0xFF3A3A3A);
+                    Framebuffer.Graphics.FillRectangle(x - 4, y - 4, documentIcon.Width + 8, documentIcon.Height + 8, bg);
+                    if (n.EndsWith(".png") || n.EndsWith(".bmp")) {
+                        Framebuffer.Graphics.DrawImage(x, y, imageIcon);
+                    } else if (n.EndsWith(".wav")) {
+                        Framebuffer.Graphics.DrawImage(x, y, audioIcon);
+                    } else if (isDir) {
+                        Framebuffer.Graphics.DrawImage(x, y, folderIcon);
+                    } else {
+                        Framebuffer.Graphics.DrawImage(x, y, docIcon);
+                    }
+                    WindowManager.font.DrawString(x, y + fh, n, fw + 32, WindowManager.font.FontSize * 3);
                     y += fh + devide;
                 }
             }
@@ -227,18 +312,30 @@ namespace guideXOS.GUI {
             Taskbar.Draw();
             // Right-click pinning for desktop items (apps/files)
             if (Control.MouseButtons.HasFlag(MouseButtons.Right)) {
-                int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
-                int scanX = devide; int scanY = devide; int iconW = docIcon.Width; int iconH = docIcon.Height;
+                int mx = Control.MousePosition.X;
+                int my = Control.MousePosition.Y;
+                int scanX = devide;
+                int scanY = devide;
+                int iconW = docIcon.Width;
+                int iconH = docIcon.Height;
                 if (HomeMode) {
                     // Computer Files first icon
-                    if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) { PinnedManager.PinComputerFiles(); }
+                    if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
+                        PinnedManager.PinComputerFiles();
+                    }
                 } else {
                     // iterate file entries in current directory
                     for (int i = 0; i < names.Count; i++) {
-                        if (scanY + fh + devide > screenH - devide) { scanY = devide; scanX += fw + devide; }
+                        if (scanY + fh + devide > screenH - devide) {
+                            scanY = devide;
+                            scanX += fw + devide;
+                        }
                         if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
-                            string fname = names[i].Name; bool dir = names[i].Attribute == FileAttribute.Directory;
-                            if (!dir) { PinnedManager.PinFile(fname, Dir + fname, docIcon); }
+                            string fname = names[i].Name;
+                            bool dir = names[i].Attribute == FileAttribute.Directory;
+                            if (!dir) {
+                                PinnedManager.PinFile(fname, Dir + fname, docIcon);
+                            }
                             break;
                         }
                         scanY += fh + devide;
@@ -264,11 +361,16 @@ namespace guideXOS.GUI {
         private static void ClickEvent(string name, bool isDirectory, int X, int Y, int i, bool clickable, bool leftDown) {
             if (leftDown) {
                 if (!WindowManager.HasWindowMoving && clickable && !ClickLock && !_mouseClickLatch &&
-                    Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.DocumentIcon(IconSize).Width &&
-                    Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.DocumentIcon(IconSize).Height) {
-                    IndexClicked = i; OnClick(name, isDirectory, X, Y); _mouseClickLatch = true;
+                  Control.MousePosition.X > X && Control.MousePosition.X < X + Icons.DocumentIcon(IconSize).Width &&
+                  Control.MousePosition.Y > Y && Control.MousePosition.Y < Y + Icons.DocumentIcon(IconSize).Height) {
+                    IndexClicked = i;
+                    OnClick(name, isDirectory, X, Y);
+                    _mouseClickLatch = true;
                 }
-            } else { ClickLock = false; _mouseClickLatch = false; }
+            } else {
+                ClickLock = false;
+                _mouseClickLatch = false;
+            }
             if (IndexClicked == i) {
                 int w = (int)(Icons.DocumentIcon(IconSize).Width * 1.5f);
                 Framebuffer.Graphics.AFillRectangle(X + ((Icons.DocumentIcon(IconSize).Width / 2) - (w / 2)), Y, w, Icons.DocumentIcon(IconSize).Height * 2, 0x7F2E86C1);
@@ -304,7 +406,10 @@ namespace guideXOS.GUI {
                 bool isUsb = name.Length >= usbPrefix.Length;
                 if (isUsb) {
                     for (int pi = 0; pi < usbPrefix.Length; pi++) {
-                        if (name[pi] != usbPrefix[pi]) { isUsb = false; break; }
+                        if (name[pi] != usbPrefix[pi]) {
+                            isUsb = false;
+                            break;
+                        }
                     }
                 }
                 usbPrefix.Dispose();
@@ -354,37 +459,80 @@ namespace guideXOS.GUI {
                 RecentManager.AddDocument(path, Icons.ImageIcon(32));
             } else if (!HasDot(name)) {
                 // Fuzzy run for executables when no extension typed
-                string match; bool amb; if (TryFuzzyExec(Dir, name, out match, out amb)) {
+                string match;
+                bool amb;
+                if (TryFuzzyExec(Dir, name, out match, out amb)) {
                     // Run matched executable
                     string newPath = Dir + match;
                     byte[] buffer = File.ReadAllBytes(newPath);
-                    string err; bool ok = GXMLoader.TryExecute(buffer, out err);
-                    if (!ok) { msgbox.X = itemX + 60; msgbox.Y = itemY + 60; msgbox.SetText(err ?? "Failed to run executable"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true; } else { RecentManager.AddDocument(newPath, Icons.DocumentIcon(32)); }
+                    string err;
+                    bool ok = GXMLoader.TryExecute(buffer, out err);
+                    if (!ok) {
+                        msgbox.X = itemX + 60;
+                        msgbox.Y = itemY + 60;
+                        msgbox.SetText(err ?? "Failed to run executable");
+                        WindowManager.MoveToEnd(msgbox);
+                        msgbox.Visible = true;
+                    } else {
+                        RecentManager.AddDocument(newPath, Icons.DocumentIcon(32));
+                    }
                     newPath.Dispose();
                 } else if (amb) {
-                    msgbox.X = itemX + 60; msgbox.Y = itemY + 60; msgbox.SetText("error: fuzzy match"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true;
+                    msgbox.X = itemX + 60;
+                    msgbox.Y = itemY + 60;
+                    msgbox.SetText("error: fuzzy match");
+                    WindowManager.MoveToEnd(msgbox);
+                    msgbox.Visible = true;
                 } else if (!Apps.Load(name)) {
-                    msgbox.X = itemX + 75; msgbox.Y = itemY + 75; msgbox.SetText("No application can open this file!"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true;
+                    msgbox.X = itemX + 75;
+                    msgbox.Y = itemY + 75;
+                    msgbox.SetText("No application can open this file!");
+                    WindowManager.MoveToEnd(msgbox);
+                    msgbox.Visible = true;
                 }
             } else if (name.EndsWith(".gxm") || name.EndsWith(".mue")) {
                 byte[] buffer = File.ReadAllBytes(path);
-                string err; bool ok = GXMLoader.TryExecute(buffer, out err);
-                if (!ok) { msgbox.X = itemX + 60; msgbox.Y = itemY + 60; msgbox.SetText(err ?? "Failed to run executable"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true; } else { RecentManager.AddDocument(path, Icons.DocumentIcon(32)); }
+                string err;
+                bool ok = GXMLoader.TryExecute(buffer, out err);
+                if (!ok) {
+                    msgbox.X = itemX + 60;
+                    msgbox.Y = itemY + 60;
+                    msgbox.SetText(err ?? "Failed to run executable");
+                    WindowManager.MoveToEnd(msgbox);
+                    msgbox.Visible = true;
+                } else {
+                    RecentManager.AddDocument(path, Icons.DocumentIcon(32));
+                }
             } else if (name.EndsWith(".wav")) {
                 if (Audio.HasAudioDevice) {
-                    wavplayer.Visible = true; byte[] buffer = File.ReadAllBytes(path); unsafe { fixed (char* ptr = name) wavplayer.Play(buffer, new string(ptr)); }
+                    wavplayer.Visible = true;
+                    byte[] buffer = File.ReadAllBytes(path);
+                    unsafe {
+                        fixed (char* ptr = name) wavplayer.Play(buffer, new string(ptr));
+                    }
                     RecentManager.AddDocument(path, Icons.AudioIcon(32));
                 } else {
-                    msgbox.X = itemX + 75; msgbox.Y = itemY + 75; msgbox.SetText("Audio controller is unavailable!"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true;
+                    msgbox.X = itemX + 75;
+                    msgbox.Y = itemY + 75;
+                    msgbox.SetText("Audio controller is unavailable!");
+                    WindowManager.MoveToEnd(msgbox);
+                    msgbox.Visible = true;
                 }
             } else if (!Apps.Load(name)) {
-                msgbox.X = itemX + 75; msgbox.Y = itemY + 75; msgbox.SetText("No application can open this file!"); WindowManager.MoveToEnd(msgbox); msgbox.Visible = true;
+                msgbox.X = itemX + 75;
+                msgbox.Y = itemY + 75;
+                msgbox.SetText("No application can open this file!");
+                WindowManager.MoveToEnd(msgbox);
+                msgbox.Visible = true;
             }
-            path.Dispose(); devider.Dispose();
+            path.Dispose();
+            devider.Dispose();
         }
         /// <summary>
         /// Invalidate Directory Cache
         /// </summary>
-        public static void InvalidateDirCache() { _dirCacheDirty = true; }
+        public static void InvalidateDirCache() {
+            _dirCacheDirty = true;
+        }
     }
 }

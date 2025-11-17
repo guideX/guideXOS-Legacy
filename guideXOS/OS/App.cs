@@ -1,4 +1,5 @@
 ﻿using guideXOS.DefaultApps;
+using guideXOS.DockableWidgets;
 using guideXOS.GUI;
 using System;
 using System.Collections.Generic;
@@ -114,7 +115,7 @@ namespace guideXOS.OS {
                         case "Devices": _apps[i].AppObject = new Devices(400, 300); b = true; break;
                         case "Lock": Lockscreen.Run(); b = true; break;
                         case "Calculator": _apps[i].AppObject = new Calculator(300, 500); b = true; break;
-                        case "Monitor": _apps[i].AppObject = new Monitor(200, 450); b = true; break;
+                        case "Monitor": _apps[i].AppObject = new Monitor(); b = true; break;
                         case "Clock": _apps[i].AppObject = new Clock(650, 500); b = true; break;
                         case "Paint": _apps[i].AppObject = new Paint(500, 200); b = true; break;
                         case "Notepad": _apps[i].AppObject = new Notepad(360, 200); b = true; break;

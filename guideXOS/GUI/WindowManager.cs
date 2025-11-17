@@ -240,5 +240,19 @@ namespace guideXOS.GUI {
         public static int GetWindowCpuPct(int ownerId) {
             return 0;
         } // _perfTrackingEnabled && _cpuPct.ContainsKey(ownerId) ? _cpuPct[ownerId] : 0; }
+        
+        /// <summary>
+        /// Get all windows that should appear in Start Menu
+        /// </summary>
+        public static List<Window> GetStartMenuWindows() {
+            var result = new List<Window>();
+            for (int i = 0; i < Windows.Count; i++) {
+                var w = Windows[i];
+                if (w.ShowInStartMenu) {
+                    result.Add(w);
+                }
+            }
+            return result;
+        }
     }
 }

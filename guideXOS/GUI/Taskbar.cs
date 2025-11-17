@@ -220,14 +220,32 @@ namespace guideXOS.GUI {
                 bool isPM = RTC.Hour >= 12; int hour12 = (RTC.Hour % 12 == 0) ? 12 : (RTC.Hour % 12);
                 string sfx = isPM ? "PM" : "AM";
                 string min = RTC.Minute < 10 ? ("0" + RTC.Minute.ToString()) : RTC.Minute.ToString();
-                time = hour12.ToString() + ":" + min + " " + sfx; sfx.Dispose(); min.Dispose();
+                string h12 = hour12.ToString();
+                time = h12 + ":" + min + " " + sfx; 
+                h12.Dispose(); // FIXED: Dispose hour string
+                sfx.Dispose(); 
+                min.Dispose();
             } else {
                 string h = RTC.Hour < 10 ? ("0" + RTC.Hour.ToString()) : RTC.Hour.ToString();
                 string m = RTC.Minute < 10 ? ("0" + RTC.Minute.ToString()) : RTC.Minute.ToString();
                 string s = RTC.Second < 10 ? ("0" + RTC.Second.ToString()) : RTC.Second.ToString();
                 time = h + ":" + m + ":" + s; h.Dispose(); m.Dispose(); s.Dispose();
             }
-            string date = RTC.Month.ToString() + "/" + RTC.Day.ToString() + "/" + RTC.Year.ToString();
+            
+            // FIXED: Properly dispose all temporary strings created for date
+            string monthStr = RTC.Month.ToString();
+            string dayStr = RTC.Day.ToString();
+            string yearStr = RTC.Year.ToString();
+            string slash1 = "/";
+            string slash2 = "/";
+            string temp1 = monthStr + slash1;
+            string temp2 = temp1 + dayStr;
+            string date = temp2 + slash2 + yearStr;
+            monthStr.Dispose();
+            dayStr.Dispose();
+            yearStr.Dispose();
+            temp1.Dispose();
+            temp2.Dispose();
 
             int timeW = WindowManager.font.MeasureString(time);
             int timeX = Framebuffer.Width - 12 - timeW;

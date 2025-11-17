@@ -25,10 +25,12 @@ namespace guideXOS.DefaultApps {
             Title = "guideXOS";
             img = new PNG(File.ReadAllBytes("Images/Banner.png"));
             link = new PNG(File.ReadAllBytes("Images/teamnexgenlink.png"));
-            // Splash: fixed window, no minimize/maximize buttons
-            ShowMinimize = true;
+            ShowInStartMenu = false;
             ShowInTaskbar = true;
+            ShowMaximize = false;
             IsResizable = false;
+            ShowMinimize = false;
+            ShowTombstone = false;
         }
         /// <summary>
         /// On Draw

@@ -81,9 +81,20 @@ namespace guideXOS.DefaultApps {
             _keyDown = true; _lastScan = (byte)Keyboard.KeyInfo.ScanCode;
 
             if (key.Key == ConsoleKey.Escape) { _searchFocus = false; return; }
-            if (key.Key == ConsoleKey.Backspace) { if (_search.Length > 0) _search = _search.Substring(0, _search.Length - 1); return; }
+            if (key.Key == ConsoleKey.Backspace) { 
+                if (_search.Length > 0) {
+                    // Create substring but don't dispose _search itself (it may be string.Empty literal)
+                    _search = _search.Substring(0, _search.Length - 1);
+                }
+                return; 
+            }
             if (key.Key == ConsoleKey.Enter) { return; }
-            char ch = key.KeyChar; if (ch >= ' ' && ch <= '~') { _search += ch.ToString(); }
+            char ch = key.KeyChar; 
+            if (ch >= ' ' && ch <= '~') { 
+                string charStr = ch.ToString();
+                _search = _search + charStr;
+                charStr.Dispose(); // FIXED: Dispose character string after concatenation
+            }
         }
 
         private void LoadIcons() {
@@ -178,22 +189,23 @@ namespace guideXOS.DefaultApps {
             return basePad;
         }
 
-        // Truncate to width with ellipsis (single-line) to avoid spill
+        // Truncate to width with ellipsis (single-line) to avoid spill - FIXED: properly dispose strings
         private string TruncateToWidth(string text, int maxW) {
             if (text == null) return string.Empty;
-            if (WindowManager.font.MeasureString(text) <= maxW) return text;
+            int measured = WindowManager.font.MeasureString(text);
+            if (measured <= maxW) return text;
             string ell = "...";
             int ellW = WindowManager.font.MeasureString(ell);
             int w = 0; int i = 0;
             for (; i < text.Length; i++) {
                 string chs = text[i].ToString();
                 int chW = WindowManager.font.MeasureString(chs);
-                chs.Dispose();
+                chs.Dispose(); // FIXED: Dispose character string
                 if (w + chW + ellW > maxW) break;
                 w += chW;
             }
             string sub = text.Substring(0, i) + ell;
-            ell.Dispose();
+            ell.Dispose(); // FIXED: Dispose ellipsis string
             return sub;
         }
 
@@ -347,7 +359,7 @@ namespace guideXOS.DefaultApps {
                 if (_showDrives) {
                     int icon = _iconFolder != null ? _iconFolder.Width : 48; int rowX = X + leftW + 8; int rowY = contentY; if (mx2 >= rowX && mx2 <= rowX + icon && my2 >= rowY && my2 <= rowY + icon) { PinnedManager.PinComputerFiles(); }
                 } else {
-                    EnsureEntries(); var list2 = _entriesCache; if (list2 != null) {
+                    EnsureEntries(); var list2 = _entriesCache; if list2 != null) {
                         int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad2 * 2; int rcX2 = X + leftW + 8; int rcW2 = contentW - leftW - 8; int cols = tileW > 0 ? rcW2 / tileW : 1; if (cols < 1) cols = 1;
                         for (int i = 0; i < list2.Count; i++) {
                             int gridX = i % cols; int gridY = i / cols; int gx = rcX2 + gridX * tileW + pad2; int gy = contentY + gridY * (icon + WindowManager.font.FontSize + pad2) + pad2 - _scroll; if (mx2 >= gx && mx2 <= gx + icon && my2 >= gy && my2 <= gy + icon) { var fi = list2[i]; if (fi.Attribute != guideXOS.FS.FileAttribute.Directory) { PinnedManager.PinFile(fi.Name, _currentPath + fi.Name, _iconDoc); } break; }
@@ -434,7 +446,7 @@ namespace guideXOS.DefaultApps {
             UIPrimitives.DrawRoundedRect(bx2, tbY, btnW, btnH, 0xFF3F3F3F, 1, 4);
             WindowManager.font.DrawString(bx2 + 6, tbY + 4, "Forward");
 
-            // Size options
+            // Size options - FIXED: properly dispose strings
             int sx = bx2 + btnW + gap + 10;
             for (int i = 0; i < _sizes.Length; i++) {
                 int w = 36;
@@ -442,11 +454,13 @@ namespace guideXOS.DefaultApps {
                 bool over = mouseX >= sx && mouseX <= sx + w && mouseY >= tbY && mouseY <= tbY + btnH;
                 UIPrimitives.AFillRoundedRect(sx, tbY, w, btnH, over ? 0x333F7FBF : 0x332A2A2A, 4);
                 UIPrimitives.DrawRoundedRect(sx, tbY, w, btnH, 0xFF3F3F3F, 1, 4);
-                WindowManager.font.DrawString(sx + 6, tbY + 4, _sizes[i].ToString());
+                string sizeText = _sizes[i].ToString();
+                WindowManager.font.DrawString(sx + 6, tbY + 4, sizeText);
+                sizeText.Dispose(); // FIXED: Dispose size text
                 sx += w + 4;
             }
 
-            // Search box (upper-right)
+            // Search box (upper-right) - FIXED: properly dispose strings
             int searchW = 180; int searchH = btnH; int searchX = X + Width - 8 - searchW; int searchY = tbY;
             bool overSearch = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH;
             uint sbg = _searchFocus ? 0xFF2D3E5F : overSearch ? 0xFF28364F : 0xFF222222;
@@ -454,7 +468,7 @@ namespace guideXOS.DefaultApps {
             UIPrimitives.DrawRoundedRect(searchX, searchY, searchW, searchH, 0xFF3F3F3F, 1, 4);
             string placeholder = string.IsNullOrEmpty(_search) ? "Search" : _search;
             WindowManager.font.DrawString(searchX + 8, searchY + 4, placeholder, searchW - 16, WindowManager.font.FontSize);
-            placeholder.Dispose();
+            if (placeholder != _search) placeholder.Dispose(); // FIXED: Only dispose if it's not the actual _search field
 
             // content area bounds
             int contentX = X + 8;
@@ -478,12 +492,13 @@ namespace guideXOS.DefaultApps {
             if (_iconFolder != null) Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
             WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + _iconFolder.Height / 2 - WindowManager.font.FontSize / 2, "Computer Files", maxLeftText, WindowManager.font.FontSize);
             cursorY += _iconFolder.Height + 10;
-            // USB drive indicator
+            // USB drive indicator - FIXED: properly dispose strings
             if (USBStorage.Count > 0) {
                 string baseLabel = USBStorage.Count == 1 ? "USB Drive" : "USB Drives";
                 Framebuffer.Graphics.DrawImage(X + 10, cursorY, _iconFolder);
                 WindowManager.font.DrawString(X + 10 + _iconFolder.Width + 8, cursorY + _iconFolder.Height / 2 - WindowManager.font.FontSize / 2, baseLabel, maxLeftText, WindowManager.font.FontSize);
-                cursorY += _iconFolder.Height + 10; baseLabel.Dispose();
+                cursorY += _iconFolder.Height + 10; 
+                baseLabel.Dispose(); // FIXED: Dispose label string
             }
 
             // Right content panel

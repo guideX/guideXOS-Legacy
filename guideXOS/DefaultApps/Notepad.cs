@@ -35,8 +35,8 @@ namespace guideXOS.DefaultApps {
             ShowInTaskbar = true;
             ShowMaximize = true;
             ShowMinimize = true;
-            //ShowRestore = true;
             ShowTombstone = true;
+            ShowInStartMenu = true;
             Title = "Notepad";
             _text = string.Empty; _clickLock = false; _savedPath = null; _dirty = false; _dlg = null; _confirmDlg = null;
             _k1 = 0; _k2 = 0;
