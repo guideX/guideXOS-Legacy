@@ -37,7 +37,6 @@ namespace guideXOS.DefaultApps {
             ShowInTaskbar = true;
             ShowMaximize = true;
             ShowMinimize = true;
-            ShowRestore = true;
             ShowTombstone = true;
             Title = "nexIRC";
             ShowInTaskbar = true;

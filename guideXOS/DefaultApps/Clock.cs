@@ -35,9 +35,8 @@ namespace guideXOS.DefaultApps {
             IsResizable = false;
             ShowInTaskbar = false; // Don't show in taskbar
             ShowMaximize = false;
-            ShowMinimize = false;
-            ShowRestore = false;
-            ShowTombstone = false;
+            ShowMinimize = true;
+
             sine = new int[16] {
         		0,
         		27,

@@ -19,7 +19,7 @@ namespace guideXOS.DefaultApps {
             ShowMinimize = true;
             ShowMaximize = true;
             IsResizable = true;
-            ShowRestore = true;
+            ShowMaximize = true;
             ShowTombstone = true;
         }
         /// <summary>

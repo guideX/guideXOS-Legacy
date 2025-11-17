@@ -34,7 +34,6 @@ namespace guideXOS.DefaultApps {
             ShowMaximize = true;
             ShowMinimize = true;
             ShowTombstone = true;
-            ShowRestore = true;
             IsResizable = true;
             Title = "Console";
             Cmd = string.Empty;

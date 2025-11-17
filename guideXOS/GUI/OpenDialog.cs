@@ -84,8 +84,7 @@ namespace guideXOS.GUI {
             IsResizable = true;
             ShowInTaskbar = false;
             ShowMaximize = false;
-            ShowMinimize = false;
-            ShowRestore = false;
+            ShowMinimize = true;
             ShowTombstone = false;
             _currentPath = startPath ?? "";
             _entries = new List<FileInfo>();

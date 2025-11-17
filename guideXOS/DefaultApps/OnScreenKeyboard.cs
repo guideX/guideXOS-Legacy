@@ -31,9 +31,9 @@ namespace guideXOS.DefaultApps {
         public OnScreenKeyboard(int x, int y) : base(x, y, 800, 280) {
             Title = "On-Screen Keyboard";
             ShowInTaskbar = true;
-            ShowMaximize = false;
+            ShowMaximize = true;
             ShowMinimize = true;
-            ShowRestore = true;
+            //ShowRestore = true;
             ShowTombstone = true;
             IsResizable = false;
         }

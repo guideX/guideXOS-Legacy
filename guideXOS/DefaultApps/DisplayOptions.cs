@@ -48,8 +48,8 @@ namespace guideXOS.DefaultApps {
             IsResizable = false;
             ShowInTaskbar = false;
             ShowMaximize = false;
-            ShowMinimize = false;
-            ShowRestore = false;
+            ShowMinimize = true;
+            //ShowRestore = false;
             ShowTombstone = false;
             Title = "Display Options";
             

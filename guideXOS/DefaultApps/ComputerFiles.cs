@@ -69,7 +69,7 @@ namespace guideXOS.DefaultApps {
             ShowInTaskbar = true;
             ShowMaximize = true;
             ShowMinimize = true;
-            ShowRestore = true;
+            //ShowRestore = true;
             ShowTombstone = true;
             Keyboard.OnKeyChanged += Keyboard_OnKeyChanged;
         }

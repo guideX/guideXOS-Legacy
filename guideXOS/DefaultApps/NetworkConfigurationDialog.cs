@@ -48,9 +48,7 @@ namespace guideXOS.DefaultApps {
             IsResizable = false;
             ShowInTaskbar = true;
             ShowMaximize = false;
-            ShowMinimize = false;
-            ShowRestore = false;
-            ShowTombstone = true;
+            ShowMinimize = true;
 
             // Load current network configuration
             LoadCurrentConfig();

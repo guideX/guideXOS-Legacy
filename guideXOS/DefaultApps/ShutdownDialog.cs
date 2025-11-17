@@ -23,9 +23,7 @@ namespace guideXOS.DefaultApps {
             Title = "Confirm Shutdown";
             IsResizable = false;
             ShowInTaskbar = true;
-            ShowMaximize = false;
             ShowMinimize = true;
-            ShowRestore = false;
             ShowTombstone = false;
         }
 

@@ -23,7 +23,6 @@ namespace guideXOS.DefaultApps {
             ShowMinimize = true;
             ShowMaximize = true;
             IsResizable = true;
-            ShowRestore = true;
             ShowTombstone = true;
             audiopause = Icons.AudioPauseIcon(32);
             audioplay = Icons.AudioPlayIcon(32);

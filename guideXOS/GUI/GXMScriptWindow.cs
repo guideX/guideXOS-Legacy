@@ -226,10 +226,9 @@ namespace guideXOS.GUI {
         public GXMScriptWindow(string title, int w, int h) 
             : base((Framebuffer.Width - w) / 2, (Framebuffer.Height - h) / 2, w, h) { 
             Title = title ?? "Script";
-            ShowInTaskbar = true;
             ShowMinimize = true;
-            ShowTombstone = true;
-            ShowRestore = true;
+            ShowMaximize = true;
+            ShowInTaskbar = true;
         }
         
         #endregion

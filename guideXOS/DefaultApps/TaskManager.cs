@@ -97,10 +97,10 @@ namespace guideXOS.DefaultApps {
 
         public TaskManager(int X, int Y, int Width = 760, int Height = 520)
             : base(X, Y, Width, Height) {
+            ShowMinimize = true;
             ShowInTaskbar = true;
             ShowMaximize = true;
-            ShowMinimize = true;
-            ShowRestore = false;
+            //ShowRestore = false;
             ShowTombstone = false;
             IsResizable = true;
             Title = "Task Manager";

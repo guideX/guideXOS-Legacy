@@ -205,17 +205,13 @@ namespace guideXOS.GUI {
         /// </summary>
         public bool ShowMinimize = false;
         /// <summary>
-        /// Show Maximize button
+        /// Show Maximize/Restore button (will automatically switch based on state)
         /// </summary>
         public bool ShowMaximize = false;
         /// <summary>
         /// Show Tombstone Button
         /// </summary>
         public bool ShowTombstone = false;
-        /// <summary>
-        /// Show Restore
-        /// </summary>
-        public bool ShowRestore = false;
         /// <summary>
         /// Constructor
         /// </summary>
@@ -290,17 +286,18 @@ namespace guideXOS.GUI {
                 _rcTombX = -1000; // off-screen
             }
             
-            if (ShowRestore) {
-                _rcRestoreX = currentX;
+            // Combined Maximize/Restore button - show restore when maximized, maximize when not
+            if (ShowMaximize) {
+                if (IsMaximized) {
+                    _rcRestoreX = currentX;
+                    _rcMaxX = -1000; // off-screen
+                } else {
+                    _rcMaxX = currentX;
+                    _rcRestoreX = -1000; // off-screen
+                }
                 currentX -= (_btnSize + _btnSpacing);
             } else {
                 _rcRestoreX = -1000; // off-screen
-            }
-            
-            if (ShowMaximize) {
-                _rcMaxX = currentX;
-                currentX -= (_btnSize + _btnSpacing);
-            } else {
                 _rcMaxX = -1000; // off-screen
             }
             
@@ -316,8 +313,11 @@ namespace guideXOS.GUI {
         TitleButton HitTestButtons(int mx, int my) {
             if (Hit(mx, my, _rcCloseX, _btnY, _btnSize, _btnH)) return TitleButton.Close;
             if (ShowTombstone && Hit(mx, my, _rcTombX, _btnY, _btnSize, _btnH)) return TitleButton.Tombstone;
-            if (ShowRestore && Hit(mx, my, _rcRestoreX, _btnY, _btnSize, _btnH)) return TitleButton.Restore;
-            if (ShowMaximize && Hit(mx, my, _rcMaxX, _btnY, _btnSize, _btnH)) return TitleButton.Maximize;
+            // Combined button hit test - check both positions
+            if (ShowMaximize) {
+                if (IsMaximized && Hit(mx, my, _rcRestoreX, _btnY, _btnSize, _btnH)) return TitleButton.Restore;
+                if (!IsMaximized && Hit(mx, my, _rcMaxX, _btnY, _btnSize, _btnH)) return TitleButton.Maximize;
+            }
             if (ShowMinimize && Hit(mx, my, _rcMinX, _btnY, _btnSize, _btnH)) return TitleButton.Minimize;
             return TitleButton.None;
         }
@@ -329,8 +329,8 @@ namespace guideXOS.GUI {
             switch (b) {
                 case TitleButton.Close: BeginFadeOutClose(); break;
                 case TitleButton.Minimize: if (ShowMinimize) Minimize(); break;
-                case TitleButton.Maximize: if (ShowMaximize) { if (IsMaximized) Restore(); else Maximize(); } break;
-                case TitleButton.Restore: if (ShowRestore) { Restore(); IsTombstoned = false; this.Visible = true; } break;
+                case TitleButton.Maximize: if (ShowMaximize) Maximize(); break;
+                case TitleButton.Restore: if (ShowMaximize) { Restore(); if (IsTombstoned) { IsTombstoned = false; this.Visible = true; } } break;
                 case TitleButton.Tombstone: if (ShowTombstone) { IsTombstoned = true; this.Visible = false; } break;
             }
         }
@@ -495,8 +495,14 @@ namespace guideXOS.GUI {
             // Custom title buttons with glow and press states (honor Show* flags)
             ComputeButtonRects();
             if (ShowMinimize) DrawTitleButton(_rcMinX, _btnY, _btnSize, TitleButton.Minimize, _hoverBtn == TitleButton.Minimize, _pressedBtn == TitleButton.Minimize && _captureButtons);
-            if (ShowMaximize) DrawTitleButton(_rcMaxX, _btnY, _btnSize, TitleButton.Maximize, _hoverBtn == TitleButton.Maximize, _pressedBtn == TitleButton.Maximize && _captureButtons);
-            if (ShowRestore) DrawTitleButton(_rcRestoreX, _btnY, _btnSize, TitleButton.Restore, _hoverBtn == TitleButton.Restore, _pressedBtn == TitleButton.Restore && _captureButtons);
+            // Combined Maximize/Restore button - show appropriate one based on state
+            if (ShowMaximize) {
+                if (IsMaximized) {
+                    DrawTitleButton(_rcRestoreX, _btnY, _btnSize, TitleButton.Restore, _hoverBtn == TitleButton.Restore, _pressedBtn == TitleButton.Restore && _captureButtons);
+                } else {
+                    DrawTitleButton(_rcMaxX, _btnY, _btnSize, TitleButton.Maximize, _hoverBtn == TitleButton.Maximize, _pressedBtn == TitleButton.Maximize && _captureButtons);
+                }
+            }
             if (ShowTombstone) DrawTitleButton(_rcTombX, _btnY, _btnSize, TitleButton.Tombstone, _hoverBtn == TitleButton.Tombstone, _pressedBtn == TitleButton.Tombstone && _captureButtons);
             // Close button always present
             DrawTitleButton(_rcCloseX, _btnY, _btnSize, TitleButton.Close, _hoverBtn == TitleButton.Close, _pressedBtn == TitleButton.Close && _captureButtons);

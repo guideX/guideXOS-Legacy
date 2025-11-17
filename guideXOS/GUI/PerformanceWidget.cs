@@ -38,7 +38,6 @@ namespace guideXOS.GUI {
             ShowMaximize = false;
             ShowMinimize = false;
             ShowTombstone = false;
-            ShowRestore = false;
             IsResizable = false;
         }
         

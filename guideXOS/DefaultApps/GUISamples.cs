@@ -23,11 +23,10 @@ namespace guideXOS.DefaultApps {
         
         public GUISamples(int x, int y) : base(x, y, 640, 480) {
             Title = "GXM GUI Samples";
-            ShowInTaskbar = true;
             ShowMinimize = true;
             ShowMaximize = true;
+            ShowInTaskbar = true;
             ShowTombstone = true;
-            ShowRestore = true;
             IsResizable = true;
             // Don't build samples in constructor - wait for a few frames after becoming visible
         }
