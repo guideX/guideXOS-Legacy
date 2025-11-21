@@ -1447,6 +1447,41 @@ namespace guideXOS.DefaultApps {
 
             WindowManager.font.DrawString(labelX, rowY, "Heap Utilization:");
             WindowManager.font.DrawString(valueX, rowY, _mdHeapUtilStr);
+            rowY += lineHeight + 10;
+
+            // Separator
+            Framebuffer.Graphics.DrawRectangle(labelX, rowY, w - 20, 1, 0xFF444444, 1);
+            rowY += 10;
+
+            // PAGE TABLE STATISTICS - NEW SECTION
+            WindowManager.font.DrawString(labelX, rowY, "=== Page Table (Virtual Memory) ===");
+            rowY += lineHeight;
+
+            WindowManager.font.DrawString(labelX, rowY, "Page Tables Allocated:");
+            string ptAllocsStr = PageTable.PageTableAllocations.ToString();
+            WindowManager.font.DrawString(valueX, rowY, ptAllocsStr);
+            ptAllocsStr.Dispose();
+            rowY += lineHeight;
+
+            WindowManager.font.DrawString(labelX, rowY, "Virtual Mappings:");
+            string mappingsStr = PageTable.MappingCount.ToString();
+            WindowManager.font.DrawString(valueX, rowY, mappingsStr);
+            mappingsStr.Dispose();
+            rowY += lineHeight;
+
+            WindowManager.font.DrawString(labelX, rowY, "Virtual Unmappings:");
+            string unmappingsStr = PageTable.UnmappingCount.ToString();
+            WindowManager.font.DrawString(valueX, rowY, unmappingsStr);
+            unmappingsStr.Dispose();
+            rowY += lineHeight;
+
+            // Calculate page table overhead
+            ulong ptOverhead = PageTable.PageTableAllocations * 4096; // 4KB per page table
+            string ptOverheadStr = ToMBString(ptOverhead);
+            WindowManager.font.DrawString(labelX, rowY, "Page Table Overhead:");
+            WindowManager.font.DrawString(valueX, rowY, ptOverheadStr);
+            ptOverheadStr.Dispose();
+            rowY += lineHeight;
         }
 
         private void UpdateMemoryDetailStats() {

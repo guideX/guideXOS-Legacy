@@ -61,10 +61,12 @@ abstract unsafe class Allocator {
     /// Current OwnerID
     /// </summary>
     public static int CurrentOwnerId = 0; // 0 = kernel/unknown
+    
     /// <summary>
-    /// pages per owner (start pages)
+    /// Maximum number of concurrent owners (windows) - fixed size to avoid Dictionary circular dependency
     /// </summary>
-    private static Dictionary<int, ulong> _ownerLivePages;
+    private const int MaxOwners = 1024;
+    
     /// <summary>
     /// Page Size
     /// </summary>
@@ -73,8 +75,8 @@ abstract unsafe class Allocator {
     /// <summary>
     /// Num Pages
     /// </summary>
-    //public const int NumPages = 131072; // 512 MiB total
-    public const int NumPages = 262144; // 1 GiB total
+    public const int NumPages = 131072; // 512 MiB total
+    //public const int NumPages = 262144; // 1 GiB total
     /// <summary>
     /// Page Signature
     /// </summary>
@@ -107,6 +109,21 @@ abstract unsafe class Allocator {
         /// Owners
         /// </summary>
         public fixed int Owners[NumPages]; // owner id at run start page
+        
+        /// <summary>
+        /// Owner IDs array (fixed size, no heap allocation)
+        /// </summary>
+        public fixed int OwnerIds[MaxOwners];
+        
+        /// <summary>
+        /// Pages per owner (parallel to OwnerIds)
+        /// </summary>
+        public fixed ulong OwnerPages[MaxOwners];
+        
+        /// <summary>
+        /// Number of active owners tracked
+        /// </summary>
+        public int OwnerCount;
     }
     /// <summary>
     /// Info
@@ -118,7 +135,9 @@ abstract unsafe class Allocator {
     /// <param name="start"></param>
     public static void Initialize(IntPtr start) {
         fixed (Info* pInfo = &_Info) Native.Stosb(pInfo, 0, (ulong)sizeof(Info));
-        _Info.Start = start; _Info.PageInUse = 0; _ownerLivePages = new Dictionary<int, ulong>();
+        _Info.Start = start; 
+        _Info.PageInUse = 0; 
+        _Info.OwnerCount = 0;
     }
     /// <summary>
     /// Memory In Use
@@ -142,6 +161,63 @@ abstract unsafe class Allocator {
     /// <param name="data"></param>
     /// <param name="size"></param>
     internal static unsafe void ZeroFill(IntPtr data, ulong size) { Native.Stosb((void*)data, 0, size); }
+    
+    /// <summary>
+    /// Find owner index in tracking arrays (returns -1 if not found)
+    /// </summary>
+    private static int FindOwnerIndex(int ownerId) {
+        for (int i = 0; i < _Info.OwnerCount; i++) {
+            if (_Info.OwnerIds[i] == ownerId) return i;
+        }
+        return -1;
+    }
+    
+    /// <summary>
+    /// Add or update owner page count
+    /// </summary>
+    private static void AddOwnerPages(int ownerId, ulong pages) {
+        if (ownerId == 0) return;
+        
+        int idx = FindOwnerIndex(ownerId);
+        if (idx >= 0) {
+            // Owner exists, add pages
+            _Info.OwnerPages[idx] += pages;
+        } else {
+            // New owner - add if space available
+            if (_Info.OwnerCount < MaxOwners) {
+                _Info.OwnerIds[_Info.OwnerCount] = ownerId;
+                _Info.OwnerPages[_Info.OwnerCount] = pages;
+                _Info.OwnerCount++;
+            }
+            // If MaxOwners reached, silently ignore (owner tracking is best-effort)
+        }
+    }
+    
+    /// <summary>
+    /// Subtract owner pages and remove entry if reaches zero (CRITICAL FIX #3)
+    /// </summary>
+    private static void SubtractOwnerPages(int ownerId, ulong pages) {
+        if (ownerId == 0) return;
+        
+        int idx = FindOwnerIndex(ownerId);
+        if (idx >= 0) {
+            if (_Info.OwnerPages[idx] > pages) {
+                _Info.OwnerPages[idx] -= pages;
+            } else {
+                // Pages reach zero - remove this owner entry to prevent stale data
+                _Info.OwnerPages[idx] = 0;
+                // Compact array by moving last entry to this position
+                if (idx < _Info.OwnerCount - 1) {
+                    _Info.OwnerIds[idx] = _Info.OwnerIds[_Info.OwnerCount - 1];
+                    _Info.OwnerPages[idx] = _Info.OwnerPages[_Info.OwnerCount - 1];
+                }
+                _Info.OwnerIds[_Info.OwnerCount - 1] = 0;
+                _Info.OwnerPages[_Info.OwnerCount - 1] = 0UL;
+                _Info.OwnerCount--;
+            }
+        }
+    }
+    
     /// <summary>
     /// Free Call Count
     /// </summary>
@@ -212,13 +288,9 @@ abstract unsafe class Allocator {
                 if (tag < (byte)AllocTag.Count) _Info.TagLivePages[tag] -= pages; 
                 _Info.Tags[p] = 0;
                 
-                // Owner accounting (do BEFORE clearing pages)
+                // Owner accounting (do BEFORE clearing pages) - CRITICAL FIX #3
                 int owner = _Info.Owners[p];
-                
-                if (owner != 0 && _ownerLivePages != null && _ownerLivePages.ContainsKey(owner)) {
-                    ulong live = _ownerLivePages[owner]; 
-                    _ownerLivePages[owner] = live > pages ? live - pages : 0UL;
-                }
+                SubtractOwnerPages(owner, pages);
                 _Info.Owners[p] = 0;
                 
                 // Global usage
@@ -286,7 +358,7 @@ abstract unsafe class Allocator {
             _Info.Pages[i] = pages; _Info.PageInUse += pages;
             byte t = (byte)tag; if (t >= (byte)AllocTag.Count) t = (byte)AllocTag.Unknown; _Info.Tags[i] = t; _Info.TagLivePages[t] += pages;
             int owner = CurrentOwnerId; _Info.Owners[i] = owner;
-            if (owner != 0) { if (_ownerLivePages.ContainsKey(owner)) _ownerLivePages[owner] += pages; else _ownerLivePages.Add(owner, pages); }
+            AddOwnerPages(owner, pages);
             long baseAddr = (long)_Info.Start; long offset = (long)(i * PageSize); return new IntPtr((void*)(baseAddr + offset));
         }
     }
@@ -299,13 +371,27 @@ abstract unsafe class Allocator {
     public static IntPtr Reallocate(IntPtr intPtr, ulong size) {
         if (intPtr == IntPtr.Zero) return Allocate(size);
         if (size == 0) { Free(intPtr); return IntPtr.Zero; }
-        long p = GetPageIndexStart(intPtr); if (p == -1) return intPtr;
+        
+        // CRITICAL FIX #4: Validate pointer before accessing _Info.Pages
+        long p = GetPageIndexStart(intPtr); 
+        if (p < 0 || p >= NumPages) return IntPtr.Zero;
+        
+        ulong oldPages = _Info.Pages[p];
+        // Validate this is actually an allocation start
+        if (oldPages == 0 || oldPages == PageSignature) return IntPtr.Zero;
+        
         ulong pages = size > PageSize ? (size / PageSize) + ((size % PageSize) != 0 ? 1UL : 0) : 1UL;
-        if (_Info.Pages[p] == pages) return intPtr;
-        byte tag = _Info.Tags[p]; IntPtr newptr = Allocate(size, (AllocTag)tag);
+        if (oldPages == pages) return intPtr;
+        
+        byte tag = _Info.Tags[p]; 
+        IntPtr newptr = Allocate(size, (AllocTag)tag);
         if (newptr == IntPtr.Zero) return intPtr; // allocation failed; keep old block
-        ulong oldBytes = _Info.Pages[p] * PageSize; ulong copyLen = size < oldBytes ? size : oldBytes;
-        MemoryCopy(newptr, intPtr, copyLen); Free(intPtr); return newptr;
+        
+        ulong oldBytes = oldPages * PageSize; 
+        ulong copyLen = size < oldBytes ? size : oldBytes;
+        MemoryCopy(newptr, intPtr, copyLen); 
+        Free(intPtr); 
+        return newptr;
     }
 #pragma warning disable CS8500
     /// <summary>
@@ -337,11 +423,16 @@ abstract unsafe class Allocator {
     /// <param name="src"></param>
     /// <param name="size"></param>
     internal static unsafe void MemoryCopy(IntPtr dst, IntPtr src, ulong size) { Native.Movsb((void*)dst, (void*)src, size); }
+    
     public static ulong GetTagBytes(AllocTag tag) { return _Info.TagLivePages[(int)tag] * PageSize; }
+    
     public static ulong GetOwnerBytes(int ownerId) {
         if (ownerId == 0) return 0UL;
         lock (_sync) {
-            if (_ownerLivePages != null && _ownerLivePages.ContainsKey(ownerId)) return _ownerLivePages[ownerId] * PageSize;
+            // Use new owner tracking system
+            int idx = FindOwnerIndex(ownerId);
+            if (idx >= 0) return _Info.OwnerPages[idx] * PageSize;
+            
             // Fallback: scan page run starts and accumulate pages owned by ownerId
             ulong pages = 0UL;
             for (int i = 0; i < NumPages; i++) {
@@ -368,15 +459,10 @@ abstract unsafe class Allocator {
     /// <returns></returns>
     public static OwnerSnapshot[] GetOwnerListSnapshot() {
         lock (_sync) {
-            if (_ownerLivePages == null) return new OwnerSnapshot[0];
-            var arr = new OwnerSnapshot[_ownerLivePages.Count];
-            int idx = 0;
-            // iterate using explicit indexing via Keys to avoid relying on foreach semantics of dictionary implementation
-            var keys = _ownerLivePages.Keys;
-            for (int k = 0; k < keys.Count; k++) {
-                int owner = keys[k]; ulong pages = _ownerLivePages[owner];
-                arr[idx++].OwnerId = owner;
-                arr[idx - 1].Bytes = pages * PageSize;
+            var arr = new OwnerSnapshot[_Info.OwnerCount];
+            for (int i = 0; i < _Info.OwnerCount; i++) {
+                arr[i].OwnerId = _Info.OwnerIds[i];
+                arr[i].Bytes = _Info.OwnerPages[i] * PageSize;
             }
             return arr;
         }

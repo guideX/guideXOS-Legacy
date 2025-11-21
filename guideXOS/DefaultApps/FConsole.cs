@@ -428,7 +428,7 @@ namespace guideXOS.DefaultApps {
             string cmd = parts[0];
             switch (cmd) {
                 case "help":
-                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, apps, launch <app>, netinit, ipconfig [/release | /renew], ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk, workspaces");
+                    WriteLine("Commands: help, pwd, ls, ll, cd, cd .., clear, exit, cat, echo, notepad <file>, vi <file>, gxminfo <file.gxm>, setbg <image>, apps, launch <app>, netinit, ipconfig [/release | /renew], ifconfig, arp, dns <host>, ping <hostOrIp>, authurl <http>, authlogin <u> <p>, authregister <u> <p>, authtoken, logout, shutdown, reboot, osk, workspaces, memstat, ptstat");
                     break;
                 case "exit": {
                         this.Visible = false;
@@ -1200,6 +1200,31 @@ namespace guideXOS.DefaultApps {
             string r = new string(arr, 0, w);
             arr.Dispose();
             return r;
+        }
+
+        private static string ToMBString(ulong bytes) {
+            ulong mb = bytes / (1024UL * 1024UL);
+            // Avoid repeated string allocation by caching common values
+            if (mb == 0) return "0 MB";
+            if (mb < 10) {
+                string mbStr = mb.ToString();
+                string result = mbStr + " MB";
+                mbStr.Dispose();
+                return result;
+            }
+            // For larger values, round to avoid excessive string allocations
+            if (mb < 100) {
+                string mbStr = mb.ToString();
+                string result = mbStr + " MB";
+                mbStr.Dispose();
+                return result;
+            }
+            // Round to nearest 10 MB for very large values
+            ulong rounded = (mb + 5) / 10 * 10;
+            string roundedStr = rounded.ToString();
+            string result2 = roundedStr + " MB";
+            roundedStr.Dispose();
+            return result2;
         }
 
         public override void OnInput() {
