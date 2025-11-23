@@ -1,6 +1,5 @@
 using guideXOS.Misc;
 using System;
-using System.Collections.Generic;
 /// <summary>
 /// Allocator with page-level bookkeeping, tagging, and per-owner (window) accounting.
 /// Adds overflow guards to prevent bogus huge allocation requests that arise from
@@ -61,10 +60,13 @@ abstract unsafe class Allocator {
     /// Current OwnerID
     /// </summary>
     public static int CurrentOwnerId = 0; // 0 = kernel/unknown
-    /// <summary>
-    /// pages per owner (start pages)
-    /// </summary>
-    private static Dictionary<int, ulong> _ownerLivePages;
+    
+    // Simplified owner tracking - replace Dictionary with parallel arrays
+    private const int MAX_OWNERS = 1024; // Support up to 1024 concurrent windows/owners
+    private static int[] _ownerIds;
+    private static ulong[] _ownerPages;
+    private static int _ownerCount;
+    
     /// <summary>
     /// Page Size
     /// </summary>
@@ -112,13 +114,43 @@ abstract unsafe class Allocator {
     /// Info
     /// </summary>
     public static Info _Info;
+    
+    /// <summary>
+    /// Find or add owner index in parallel arrays
+    /// </summary>
+    private static int FindOrAddOwner(int ownerId) {
+        if (ownerId == 0) return -1;
+        
+        // Search existing owners
+        for (int i = 0; i < _ownerCount; i++) {
+            if (_ownerIds[i] == ownerId) return i;
+        }
+        
+        // Add new owner if we have space
+        if (_ownerCount < MAX_OWNERS) {
+            int idx = _ownerCount;
+            _ownerIds[idx] = ownerId;
+            _ownerPages[idx] = 0;
+            _ownerCount++;
+            return idx;
+        }
+        
+        return -1; // No space for more owners
+    }
+    
     /// <summary>
     /// Initialize
     /// </summary>
     /// <param name="start"></param>
     public static void Initialize(IntPtr start) {
         fixed (Info* pInfo = &_Info) Native.Stosb(pInfo, 0, (ulong)sizeof(Info));
-        _Info.Start = start; _Info.PageInUse = 0; _ownerLivePages = new Dictionary<int, ulong>();
+        _Info.Start = start; 
+        _Info.PageInUse = 0;
+        
+        // Initialize owner tracking with simple arrays
+        _ownerIds = new int[MAX_OWNERS];
+        _ownerPages = new ulong[MAX_OWNERS];
+        _ownerCount = 0;
     }
     /// <summary>
     /// Memory In Use
@@ -215,9 +247,15 @@ abstract unsafe class Allocator {
                 // Owner accounting (do BEFORE clearing pages)
                 int owner = _Info.Owners[p];
                 
-                if (owner != 0 && _ownerLivePages != null && _ownerLivePages.ContainsKey(owner)) {
-                    ulong live = _ownerLivePages[owner]; 
-                    _ownerLivePages[owner] = live > pages ? live - pages : 0UL;
+                if (owner != 0) {
+                    // Find owner in array and decrement
+                    for (int i = 0; i < _ownerCount; i++) {
+                        if (_ownerIds[i] == owner) {
+                            ulong live = _ownerPages[i];
+                            _ownerPages[i] = live > pages ? live - pages : 0UL;
+                            break;
+                        }
+                    }
                 }
                 _Info.Owners[p] = 0;
                 
@@ -285,8 +323,17 @@ abstract unsafe class Allocator {
             for (ulong k = 0; k < pages; k++) _Info.Pages[i + k] = PageSignature;
             _Info.Pages[i] = pages; _Info.PageInUse += pages;
             byte t = (byte)tag; if (t >= (byte)AllocTag.Count) t = (byte)AllocTag.Unknown; _Info.Tags[i] = t; _Info.TagLivePages[t] += pages;
-            int owner = CurrentOwnerId; _Info.Owners[i] = owner;
-            if (owner != 0) { if (_ownerLivePages.ContainsKey(owner)) _ownerLivePages[owner] += pages; else _ownerLivePages.Add(owner, pages); }
+            
+            // Owner accounting with simple array lookup
+            int owner = CurrentOwnerId; 
+            _Info.Owners[i] = owner;
+            if (owner != 0) {
+                int ownerIdx = FindOrAddOwner(owner);
+                if (ownerIdx >= 0) {
+                    _ownerPages[ownerIdx] += pages;
+                }
+            }
+            
             long baseAddr = (long)_Info.Start; long offset = (long)(i * PageSize); return new IntPtr((void*)(baseAddr + offset));
         }
     }
@@ -337,11 +384,19 @@ abstract unsafe class Allocator {
     /// <param name="src"></param>
     /// <param name="size"></param>
     internal static unsafe void MemoryCopy(IntPtr dst, IntPtr src, ulong size) { Native.Movsb((void*)dst, (void*)src, size); }
+    
     public static ulong GetTagBytes(AllocTag tag) { return _Info.TagLivePages[(int)tag] * PageSize; }
+    
     public static ulong GetOwnerBytes(int ownerId) {
         if (ownerId == 0) return 0UL;
         lock (_sync) {
-            if (_ownerLivePages != null && _ownerLivePages.ContainsKey(ownerId)) return _ownerLivePages[ownerId] * PageSize;
+            // Direct array lookup - much simpler than Dictionary
+            for (int i = 0; i < _ownerCount; i++) {
+                if (_ownerIds[i] == ownerId) {
+                    return _ownerPages[i] * PageSize;
+                }
+            }
+            
             // Fallback: scan page run starts and accumulate pages owned by ownerId
             ulong pages = 0UL;
             for (int i = 0; i < NumPages; i++) {
@@ -368,15 +423,10 @@ abstract unsafe class Allocator {
     /// <returns></returns>
     public static OwnerSnapshot[] GetOwnerListSnapshot() {
         lock (_sync) {
-            if (_ownerLivePages == null) return new OwnerSnapshot[0];
-            var arr = new OwnerSnapshot[_ownerLivePages.Count];
-            int idx = 0;
-            // iterate using explicit indexing via Keys to avoid relying on foreach semantics of dictionary implementation
-            var keys = _ownerLivePages.Keys;
-            for (int k = 0; k < keys.Count; k++) {
-                int owner = keys[k]; ulong pages = _ownerLivePages[owner];
-                arr[idx++].OwnerId = owner;
-                arr[idx - 1].Bytes = pages * PageSize;
+            var arr = new OwnerSnapshot[_ownerCount];
+            for (int i = 0; i < _ownerCount; i++) {
+                arr[i].OwnerId = _ownerIds[i];
+                arr[i].Bytes = _ownerPages[i] * PageSize;
             }
             return arr;
         }

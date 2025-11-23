@@ -91,12 +91,20 @@ namespace guideXOS.FS {
         private uint _rootCluster; // FAT32 root cluster
         private uint _clusterCount;
 
-        // Simple sector cache
-        private readonly Dictionary<ulong, byte[]> _sectorCache = new Dictionary<ulong, byte[]>();
+        // Simple sector cache - replaced Dictionary with parallel arrays
         private const int CacheCapacity = 1024; // sectors
-        private readonly Queue<ulong> _lru = new Queue<ulong>();
+        private ulong[] _cacheKeys;
+        private byte[][] _cacheValues;
+        private int _cacheCount;
+        private int _lruHead; // simple circular buffer for LRU
 
         public FAT() {
+            // Initialize cache arrays
+            _cacheKeys = new ulong[CacheCapacity];
+            _cacheValues = new byte[CacheCapacity][];
+            _cacheCount = 0;
+            _lruHead = 0;
+            
             // Read boot sector
             var sec0 = ReadSectorsCached(0, 1);
             fixed (byte* p = sec0) {
@@ -127,18 +135,45 @@ namespace guideXOS.FS {
         }
 
         private void InvalidateSector(ulong lba) {
-            if (_sectorCache.ContainsKey(lba)) _sectorCache.Remove(lba);
+            // Linear search and invalidate
+            for (int i = 0; i < _cacheCount; i++) {
+                if (_cacheKeys[i] == lba) {
+                    _cacheValues[i] = null;
+                    // Don't reduce count - keep slot for reuse
+                    return;
+                }
+            }
         }
 
         private byte[] ReadSectorsCached(ulong lba, uint count) {
             if (count == 1) {
-                if (_sectorCache.ContainsKey(lba)) return _sectorCache[lba];
+                // Check cache first
+                for (int i = 0; i < _cacheCount; i++) {
+                    if (_cacheKeys[i] == lba && _cacheValues[i] != null) {
+                        return _cacheValues[i];
+                    }
+                }
+                
+                // Not in cache - read from disk
                 var buf = new byte[SectorSize];
                 fixed (byte* p = buf) disk.Read(lba, 1, p);
-                _sectorCache[lba] = buf; _lru.Enqueue(lba);
-                if (_sectorCache.Count > CacheCapacity) { var old = _lru.Dequeue(); _sectorCache.Remove(old); }
+                
+                // Add to cache
+                if (_cacheCount < CacheCapacity) {
+                    // Add new entry
+                    _cacheKeys[_cacheCount] = lba;
+                    _cacheValues[_cacheCount] = buf;
+                    _cacheCount++;
+                } else {
+                    // Replace oldest (circular LRU)
+                    _cacheKeys[_lruHead] = lba;
+                    _cacheValues[_lruHead] = buf;
+                    _lruHead = (_lruHead + 1) % CacheCapacity;
+                }
+                
                 return buf;
             } else {
+                // Multi-sector read - don't cache
                 var buf = new byte[count * SectorSize];
                 fixed (byte* p = buf) disk.Read(lba, count, p);
                 return buf;

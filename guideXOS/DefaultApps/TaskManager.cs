@@ -87,9 +87,13 @@ namespace guideXOS.DefaultApps {
         private int _diskActivePct;
         private int _diskRespMs;
 
-        // Owner memory sampling for leak detection
-        private Dictionary<int, ulong> _lastOwnerBytes;
-        private Dictionary<int, int> _ownerKBps; // KB per second (positive = growth)
+        // Owner memory sampling for leak detection - replaced Dictionary with parallel arrays
+        private const int MAX_TRACKED_OWNERS = 256;
+        private int[] _ownerIds;
+        private ulong[] _lastOwnerBytes;
+        private int[] _ownerKBps;
+        private int _trackedOwnerCount;
+        
         private ulong _lastOwnerSampleTick;
 
         // Flag to enable perf tracking on first draw (not in constructor to prevent freeze)
@@ -106,10 +110,11 @@ namespace guideXOS.DefaultApps {
         private int _leakGrowthCounter = 0; // count consecutive growths
         private const int LeakThreshold = 5; // 5 consecutive growths = leak
         
-        // Memory leak blame tracking
-        private string _memLeakBlame = "None detected";
-        private Dictionary<int, ulong> _ownerHistoryStart;
-        private Dictionary<int, int> _ownerGrowthCounter;
+        // Memory leak blame tracking - replaced Dictionary with parallel arrays
+        private int[] _blameOwnerIds;
+        private ulong[] _ownerHistoryStart;
+        private int[] _ownerGrowthCounter;
+        private int _blameOwnerCount;
 
         // Cached strings for Memory Details to reduce per-frame allocations
         private string _mdFreeCallsStr;
@@ -149,15 +154,19 @@ namespace guideXOS.DefaultApps {
             // DON'T enable perf tracking here - it causes freeze during construction
             //g WindowManager.EnablePerfTracking();
 
-            // initialize owner sampling
-            _lastOwnerBytes = new Dictionary<int, ulong>();
-            _ownerKBps = new Dictionary<int, int>();
+            // initialize owner sampling with parallel arrays
+            _ownerIds = new int[MAX_TRACKED_OWNERS];
+            _lastOwnerBytes = new ulong[MAX_TRACKED_OWNERS];
+            _ownerKBps = new int[MAX_TRACKED_OWNERS];
+            _trackedOwnerCount = 0;
             _lastOwnerSampleTick = Timer.Ticks;
 
-            // Initialize memory leak tracking
+            // Initialize memory leak tracking with parallel arrays
             _leakHistory = new List<ulong>(_leakHistoryMaxSamples);
-            _ownerHistoryStart = new Dictionary<int, ulong>();
-            _ownerGrowthCounter = new Dictionary<int, int>();
+            _blameOwnerIds = new int[MAX_TRACKED_OWNERS];
+            _ownerHistoryStart = new ulong[MAX_TRACKED_OWNERS];
+            _ownerGrowthCounter = new int[MAX_TRACKED_OWNERS];
+            _blameOwnerCount = 0;
         }
 
         public override void OnSetVisible(bool value) {
@@ -935,13 +944,12 @@ namespace guideXOS.DefaultApps {
 
             int topOwner = 0;
             int topKbps = 0;
-            var ownerKeys = _ownerKBps.Keys;
-            for (int _i = 0; _i < ownerKeys.Count; _i++) {
-                int ok = ownerKeys[_i];
-                int val = _ownerKBps[ok];
+            // Use parallel arrays instead of Dictionary
+            for (int i = 0; i < _trackedOwnerCount; i++) {
+                int val = _ownerKBps[i];
                 if (Math.Abs(val) > Math.Abs(topKbps)) {
                     topKbps = val;
-                    topOwner = ok;
+                    topOwner = _ownerIds[i];
                 }
             }
             WindowManager.font.DrawString(col1X, detailY, "Top owner:");
@@ -1150,26 +1158,47 @@ namespace guideXOS.DefaultApps {
                 return;
 
             // Build new snapshot values - removed lock to prevent deadlock
+            // Clear KB/s tracking first
+            for (int i = 0; i < _trackedOwnerCount; i++) {
+                _ownerKBps[i] = 0;
+            }
+            
+            // Helper to find or add owner
+            int FindOrAddOwner(int ownerId) {
+                // Search existing
+                for (int i = 0; i < _trackedOwnerCount; i++) {
+                    if (_ownerIds[i] == ownerId) return i;
+                }
+                // Add new if space available
+                if (_trackedOwnerCount < MAX_TRACKED_OWNERS) {
+                    int idx = _trackedOwnerCount;
+                    _ownerIds[idx] = ownerId;
+                    _lastOwnerBytes[idx] = 0;
+                    _ownerKBps[idx] = 0;
+                    _trackedOwnerCount++;
+                    return idx;
+                }
+                return -1;
+            }
+
             // Compute diffs for owners present in snap
-            _ownerKBps.Clear();
             for (int i = 0; i < snap.Length; i++) {
                 int owner = snap[i].OwnerId;
                 ulong bytes = snap[i].Bytes;
-                ulong prev = _lastOwnerBytes.ContainsKey(owner) ? _lastOwnerBytes[owner] : 0UL;
-                long diff = (long)bytes - (long)prev; // bytes per ~1s
-                int kbs = (int)(diff / 1024L);
-                _ownerKBps[owner] = kbs;
+                
+                int ownerIdx = FindOrAddOwner(owner);
+                if (ownerIdx >= 0) {
+                    ulong prev = _lastOwnerBytes[ownerIdx];
+                    long diff = (long)bytes - (long)prev; // bytes per ~1s
+                    int kbs = (int)(diff / 1024L);
+                    _ownerKBps[ownerIdx] = kbs;
+                    _lastOwnerBytes[ownerIdx] = bytes;
+                }
             }
 
             // Owners that disappeared -> negative freed rate
-            // Create a temporary list to avoid modifying dictionary during iteration
-            var keysToCheck = new List<int>(_lastOwnerBytes.Keys.Count);
-            for (int i = 0; i < _lastOwnerBytes.Keys.Count; i++) {
-                keysToCheck.Add(_lastOwnerBytes.Keys[i]);
-            }
-
-            for (int i = 0; i < keysToCheck.Count; i++) {
-                int owner = keysToCheck[i];
+            for (int i = 0; i < _trackedOwnerCount; i++) {
+                int owner = _ownerIds[i];
                 bool found = false;
                 for (int j = 0; j < snap.Length; j++) {
                     if (snap[j].OwnerId == owner) {
@@ -1178,19 +1207,25 @@ namespace guideXOS.DefaultApps {
                     }
                 }
                 if (!found) {
-                    int freed = (int)(-((long)_lastOwnerBytes[owner] / 1024L));
-                    _ownerKBps[owner] = freed;
+                    int freed = (int)(-((long)_lastOwnerBytes[i] / 1024L));
+                    _ownerKBps[i] = freed;
+                    _lastOwnerBytes[i] = 0;
                 }
             }
 
-            // Replace _lastOwnerBytes with new snapshot
-            _lastOwnerBytes.Clear();
-            for (int i = 0; i < snap.Length; i++) {
-                _lastOwnerBytes[snap[i].OwnerId] = snap[i].Bytes;
+            // Compact the arrays by removing owners with 0 bytes
+            int writeIdx = 0;
+            for (int readIdx = 0; readIdx < _trackedOwnerCount; readIdx++) {
+                if (_lastOwnerBytes[readIdx] != 0 || _ownerKBps[readIdx] != 0) {
+                    if (writeIdx != readIdx) {
+                        _ownerIds[writeIdx] = _ownerIds[readIdx];
+                        _lastOwnerBytes[writeIdx] = _lastOwnerBytes[readIdx];
+                        _ownerKBps[writeIdx] = _ownerKBps[readIdx];
+                    }
+                    writeIdx++;
+                }
             }
-
-            // Dispose the temporary list
-            keysToCheck.Dispose();
+            _trackedOwnerCount = writeIdx;
         }
 
         public override void Dispose() {
@@ -1446,10 +1481,10 @@ namespace guideXOS.DefaultApps {
         private OwnerGrowth[] GetTopGrowingOwners(int count) {
             var growers = new List<OwnerGrowth>();
             
-            var keys = _ownerGrowthCounter.Keys;
-            for (int i = 0; i < keys.Count; i++) {
-                int ownerId = keys[i];
-                int growthCount = _ownerGrowthCounter[ownerId];
+            // Use parallel arrays instead of Dictionary
+            for (int i = 0; i < _blameOwnerCount; i++) {
+                int ownerId = _blameOwnerIds[i];
+                int growthCount = _ownerGrowthCounter[i];
                 if (growthCount > 0) {
                     OwnerGrowth og;
                     og.OwnerId = ownerId;
