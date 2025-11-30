@@ -92,7 +92,7 @@ namespace guideXOS.Network {
             // Ensure required headers
             if (GetHeader(req.Headers, "Host") == null) AddHeader(req.Headers, "Host", host);
             if (GetHeader(req.Headers, "Connection") == null) AddHeader(req.Headers, "Connection", "close");
-            if (GetHeader(req.Headers, "User-Agent") == null) AddHeader(req.Headers, "User-Agent", "guideXOS/0.1");
+            if (GetHeader(req.Headers, "User-Agent") == null) AddHeader(req.Headers, "User-Agent", "guideXOS/0.2");
             if (req.Body != null && req.Body.Length > 0) SetHeader(req.Headers, "Content-Length", ParseIntToString(req.Body.Length));
 
             // Build request bytes

@@ -25,7 +25,7 @@ namespace guideXOS.Misc {
             }
 
             // Boot splash init
-            BootSplash.Initialize("Team Nexgen", "guideXOS", "Version: 0.1");
+            BootSplash.Initialize("Team Nexgen", "guideXOS", "Version: 0.2");
 
             Console.Setup();
             IDT.Disable();

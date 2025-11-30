@@ -27,7 +27,7 @@ namespace guideXOS.Misc {
         static int dotsSize;
         static int dotsGap;
 
-        public static void Initialize(string team = "Team Nexgen", string os = "guideXOS", string ver = "Version: 0.1") {
+        public static void Initialize(string team = "Team Nexgen", string os = "guideXOS", string ver = "Version: 0.2") {
             sTeam = team;
             sOS = os;
             sVer = ver;
