@@ -1,19 +1,20 @@
-using guideXOS.Kernel.Drivers;
-using System;
-
 namespace guideXOS.FS {
     /// <summary>
     /// Detects filesystem in the attached Disk and instantiates appropriate FileSystem.
     /// Supports TAR (initrd) and FAT12/16/32 images.
     /// </summary>
     internal unsafe partial class AutoFS : FileSystem {
+        /// <summary>
+        /// Implementation
+        /// </summary>
         private FileSystem _impl;
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public AutoFS() {
             // Peek at sector 0
             var buf = new byte[SectorSize];
             fixed (byte* p = buf) Disk.Instance.Read(0, 1, p);
-
             if (LooksLikeTar(buf)) {
                 _impl = new TarFS();
             } else if (LooksLikeFat(buf)) {
@@ -27,14 +28,22 @@ namespace guideXOS.FS {
             // Set as active implementation
             File.Instance = _impl;
         }
-
+        /// <summary>
+        /// Looks like a TAR archive?
+        /// </summary>
+        /// <param name="sector0"></param>
+        /// <returns></returns>
         private static bool LooksLikeTar(byte[] sector0) {
             // POSIX ustar magic at offset 257: "ustar\0" or "ustar\x00" and version "00"
             if (sector0.Length < 512) return false;
             return sector0[257] == (byte)'u' && sector0[258] == (byte)'s' && sector0[259] == (byte)'t' &&
                    sector0[260] == (byte)'a' && sector0[261] == (byte)'r';
         }
-
+        /// <summary>
+        /// Looks like a FAT filesystem?
+        /// </summary>
+        /// <param name="sector0"></param>
+        /// <returns></returns>
         private static bool LooksLikeFat(byte[] sector0) {
             if (sector0.Length < 512) return false;
             // Signature 0x55AA at 510
@@ -54,11 +63,32 @@ namespace guideXOS.FS {
             if (rsvdSec == 0) return false;
             return true;
         }
-
+        /// <summary>
+        /// Get Files
+        /// </summary>
+        /// <param name="Directory"></param>
+        /// <returns></returns>
         public override System.Collections.Generic.List<FileInfo> GetFiles(string Directory) => _impl.GetFiles(Directory);
+        /// <summary>
+        /// Delete File
+        /// </summary>
+        /// <param name="Name"></param>
         public override void Delete(string Name) => _impl.Delete(Name);
+        /// <summary>
+        /// Read All Bytes
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <returns></returns>
         public override byte[] ReadAllBytes(string Name) => _impl.ReadAllBytes(Name);
+        /// <summary>
+        /// Write All Bytes
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <param name="Content"></param>
         public override void WriteAllBytes(string Name, byte[] Content) => _impl.WriteAllBytes(Name, Content);
+        /// <summary>
+        /// Format
+        /// </summary>
         public override void Format() => _impl.Format();
     }
 }

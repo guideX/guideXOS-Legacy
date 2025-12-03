@@ -106,7 +106,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Structs\BufferDescriptor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Drivers\Base\" />
     <Folder Include="$(MSBuildThisFileDirectory)Libraries\" />
   </ItemGroup>
   <ItemGroup>

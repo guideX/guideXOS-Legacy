@@ -39,7 +39,7 @@ namespace guideXOS.DefaultApps {
             Cmd = string.Empty;
             Data = string.Empty;
             ScreenBuf = new Image(640, 320);
-            ASC16.Initialise();
+            ASC16.Initialize();
             _cwd = Desktop.Dir ?? "";
             UpdateTitle();
             Rebind();
