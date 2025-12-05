@@ -4,9 +4,10 @@ using System.Drawing;
 using guideXOS.OS;
 using guideXOS.GUI;
 using guideXOS.Compat;
-using guideXOS.Graph;
-
 namespace guideXOS.DefaultApps {
+    /// <summary>
+    /// Console
+    /// </summary>
     internal class FConsole : Window {
         private string Data; // output buffer
         public Image ScreenBuf;
@@ -15,7 +16,8 @@ namespace guideXOS.DefaultApps {
         private byte _lastScan = 0;
         private string _prompt = ">"; // prompt symbol
         private string _cwd = ""; // current working directory
-                                  // vi state
+
+        // vi state
         private string _textBufferForVi;
         private string _viPath;
         private bool _viMode;
@@ -147,8 +149,6 @@ namespace guideXOS.DefaultApps {
             if (Desktop.Taskbar != null && Desktop.Taskbar.IsWorkspaceSwitcherVisible) {
                 // Allow Escape key to pass through to close the switcher
                 if (key.Key == ConsoleKey.Escape && key.KeyState == ConsoleKeyState.Pressed) {
-                    // This is a bit of a hack, but it allows the switcher to close.
-                    // A better solution would be a more centralized input manager.
                     Desktop.Taskbar.CloseWorkspaceSwitcher();
                 }
                 return;
@@ -184,7 +184,7 @@ namespace guideXOS.DefaultApps {
                 AppendRaw("\n");
                 HandleCommand(TrimSpaces(Cmd));
                 Cmd = string.Empty;
-                
+
                 // Don't write prompt immediately if ping is in progress
                 // (OnInput will write it when ping completes)
                 if (!_pingInProgress) {
@@ -215,7 +215,7 @@ namespace guideXOS.DefaultApps {
             }
             return true;
         }
-        private static string JoinParts(string[] arr, char sep, int start) {
+        private static string JoinParts(String[] arr, char sep, int start) {
             if (start >= arr.Length) return string.Empty;
             string r = arr[start];
             for (int i = start + 1; i < arr.Length; i++) {
@@ -477,7 +477,7 @@ namespace guideXOS.DefaultApps {
                                                 if (isPng || isJpg || isBmp) {
                                                     matches++;
                                                     match = nm;
-                                                  }
+                                                }
                                             }
                                         }
                                         fi.Dispose();
@@ -732,7 +732,7 @@ namespace guideXOS.DefaultApps {
                             WriteLine("Loads and executes a GXM GUI script from a .txt file");
                             return;
                         }
-                        
+
                         string fileToken = parts[1];
                         if (!ResolveFileToken(fileToken, out
                             var path, out
@@ -744,60 +744,60 @@ namespace guideXOS.DefaultApps {
                             // File doesn't exist, try as-is
                             path = Posix.NormalizePath(_cwd, fileToken);
                         }
-                        
+
                         // Load the script file
                         byte[] scriptData = FS.File.ReadAllBytes(path);
                         if (scriptData == null) {
                             WriteLine("Error: Unable to read script file: " + fileToken);
                             return;
                         }
-                        
+
                         // Create GXM header with GUI marker
                         int headerSize = 20; // GXM header (16) + GUI marker (4)
                         int totalSize = headerSize + scriptData.Length + 1; // +1 for null terminator
                         byte[] gxmData = new byte[totalSize];
-                        
+
                         // Write GXM header
                         gxmData[0] = (byte)'G';
                         gxmData[1] = (byte)'X';
                         gxmData[2] = (byte)'M';
                         gxmData[3] = 0;
-                        
+
                         // Version (1)
                         gxmData[4] = 1;
                         gxmData[5] = 0;
                         gxmData[6] = 0;
                         gxmData[7] = 0;
-                        
+
                         // Entry RVA (0 for GUI scripts)
                         gxmData[8] = 0;
                         gxmData[9] = 0;
                         gxmData[10] = 0;
                         gxmData[11] = 0;
-                        
+
                         // Image size
                         uint size = (uint)totalSize;
                         gxmData[12] = (byte)(size & 0xFF);
                         gxmData[13] = (byte)((size >> 8) & 0xFF);
                         gxmData[14] = (byte)((size >> 16) & 0xFF);
                         gxmData[15] = (byte)((size >> 24) & 0xFF);
-                        
+
                         // GUI marker
                         gxmData[16] = (byte)'G';
                         gxmData[17] = (byte)'U';
                         gxmData[18] = (byte)'I';
                         gxmData[19] = 0;
-                        
+
                         // Copy script data
                         for (int i = 0; i < scriptData.Length; i++) {
                             gxmData[headerSize + i] = scriptData[i];
                         }
-                        
+
                         // Null terminator
                         gxmData[totalSize - 1] = 0;
-                        
+
                         scriptData.Dispose();
-                        
+
                         // Execute the GXM
                         string error;
                         if (Misc.GXMLoader.TryExecute(gxmData, out error)) {
@@ -806,7 +806,7 @@ namespace guideXOS.DefaultApps {
                             WriteLine("Error executing script: " + (error ?? "unknown error"));
                             if (error != null) error.Dispose();
                         }
-                        
+
                         gxmData.Dispose();
                         return;
                     }
@@ -877,7 +877,7 @@ namespace guideXOS.DefaultApps {
                             break;
                         }
                     }
-                    
+
                     WriteLine("[NET] Initializing stack");
                     try {
                         NETv4.Initialize();
@@ -885,7 +885,7 @@ namespace guideXOS.DefaultApps {
                         WriteLine("[NET] Stack initialization failed");
                         break;
                     }
-                    
+
                     WriteLine("[NET] Scanning for NICs");
                     bool nicFound = false;
                     try {
@@ -897,7 +897,7 @@ namespace guideXOS.DefaultApps {
                             }
                         }
                     } catch { }
-                    
+
                     try {
                         RTL8111.Initialize();
                         unsafe {
@@ -907,12 +907,12 @@ namespace guideXOS.DefaultApps {
                             }
                         }
                     } catch { }
-                    
+
                     if (!nicFound) {
                         WriteLine("[NET] No supported NIC found");
                         break;
                     }
-                    
+
                     WriteLine("[NET] Attempting DHCP (this may take a few seconds)...");
                     try {
                         bool dhcp = NETv4.DHCPDiscover();
@@ -937,7 +937,7 @@ namespace guideXOS.DefaultApps {
                     if (parts.Length > 1) {
                         string param = parts[1];
                         // Manual case-insensitive comparison
-                        bool isRelease = param.Length == 8 && 
+                        bool isRelease = param.Length == 8 &&
                             (param[0] == '/' || param[0] == '-') &&
                             (param[1] == 'r' || param[1] == 'R') &&
                             (param[2] == 'e' || param[2] == 'E') &&
@@ -946,15 +946,15 @@ namespace guideXOS.DefaultApps {
                             (param[5] == 'a' || param[5] == 'A') &&
                             (param[6] == 's' || param[6] == 'S') &&
                             (param[7] == 'e' || param[7] == 'E');
-                        
-                        bool isRenew = param.Length == 6 && 
+
+                        bool isRenew = param.Length == 6 &&
                             (param[0] == '/' || param[0] == '-') &&
                             (param[1] == 'r' || param[1] == 'R') &&
                             (param[2] == 'e' || param[2] == 'E') &&
                             (param[3] == 'n' || param[3] == 'N') &&
                             (param[4] == 'e' || param[4] == 'E') &&
                             (param[5] == 'w' || param[5] == 'W');
-                        
+
                         if (isRelease) {
                             // Release DHCP lease - clear IP configuration
                             WriteLine("Releasing IP configuration...");
@@ -971,7 +971,7 @@ namespace guideXOS.DefaultApps {
                                     break;
                                 }
                             }
-                            
+
                             WriteLine("WARNING: DHCP renewal may take several seconds and will freeze the OS.");
                             WriteLine("To renew your IP address, use the 'netinit' command instead.");
                             WriteLine("");
@@ -985,7 +985,7 @@ namespace guideXOS.DefaultApps {
                             break;
                         }
                     }
-                    
+
                     // No parameters - show current configuration
                     WriteLine($"IP: {NETv4.IP.P1}.{NETv4.IP.P2}.{NETv4.IP.P3}.{NETv4.IP.P4}");
                     WriteLine($"Mask: {NETv4.Mask.P1}.{NETv4.Mask.P2}.{NETv4.Mask.P3}.{NETv4.Mask.P4}");
@@ -1007,14 +1007,14 @@ namespace guideXOS.DefaultApps {
                         WriteLine("Usage: dns <host>");
                         break;
                     }
-                    
+
                     unsafe {
                         if (NETv4.Sender == null) {
                             WriteLine("Network not initialized. Run 'netinit' first.");
                             break;
                         }
                     }
-                    
+
                     try {
                         var ip = NETv4.DNSQuery(parts[1]);
                         if (ip.P1 == 0 && ip.P2 == 0 && ip.P3 == 0 && ip.P4 == 0) {
@@ -1033,7 +1033,7 @@ namespace guideXOS.DefaultApps {
                         WriteLine("Note: Use 'dns <hostname>' to resolve hostnames first");
                         break;
                     }
-                    
+
                     // Check if network is initialized
                     unsafe {
                         if (NETv4.Sender == null) {
@@ -1041,13 +1041,13 @@ namespace guideXOS.DefaultApps {
                             break;
                         }
                     }
-                    
+
                     // Check if ping already in progress
                     if (_pingInProgress) {
                         WriteLine("Ping already in progress, please wait...");
                         break;
                     }
-                    
+
                     // ONLY accept IP addresses to avoid DNS blocking the GUI thread
                     NETv4.IPAddress dip;
                     if (!TryParseIp(parts[1], out dip)) {
@@ -1059,23 +1059,23 @@ namespace guideXOS.DefaultApps {
                         WriteLine("  2. Then: ping <ip>       (use the resolved IP)");
                         break;
                     }
-                    
+
                     WriteLine($"Pinging {dip.P1}.{dip.P2}.{dip.P3}.{dip.P4} with {NETv4.ICMPPingBytes} bytes of data:");
-                    
+
                     // Reset ICMP state
                     NETv4.IsICMPRespond = false;
                     NETv4.ICMPReplyTTL = 0;
                     NETv4.ICMPReplyBytes = 0;
-                    
+
                     try {
                         NETv4.ICMPPing(dip);
-                        
+
                         // Set ping state - response will be checked in OnInput()
                         _pingInProgress = true;
                         _pingStartTime = Timer.Ticks;
                         _pingTarget = dip;
                         _pingHostname = parts[1];
-                        
+
                         // DON'T wait here - return immediately to keep UI responsive
                     } catch {
                         WriteLine("Ping failed (network error)");
@@ -1104,6 +1104,9 @@ namespace guideXOS.DefaultApps {
                             WriteLine("Login failed: " + (msg ?? ""));
                         }
                     }
+                    break;
+                case "fontdemo":
+                    WindowManager.EnqueueTTFFontDemo(100, 100, 700, 500);
                     break;
                 case "authregister":
                     if (parts.Length < 3) {
@@ -1194,11 +1197,11 @@ namespace guideXOS.DefaultApps {
                             WriteLine("App system not initialized");
                             break;
                         }
-                        
+
                         string appName = parts[1];
                         bool found = false;
                         string match = null;
-                        
+
                         // Try exact match first
                         for (int i = 0; i < Desktop.Apps.Length; i++) {
                             if (EqualsIgnoreCase(Desktop.Apps.Name(i), appName)) {
@@ -1207,7 +1210,7 @@ namespace guideXOS.DefaultApps {
                                 break;
                             }
                         }
-                        
+
                         // Try partial match if not found
                         if (!found) {
                             int matches = 0;
@@ -1217,7 +1220,7 @@ namespace guideXOS.DefaultApps {
                                     matches++;
                                 }
                             }
-                            
+
                             if (matches == 1) {
                                 appName = match;
                                 found = true;
@@ -1231,7 +1234,7 @@ namespace guideXOS.DefaultApps {
                                 break;
                             }
                         }
-                        
+
                         if (found) {
                             WriteLine("Launching " + appName + "...");
                             Desktop.Apps.Load(appName);
@@ -1287,12 +1290,12 @@ namespace guideXOS.DefaultApps {
 
         public override void OnInput() {
             base.OnInput();
-            
+
             // ALWAYS check ping status, even if window not focused
             // This ensures ping completes even if user clicks away
             if (_pingInProgress) {
                 ulong now = Timer.Ticks;
-                
+
                 if (NETv4.IsICMPRespond) {
                     // Got response!
                     ulong elapsed = now - _pingStartTime;
@@ -1311,24 +1314,24 @@ namespace guideXOS.DefaultApps {
         public override void OnDraw() {
             base.OnDraw();
             DrawString(X, Y, Data, Height, Width);
-            
+
             // Draw resize grip on top of console content so it's visible
             if (IsResizable && UISettings.EnableResizeGrip) {
-                int gx = X + Width - 16; 
+                int gx = X + Width - 16;
                 int gy = Y + Height - 16;
-                
+
                 uint gripColor = UISettings.EnableTransparentWindows ? 0x332F2F2Fu : 0xFF2F2F2Fu;
                 Framebuffer.Graphics.FillRectangle(gx, gy, 16, 16, gripColor);
-                
+
                 // three little diagonal lines
-                int inset = 4; 
+                int inset = 4;
                 uint lc = 0xFF777777;
                 for (int i = 0; i < 3; i++) {
-                    int ox = gx + 16 - inset - (i * 4); 
+                    int ox = gx + 16 - inset - (i * 4);
                     int oy = gy + 16 - inset;
                     Framebuffer.Graphics.DrawLine(ox - 6, oy, ox, oy - 6, lc);
                 }
-                
+
                 int gripCornerRadius = UISettings.EnableRoundedCorners ? 2 : 0;
                 UIPrimitives.DrawRoundedRect(gx, gy, 16, 16, 0xFF444444, 1, gripCornerRadius);
             }
@@ -1350,7 +1353,7 @@ namespace guideXOS.DefaultApps {
                     wpx += 8;
                 }
                 // For characters outside printable range, just skip them (don't draw or advance)
-                
+
                 if (LineLimit != -1 && wpx + 8 > LineLimit) {
                     wpx = 0;
                     hpx += 16;

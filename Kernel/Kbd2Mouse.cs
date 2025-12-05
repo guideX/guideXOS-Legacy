@@ -18,8 +18,6 @@ namespace guideXOS {
             if (keyInfo.Key == ConsoleKey.Right)
                 right = keyInfo.KeyState == ConsoleKeyState.Pressed;
 
-            Console.WriteLine($"{up},{down},{left},{right}");
-
             if (
                 keyInfo.Key == ConsoleKey.Up ||
                 keyInfo.Key == ConsoleKey.Down ||

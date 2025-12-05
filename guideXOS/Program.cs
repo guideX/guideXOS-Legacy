@@ -132,7 +132,7 @@ unsafe class Program {
         // FIXED: Added leading space to charset to match font image layout
         string CustomCharset = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
         BitFont.RegisterBitFont(new BitFontDescriptor("Enludo", CustomCharset, File.ReadAllBytes("Fonts/enludo.btf"), 16));
-        FConsole = null;
+        //Terminal = null;
         WindowManager.Initialize();
         Desktop.Initialize();
         Firewall.Initialize();
@@ -266,7 +266,7 @@ unsafe class Program {
         }
 
         //Lockscreen.Run();
-        FConsole = null;
+        FConsole = null; // Don't create console here - let it be created on-demand
 
         // Initialize background rotation manager
         BackgroundRotationManager.Initialize();
@@ -318,10 +318,8 @@ unsafe class Program {
         widgetContainer.Visible = true;
         WindowManager.MoveToEnd(widgetContainer);
 
-        // Automatically show console on startup
-        FConsole = new FConsole(160, 120);
-        FConsole.Visible = true;
-        WindowManager.MoveToEnd(FConsole);
+        // Console will be created on-demand when user opens it from Start Menu
+        // No longer auto-created at startup
 
         // Show login screen immediately after unlocking
         // var login = new guideXOS.GUI.LoginDialog();
@@ -333,7 +331,34 @@ unsafe class Program {
         //It freezes here too
         //WindowManager.EnablePerfTracking();
 
-        Console.WriteLine("Draw Start");
+        // FIXED: Removed debug line "Console.WriteLine("Draw Start");" that was polluting FConsole output
+        
+        // Add global Escape key handler to close active (topmost visible) window
+        Keyboard.OnKeyChanged += (sender, key) => {
+            try {
+                // Only handle Escape key press events
+                if (key.Key == System.ConsoleKey.Escape && key.KeyState == System.ConsoleKeyState.Pressed) {
+                    // Block Escape key when workspace switcher is visible
+                    if (Desktop.Taskbar != null && Desktop.Taskbar.IsWorkspaceSwitcherVisible) {
+                        Desktop.Taskbar.CloseWorkspaceSwitcher();
+                        return;
+                    }
+                    
+                    // Find the topmost visible window and call OnGlobalKey on it
+                    for (int i = WindowManager.Windows.Count - 1; i >= 0; i--) {
+                        var window = WindowManager.Windows[i];
+                        if (window.Visible && !window.IsTombstoned) {
+                            // Call OnGlobalKey which will close the window if allowed
+                            window.OnGlobalKey(key);
+                            break; // Only affect the topmost visible window
+                        }
+                    }
+                }
+            } catch {
+                // Ignore errors in global key handler to prevent crashes
+            }
+        };
+        
         int lastMouseX = Control.MousePosition.X;
         int lastMouseY = Control.MousePosition.Y;
         ulong lastMoveTick = Timer.Ticks;

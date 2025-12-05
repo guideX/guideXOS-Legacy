@@ -671,6 +671,8 @@ namespace guideXOS.GUI {
         /// </summary>
         /// <param name="key"></param>
         public virtual void OnGlobalKey(ConsoleKeyInfo key){ 
+            // FIXED: Removed debug WriteLine that was outputting key information to console
+            // This was causing "Draw Start" and "34" to appear in FConsole
             if(key.Key==System.ConsoleKey.Escape){ // close on escape if visible and allowed
                 if(this.Visible && !this.IsTombstoned){
                     this.Visible=false;

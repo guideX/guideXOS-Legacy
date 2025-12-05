@@ -1,11 +1,8 @@
 ﻿using guideXOS.FS;
 using guideXOS.GUI;
 using guideXOS.Kernel.Drivers;
-using guideXOS.Misc;
 using System;
-using System.Drawing;
 using System.Windows.Forms;
-
 namespace guideXOS.DefaultApps {
     /// <summary>
     /// Simple Notepad app: type text and save to a file to test filesystem writes.
@@ -138,8 +135,8 @@ namespace guideXOS.DefaultApps {
 
             // Debug: show key info including modifiers
             if (false) { // Set to true to enable debug
-                Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2} Char: '{key.KeyChar}' Key: {key.Key} Mods: {key.Modifiers}");
-                Desktop.msgbox.Visible = true;
+                //Desktop.msgbox.SetText($"Scan: 0x{Keyboard.KeyInfo.ScanCode:X2} Char: '{key.KeyChar}' Key: {key.Key} Mods: {key.Modifiers}");
+                //Desktop.msgbox.Visible = true;
             }
 
             if ((_dlg != null && _dlg.Visible) || (_confirmDlg != null && _confirmDlg.Visible)) return; // let dialog handle keys when visible

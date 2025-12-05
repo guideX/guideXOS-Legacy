@@ -122,6 +122,20 @@ namespace guideXOS.GUI {
             pw.H = h;
             _pending.Add(pw);
         }
+        
+        /// <summary>
+        /// Enqueue TTF Font Demo window creation after input phase
+        /// </summary>
+        public static void EnqueueTTFFontDemo(int x, int y, int w, int h) {
+            PendingWindow pw;
+            pw.Type = 2; // TTF Demo
+            pw.X = x;
+            pw.Y = y;
+            pw.W = w;
+            pw.H = h;
+            _pending.Add(pw);
+        }
+        
         /// <summary>
         /// Flush pending window creations
         /// </summary>
@@ -132,6 +146,8 @@ namespace guideXOS.GUI {
                 var pw = _pending[i];
                 if (pw.Type == 1)
                     _ = new DisplayOptions(pw.X, pw.Y, pw.W, pw.H);
+                else if (pw.Type == 2)
+                    _ = new guideXOS.DefaultApps.TTFFontDemo(pw.X, pw.Y, pw.W, pw.H);
             }
             _pending.Clear();
         }

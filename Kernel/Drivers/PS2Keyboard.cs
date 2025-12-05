@@ -23,6 +23,10 @@ namespace guideXOS.Kernel.Drivers {
         private static bool _set2 = false;          // Seen 0xF0 break prefix => device uses Set 2
         private static bool _breakPending = false;   // Last byte was 0xF0 => next code is a release
         
+        // Spurious scancode filter - ignore first few scancodes after initialization
+        private static int _scancodeCount = 0;
+        private const int MinScancodeBeforeAccept = 5; // Ignore first 5 scancodes
+        
         /// <summary>
         /// Initialize PS/2 Keyboard
         /// </summary>
@@ -37,6 +41,9 @@ namespace guideXOS.Kernel.Drivers {
             Native.Out8(DataPort, 0x65); // Enable keyboard interrupt
             Native.Hlt();
             
+            // Reset scancode counter
+            _scancodeCount = 0;
+            
             Console.WriteLine("[PS2KBD] PS/2 Keyboard initialized");
         }
         
@@ -48,6 +55,15 @@ namespace guideXOS.Kernel.Drivers {
             
             // QEMU workaround: Filter out spurious 0x00 scancodes
             if (scancode == 0x00) {
+                return;
+            }
+            
+            // Filter spurious scancodes during early boot
+            // Sometimes QEMU/VMs send garbage scancodes during initialization
+            _scancodeCount++;
+            if (_scancodeCount <= MinScancodeBeforeAccept) {
+                // Ignore first few scancodes after initialization
+                // They're often garbage from keyboard controller reset
                 return;
             }
             
