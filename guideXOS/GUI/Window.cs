@@ -683,7 +683,7 @@ namespace guideXOS.GUI {
         /// <summary>
         /// Dispose window and free all associated memory
         /// </summary>
-        public virtual void Dispose() {
+        public virtual new void Dispose() {
             // Dispose blur cache
             DisposeBlurCache();
             

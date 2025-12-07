@@ -137,10 +137,12 @@ namespace guideXOS.Kernel.Drivers {
                     return;
                 }
 
-                MData[0] &= 0x0F;
-
+                // Extract sign bits BEFORE masking them out
+                bool xSign = (MData[0] & 0x10) != 0; // Bit 4: X sign (1 = negative)
+                bool ySign = (MData[0] & 0x20) != 0; // Bit 5: Y sign (1 = negative)
+                
                 // Button debouncing to prevent phantom clicks on touchpads
-                byte currentButtonState = (byte)(MData[0] & 0x07); // Extract button bits
+                byte currentButtonState = (byte)(MData[0] & 0x07); // Extract button bits (bits 0-2)
                 
                 if (currentButtonState == lastButtonState) {
                     buttonStableCount++;
@@ -164,10 +166,19 @@ namespace guideXOS.Kernel.Drivers {
                     }
                 }
 
-                // Read raw deltas
-                aX = (sbyte)MData[1];
-                aY = (sbyte)MData[2];
-                aY = -aY;
+                // Read raw deltas as unsigned values
+                aX = MData[1];
+                aY = MData[2];
+                
+                // Apply sign based on the sign bits from byte 0
+                if (xSign) {
+                    aX = aX - 256; // Convert to negative if sign bit is set
+                }
+                if (ySign) {
+                    aY = aY - 256; // Convert to negative if sign bit is set
+                }
+                
+                aY = -aY; // Invert Y axis for screen coordinates
 
                 // Apply touchpad filtering if enabled
                 if (EnableTouchpadFiltering) {

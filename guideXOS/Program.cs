@@ -198,7 +198,6 @@ unsafe class Program {
     private static Image _cachedAudioIcon;
     private static int _cachedIconSize = 48;
     private static ulong _lastIconCacheRefresh = 0;
-    private const ulong IconCacheRefreshIntervalMs = 300000; // Refresh every 5 minutes
 
     public static void SMain() {
         Framebuffer.TripleBuffered = true;
@@ -324,7 +323,7 @@ unsafe class Program {
         widgetContainer.AddWidget(clockWidget);
         widgetContainer.AddWidget(monitorWidget);
         widgetContainer.AddWidget(uptimeWidget);
-        widgetContainer.Visible = true;
+        widgetContainer.Visible = UISettings.ShowWidgetsOnStartup; // Respect ShowWidgetsOnStartup setting
         WindowManager.MoveToEnd(widgetContainer);
 
         // Console will be created on-demand when user opens it from Start Menu
@@ -375,10 +374,13 @@ unsafe class Program {
 
         for (; ; ) {
             try {
-                // FIXED: Periodically refresh cached icons to prevent memory buildup
-                if (Timer.Ticks - _lastIconCacheRefresh >= IconCacheRefreshIntervalMs) {
-                    RefreshCachedIcons();
-                    _lastIconCacheRefresh = Timer.Ticks;
+                // FIXED: Periodically refresh cached icons to prevent memory buildup (optional)
+                if (UISettings.EnableDesktopIconCacheRefresh) {
+                    ulong intervalMs = (ulong)UISettings.DesktopIconCacheRefreshIntervalMinutes * 60000UL;
+                    if (Timer.Ticks - _lastIconCacheRefresh >= intervalMs) {
+                        RefreshCachedIcons();
+                        _lastIconCacheRefresh = Timer.Ticks;
+                    }
                 }
                 
                 // Update background rotation manager (handles automatic rotation and fade transitions)
@@ -534,18 +536,36 @@ unsafe class Program {
      
      /// <summary>
      /// FIXED: Helper method to refresh cached icons and dispose old ones
+     /// CRITICAL: Create new icons BEFORE disposing old ones to prevent Desktop.Update from receiving null/disposed icons
      /// </summary>
      private static void RefreshCachedIcons() {
-         // Dispose old cached icons
-         if (_cachedDocumentIcon != null) _cachedDocumentIcon.Dispose();
-         if (_cachedFolderIcon != null) _cachedFolderIcon.Dispose();
-         if (_cachedImageIcon != null) _cachedImageIcon.Dispose();
-         if (_cachedAudioIcon != null) _cachedAudioIcon.Dispose();
-         
-         // Create new cached icons
-         _cachedDocumentIcon = Icons.DocumentIcon(_cachedIconSize);
-         _cachedFolderIcon = Icons.FolderIcon(_cachedIconSize);
-         _cachedImageIcon = Icons.ImageIcon(_cachedIconSize);
-         _cachedAudioIcon = Icons.AudioIcon(_cachedIconSize);
+         try {
+             // STEP 1: Create new icons first
+             Image newDocumentIcon = Icons.DocumentIcon(_cachedIconSize);
+             Image newFolderIcon = Icons.FolderIcon(_cachedIconSize);
+             Image newImageIcon = Icons.ImageIcon(_cachedIconSize);
+             Image newAudioIcon = Icons.AudioIcon(_cachedIconSize);
+             
+             // STEP 2: Save old icons for disposal
+             Image oldDocumentIcon = _cachedDocumentIcon;
+             Image oldFolderIcon = _cachedFolderIcon;
+             Image oldImageIcon = _cachedImageIcon;
+             Image oldAudioIcon = _cachedAudioIcon;
+             
+             // STEP 3: Atomically swap to new icons (prevents Desktop.Update from seeing null)
+             _cachedDocumentIcon = newDocumentIcon;
+             _cachedFolderIcon = newFolderIcon;
+             _cachedImageIcon = newImageIcon;
+             _cachedAudioIcon = newAudioIcon;
+             
+             // STEP 4: Now safely dispose old icons (after swap is complete)
+             if (oldDocumentIcon != null) oldDocumentIcon.Dispose();
+             if (oldFolderIcon != null) oldFolderIcon.Dispose();
+             if (oldImageIcon != null) oldImageIcon.Dispose();
+             if (oldAudioIcon != null) oldAudioIcon.Dispose();
+         } catch {
+             // If icon creation fails, keep using old icons rather than having null icons
+             Console.WriteLine("Icon cache refresh failed - keeping old icons");
+         }
      }
  }

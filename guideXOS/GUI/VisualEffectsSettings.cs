@@ -18,7 +18,7 @@ namespace guideXOS.GUI {
         // Tab system
         private int _tabH = 40;
         private int _tabGap = 10;
-        private int _currentTab = 0; // 0=Animations, 1=Visual Effects, 2=Window Rendering, 3=Performance, 4=Widgets, 5=Colors
+        private int _currentTab = 0; // 0=Animations, 1=Visual Effects, 2=Window Rendering, 3=Performance, 4=Widgets
         
         // Scroll state
         private int _scrollY = 0;
@@ -93,6 +93,13 @@ namespace guideXOS.GUI {
         private bool _enableBackgroundFadeTransition;
         private int _backgroundFadeDuration;
         
+        // Taskbar Settings (added to Visual Effects)
+        private bool _enableTaskbarAutoHide;
+        private bool _enableTaskbarSlideDown;
+        private bool _enableTaskbarSlideUp;
+        private int _taskbarAutoHideDelay;
+        private int _taskbarSlideDuration;
+        
         public VisualEffectsSettings(int X, int Y) : base(X, Y, 900, 700) {
             IsResizable = false;
             ShowInTaskbar = true;
@@ -131,6 +138,13 @@ namespace guideXOS.GUI {
             _backgroundRotationInterval = UISettings.BackgroundRotationIntervalMinutes;
             _enableBackgroundFadeTransition = UISettings.EnableBackgroundFadeTransition;
             _backgroundFadeDuration = UISettings.BackgroundFadeDurationMs;
+            
+            // Taskbar
+            _enableTaskbarAutoHide = UISettings.EnableTaskbarAutoHide;
+            _enableTaskbarSlideDown = UISettings.EnableTaskbarSlideDown;
+            _enableTaskbarSlideUp = UISettings.EnableTaskbarSlideUp;
+            _taskbarAutoHideDelay = UISettings.TaskbarAutoHideDelayMs;
+            _taskbarSlideDuration = UISettings.TaskbarSlideDurationMs;
             
             // Window Rendering
             _enableWindowTitles = UISettings.EnableWindowTitles;
@@ -361,6 +375,25 @@ namespace guideXOS.GUI {
             
             // Background Fade Duration slider
             if (CheckSlider(mx, my, cx + _labelWidth, currentY, contentY, contentH)) { _draggingSlider = 11; }
+            currentY += _lineHeight;
+            
+            currentY += _lineHeight; // Skip subtitle
+            
+            if (CheckCheckbox(mx, my, cx, currentY, contentY, contentH)) { _enableTaskbarAutoHide = !_enableTaskbarAutoHide; _btnClickLatch = true; return; }
+            currentY += _lineHeight;
+            
+            if (CheckCheckbox(mx, my, cx, currentY, contentY, contentH)) { _enableTaskbarSlideDown = !_enableTaskbarSlideDown; _btnClickLatch = true; return; }
+            currentY += _lineHeight;
+            
+            if (CheckCheckbox(mx, my, cx, currentY, contentY, contentH)) { _enableTaskbarSlideUp = !_enableTaskbarSlideUp; _btnClickLatch = true; return; }
+            currentY += _lineHeight;
+            
+            // Taskbar Auto-Hide Delay slider
+            if (CheckSlider(mx, my, cx + _labelWidth, currentY, contentY, contentH)) { _draggingSlider = 12; }
+            currentY += _lineHeight;
+            
+            // Taskbar Slide Duration slider
+            if (CheckSlider(mx, my, cx + _labelWidth, currentY, contentY, contentH)) { _draggingSlider = 13; }
             
             // Handle slider dragging
             if (_draggingSlider >= 0) {
@@ -371,6 +404,8 @@ namespace guideXOS.GUI {
                 switch (_draggingSlider) {
                     case 10: _backgroundRotationInterval = (int)(1 + t * 59); break; // 1-60 minutes
                     case 11: _backgroundFadeDuration = (int)(200 + t * 4800); break; // 200-5000ms
+                    case 12: _taskbarAutoHideDelay = (int)(500 + t * 4500); break; // 500-5000ms
+                    case 13: _taskbarSlideDuration = (int)(100 + t * 900); break; // 100-1000ms
                 }
             }
         }
@@ -524,11 +559,11 @@ namespace guideXOS.GUI {
             int contentH = Height - _padding * 2 - _tabH - _tabGap - 60;
             
             // Draw tabs
-            int tabW = (cw - _tabGap * 5) / 6;
+            int tabW = (cw - _tabGap * 4) / 5;
             int tabY = cy;
-            string[] tabNames = { "Animations", "Visual Effects", "Rendering", "Performance", "Widgets", "About" };
+            string[] tabNames = { "Animations", "Visual Effects", "Rendering", "Performance", "Widgets" };
             
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 5; i++) {
                 int tabX = cx + i * (tabW + _tabGap);
                 uint tabBg = (_currentTab == i) ? 0xFF3A3A3A : 0xFF252525;
                 g.FillRectangle(tabX, tabY, tabW, _tabH, tabBg);
@@ -549,7 +584,6 @@ namespace guideXOS.GUI {
                 case 2: DrawWindowRenderingTab(cx, contentY, contentH); break;
                 case 3: DrawPerformanceTab(cx, contentY, contentH); break;
                 case 4: DrawWidgetsTab(cx, contentY, contentH); break;
-                case 5: DrawAboutTab(cx, contentY, contentH); break;
             }
             
             // Draw scrollbar
@@ -638,6 +672,24 @@ namespace guideXOS.GUI {
             currentY += _lineHeight;
             
             DrawSliderWithLabel(cx, currentY, contentY, contentH, "  Transition Duration:", _backgroundFadeDuration, 200, 5000, " ms");
+            currentY += _lineHeight;
+            
+            DrawSubtitle(cx, currentY, "Taskbar Settings");
+            currentY += _lineHeight;
+            
+            DrawCheckboxWithLabel(cx, currentY, contentY, contentH, _enableTaskbarAutoHide, "Auto-Hide Taskbar");
+            currentY += _lineHeight;
+            
+            DrawCheckboxWithLabel(cx, currentY, contentY, contentH, _enableTaskbarSlideDown, "Slide Down Animation (Show)");
+            currentY += _lineHeight;
+            
+            DrawCheckboxWithLabel(cx, currentY, contentY, contentH, _enableTaskbarSlideUp, "Slide Up Animation (Hide)");
+            currentY += _lineHeight;
+            
+            DrawSliderWithLabel(cx, currentY, contentY, contentH, "  Auto-Hide Delay:", _taskbarAutoHideDelay, 500, 5000, " ms");
+            currentY += _lineHeight;
+            
+            DrawSliderWithLabel(cx, currentY, contentY, contentH, "  Slide Duration:", _taskbarSlideDuration, 100, 1000, " ms");
         }
         
         private void DrawWindowRenderingTab(int cx, int contentY, int contentH) {
@@ -745,42 +797,6 @@ namespace guideXOS.GUI {
             currentY += _lineHeight;
             
             DrawSliderWithLabel(cx, currentY, contentY, contentH, "Default Refresh Rate:", _widgetDefaultRefreshRate, 100, 5000, " ms");
-        }
-        
-        private void DrawAboutTab(int cx, int contentY, int contentH) {
-            int currentY = contentY - _scrollY + 40;
-            
-            WindowManager.font.DrawString(cx, currentY, "Visual Effects & UI Settings");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx, currentY, "Version 2.0 - Comprehensive Settings Management");
-            currentY += _lineHeight * 2;
-            
-            WindowManager.font.DrawString(cx, currentY, "This window provides access to all UI and visual effect settings");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx, currentY, "organized into categorized tabs for easy navigation.");
-            currentY += _lineHeight * 2;
-            
-            WindowManager.font.DrawString(cx, currentY, "Tabs:");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx + 20, currentY, "• Animations - Window fade and slide animations");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx + 20, currentY, "• Visual Effects - Blur, transparency, glow, shadows");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx + 20, currentY, "• Rendering - Window chrome, buttons, icons");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx + 20, currentY, "• Performance - Optimization flags and caching");
-            currentY += _lineHeight;
-            
-            WindowManager.font.DrawString(cx + 20, currentY, "• Widgets - Widget rendering and animation settings");
-            currentY += _lineHeight * 2;
-            
-            WindowManager.font.DrawString(cx, currentY, "Click 'Apply' to save changes or 'Reset' to restore defaults.");
         }
         
         private void DrawTitle(int cx, int cy, string text) {
@@ -893,11 +909,10 @@ namespace guideXOS.GUI {
         private int GetCurrentTabHeight() {
             switch (_currentTab) {
                 case 0: return _lineHeight * 9; // Animations
-                case 1: return _lineHeight * 17; // Visual Effects (increased by 1 for new checkbox)
+                case 1: return _lineHeight * 23; // Visual Effects (increased for taskbar settings)
                 case 2: return _lineHeight * 13; // Window Rendering
                 case 3: return _lineHeight * 9; // Performance
                 case 4: return _lineHeight * 11; // Widgets
-                case 5: return _lineHeight * 18; // About
                 default: return _lineHeight * 10;
             }
         }
@@ -929,6 +944,13 @@ namespace guideXOS.GUI {
             UISettings.BackgroundRotationIntervalMinutes = _backgroundRotationInterval;
             UISettings.EnableBackgroundFadeTransition = _enableBackgroundFadeTransition;
             UISettings.BackgroundFadeDurationMs = _backgroundFadeDuration;
+            
+            // Taskbar
+            UISettings.EnableTaskbarAutoHide = _enableTaskbarAutoHide;
+            UISettings.EnableTaskbarSlideDown = _enableTaskbarSlideDown;
+            UISettings.EnableTaskbarSlideUp = _enableTaskbarSlideUp;
+            UISettings.TaskbarAutoHideDelayMs = _taskbarAutoHideDelay;
+            UISettings.TaskbarSlideDurationMs = _taskbarSlideDuration;
             
             // Window Rendering
             UISettings.EnableWindowTitles = _enableWindowTitles;
@@ -993,6 +1015,12 @@ namespace guideXOS.GUI {
             _backgroundRotationInterval = 5;
             _enableBackgroundFadeTransition = true;
             _backgroundFadeDuration = 1000;
+            
+            _enableTaskbarAutoHide = true;
+            _enableTaskbarSlideDown = true;
+            _enableTaskbarSlideUp = true;
+            _taskbarAutoHideDelay = 1500;
+            _taskbarSlideDuration = 200;
             
             _enableWindowTitles = true;
             _enableWindowBorders = true;

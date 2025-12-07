@@ -228,7 +228,7 @@ namespace guideXOS.GUI {
         /// <summary>
         /// Cleanup resources
         /// </summary>
-        public static void Dispose() {
+        public static new void Dispose() {
             if (_fadeFrame != null) {
                 _fadeFrame.Dispose();
                 _fadeFrame = null;

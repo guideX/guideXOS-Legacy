@@ -233,6 +233,7 @@ namespace guideXOS.GUI {
         public static bool EnableWidgetInitialization = true; // enable widget initialization
         
         // Widget visibility and state
+        public static bool ShowWidgetsOnStartup = false; // show widget container on startup (disable to start with widgets hidden)
         public static bool EnableWidgetVisibilityToggle = true; // allow toggling widget visibility
         public static bool EnableWidgetCollapseExpand = true; // allow collapsing/expanding widgets
         public static bool EnableWidgetMinimize = true; // allow minimizing widgets
@@ -277,6 +278,11 @@ namespace guideXOS.GUI {
         public static bool EnableWidgetDebugText = false; // show widget debug information
         public static bool EnableWidgetPerformanceMetrics = false; // show performance metrics
         
+        // ===== DESKTOP ICON SETTINGS =====
+        // Desktop icon cache settings
+        public static bool EnableDesktopIconCacheRefresh = false; // periodically refresh desktop icon cache (disable if icons disappear after 5 minutes)
+        public static int DesktopIconCacheRefreshIntervalMinutes = 5; // how often to refresh icon cache (default 5 minutes)
+        
         // ===== BACKGROUND SETTINGS =====
         // Background rotation settings
         public static bool EnableAutoBackgroundRotation = false;
@@ -284,6 +290,15 @@ namespace guideXOS.GUI {
         public static int BackgroundRotationIntervalMinutes = 5; // 5 minutes default
         public static bool EnableBackgroundFadeTransition = true;
         public static int BackgroundFadeDurationMs = 1000; // 1 second fade
+        
+        // ===== TASKBAR SETTINGS =====
+        // Taskbar auto-hide and animations
+        public static bool EnableTaskbarAutoHide = true; // automatically hide taskbar when not in use
+        public static bool EnableTaskbarSlideDown = true; // animate taskbar sliding down when showing
+        public static bool EnableTaskbarSlideUp = true; // animate taskbar sliding up when hiding
+        public static int TaskbarAutoHideDelayMs = 1500; // delay before auto-hiding (1.5 seconds)
+        public static int TaskbarSlideDurationMs = 200; // duration of slide animation
+        public static int TaskbarRevealThreshold = 5; // pixels from bottom to reveal taskbar
         
         // ===== DEFAULT VALUES AND CONSTANTS =====
         // Window defaults

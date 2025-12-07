@@ -12,7 +12,7 @@ if not exist "%EFI_IMG_DIR%" mkdir "%EFI_IMG_DIR%"
 
 rem Generate grubx64.efi
 echo Generating GRUB EFI boot file...
-"%TOOLS_DIR%\grub-mkimage.exe" -o "%EFI_IMG_DIR%\bootx64.efi" -p /boot/grub -O x86_64-efi boot efi_uga efi_gop efi_uga_text fat part_gpt part_msdos normal configfile search search_fs_file search_label gfxterm gfxmenu all_video loadenv echo truecrypt iso9660 xhci ohci uhci usb usb_keyboard usbms
+"%TOOLS_DIR%\mkimage.exe" -o "%EFI_IMG_DIR%\bootx64.efi" -p /boot/grub -O x86_64-efi boot efi_uga efi_gop efi_uga_text fat part_gpt part_msdos normal configfile search search_fs_file search_label gfxterm gfxmenu all_video loadenv echo truecrypt iso9660 xhci ohci uhci usb usb_keyboard usbms
 
 rem Check if bootx64.efi was created
 if not exist "%EFI_IMG_DIR%\bootx64.efi" (

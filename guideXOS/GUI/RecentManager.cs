@@ -85,7 +85,7 @@ namespace guideXOS.GUI {
         /// <summary>
         /// FIXED: Added cleanup method to dispose all cached icons
         /// </summary>
-        public static void Dispose() {
+        public static new void Dispose() {
             // Dispose all program icons
             for (int i = 0; i < _programs.Count; i++) {
                 var entry = _programs.ToArray()[i];

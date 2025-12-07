@@ -22,7 +22,7 @@ namespace guideXOS.DefaultApps {
             USB
         }
 
-        public void Dispose() {
+        public new void Dispose() {
             Name?.Dispose();
             RootPath?.Dispose();
             FileSystem?.Dispose();
