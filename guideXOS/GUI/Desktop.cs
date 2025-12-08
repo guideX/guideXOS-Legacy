@@ -396,6 +396,10 @@ namespace guideXOS.GUI {
                 }
             }
             // Selection marquee unchanged...
+            // Handle widget container auto-hide (must run even when hidden)
+            if (Program.WidgetsContainer != null) {
+                Program.WidgetsContainer.UpdateAutoHide();
+            }
             // Draw taskbar and handle Start Menu interactions
             Taskbar.Draw();
             // Right-click pinning for desktop items (apps/files)

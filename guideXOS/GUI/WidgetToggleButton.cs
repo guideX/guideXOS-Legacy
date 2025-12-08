@@ -19,7 +19,7 @@ namespace guideXOS.GUI {
         }
 
         public override void OnInput() {
-            if (!Visible) return;
+            if (!Visible || UISettings.EnableAutoHideWidgetsVisuals) return;
             int mx = Control.MousePosition.X;
             int my = Control.MousePosition.Y;
             _hover = (mx >= X && mx <= X + Width && my >= Y && my <= Y + Height);
@@ -36,7 +36,7 @@ namespace guideXOS.GUI {
         }
 
         public override void OnDraw() {
-            if (!Visible) return;
+            if (!Visible || UISettings.EnableAutoHideWidgetsVisuals) return;
             // Far-right small pill with glow
             uint bg = _hover ? 0xFF2E2E2Eu : 0xFF1E1E1Eu;
             uint border = 0xFF4A4A4Au;

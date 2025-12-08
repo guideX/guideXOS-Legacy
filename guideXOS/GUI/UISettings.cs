@@ -38,6 +38,11 @@ namespace guideXOS.GUI {
         public static bool EnableRoundedCorners = true; // enable rounded corners on windows (causes massive memory leak)
         public static bool EnableButtonHoverEffects = true; // enable hover glow on title bar buttons
         public static bool EnableResizeGrip = true; // enable resize grip visual in corner
+
+        // Auto-hide widgets (visuals)
+        public static bool EnableAutoHideWidgetsVisuals = true; // enable reveal/hide visual effects for auto-hidden widgets
+        public static bool EnableAutoHideWidgetsSlideAnimation = true; // slide widgets in/out when auto-hide triggers
+        public static int AutoHideWidgetsSlideDurationMs = 180; // animation duration for reveal/hide
         
         // Blur cache settings
         public static bool EnableBlurCaching = true; // enable blur cache system
@@ -178,6 +183,13 @@ namespace guideXOS.GUI {
         public static bool EnableWidgetShadows = true; // enable drop shadows behind widgets
         public static bool EnableWidgetRoundedCorners = true; // enable rounded corners on widgets
         public static bool EnableWidgetGlow = true; // enable glow effect on widgets
+
+        // Auto-hide widgets behavior
+        public static bool EnableAutoHideWidgets = false; // when enabled, widget button and widgets are hidden until mouse reaches far right edge
+        public static bool AutoHideWidgetsHideResources = true; // when hidden, widgets do not consume system resources (skip updates/renders)
+        public static int AutoHideWidgetsRevealThresholdPx = 4; // distance from the far right screen edge to trigger reveal
+        public static int AutoHideWidgetsHideDelayMs = 150; // delay before hiding again after mouse leaves the reveal area
+        public static bool AutoHideWidgetsHideWidgetButton = true; // also hide the main widget toggle button when auto-hide is enabled
         
         // Widget animations
         public static bool EnableWidgetFadeAnimations = true; // enable fade in/out animations for widgets

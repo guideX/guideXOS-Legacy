@@ -12,6 +12,11 @@ namespace guideXOS.GUI {
         private const int CloseBtnSize = 16;
         private const int WidgetGap = 10;
         
+        // Auto-hide state
+        private bool _autoHidden = false;
+        private long _lastRevealCheckMs = 0;
+        private long _lastHideRequestMs = 0;
+        
         private bool _dragging = false;
         private int _dragOffsetX, _dragOffsetY;
         private bool _closeHover = false;
@@ -27,6 +32,12 @@ namespace guideXOS.GUI {
             IsResizable = false;
             
             _widgets = new List<DockableWidget>();
+            
+            // Initialize auto-hidden state based on settings
+            if (UISettings.EnableAutoHideWidgets || UISettings.EnableAutoHideWidgetsVisuals) {
+                _autoHidden = true;
+                Visible = false;
+            }
         }
         
         public void AddWidget(DockableWidget widget) {
@@ -117,7 +128,48 @@ namespace guideXOS.GUI {
         }
         
         public override void OnInput() {
-            if (!Visible) return;
+            // Auto-hide widgets behavior - ALWAYS check mouse position even when hidden
+            if (UISettings.EnableAutoHideWidgets || UISettings.EnableAutoHideWidgetsVisuals) {
+                int mx2 = Control.MousePosition.X;
+                int my2 = Control.MousePosition.Y;
+                int threshold = UISettings.AutoHideWidgetsRevealThresholdPx;
+                
+                // Calculate exclusion zones (15% from top and bottom)
+                int screenHeight = Framebuffer.Height;
+                int topExclusionZone = (int)(screenHeight * 0.15f);
+                int bottomExclusionZone = screenHeight - (int)(screenHeight * 0.15f);
+                
+                // Check if mouse is at right edge AND within the middle 70% of screen height
+                bool atRightEdge = mx2 >= (Framebuffer.Width - threshold);
+                bool inValidVerticalZone = my2 >= topExclusionZone && my2 <= bottomExclusionZone;
+                bool shouldReveal = atRightEdge && inValidVerticalZone;
+
+                long nowMs = (long)guideXOS.Kernel.Drivers.Timer.Ticks;
+
+                if (shouldReveal) {
+                    // Reveal widgets when mouse is at the far right edge in valid zone
+                    if (_autoHidden || !Visible) {
+                        RevealWidgets();
+                    }
+                    _lastRevealCheckMs = nowMs;
+                } else {
+                    // If mouse left reveal area, schedule hide
+                    if (!_autoHidden && Visible) {
+                        _lastHideRequestMs = nowMs;
+                        int delay = UISettings.AutoHideWidgetsHideDelayMs;
+                        if (nowMs - _lastRevealCheckMs >= delay) {
+                            HideWidgetsAuto();
+                        }
+                    }
+                }
+
+                // When auto-hidden, skip remaining input processing to avoid resource usage
+                if (_autoHidden || !Visible) {
+                    return;
+                }
+            } else {
+                if (!Visible) return;
+            }
             
             int mx = Control.MousePosition.X;
             int my = Control.MousePosition.Y;
@@ -235,6 +287,8 @@ namespace guideXOS.GUI {
         }
         
         public override void OnDraw() {
+            // Skip rendering when not visible or no widgets
+            // Note: _autoHidden is already handled by Visible flag
             if (!Visible || _widgets == null || _widgets.Count == 0) return;
             
             // Draw container background with subtle glow
@@ -310,6 +364,82 @@ namespace guideXOS.GUI {
         // Do not dispose the internal list; widgets are managed elsewhere.
         public override void Dispose() {
             base.Dispose();
+        }
+
+        private void RevealWidgets() {
+            _autoHidden = false;
+            
+            // Position container at right edge of screen with some margin
+            X = Framebuffer.Width - Width - 10;
+            if (Y < 0 || Y > Framebuffer.Height - Height) {
+                Y = 80; // Default Y position if not set properly
+            }
+            
+            Visible = true;
+            
+            // Make all widgets visible again
+            for (int i = 0; i < _widgets.Count; i++) {
+                var w = _widgets[i];
+                if (w != null) w.Visible = true;
+            }
+            
+            // Bring container to front
+            WindowManager.MoveToEnd(this);
+            
+            // Optionally trigger slide animation (not implemented here, just state hook)
+            // Respect UISettings.EnableAutoHideWidgetsSlideAnimation and AutoHideWidgetsSlideDurationMs if rendering anims are available
+        }
+
+        private void HideWidgetsAuto() {
+            if (!(UISettings.EnableAutoHideWidgets || UISettings.EnableAutoHideWidgetsVisuals)) return;
+            _autoHidden = true;
+            // Hide container and widgets to prevent updates/renders
+            Visible = false;
+            for (int i = 0; i < _widgets.Count; i++) {
+                var w = _widgets[i];
+                if (w != null) {
+                    w.Visible = false;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Public method to handle auto-hide logic - can be called externally even when window is hidden
+        /// </summary>
+        public void UpdateAutoHide() {
+            if (!(UISettings.EnableAutoHideWidgets || UISettings.EnableAutoHideWidgetsVisuals)) return;
+            
+            int mx = Control.MousePosition.X;
+            int my = Control.MousePosition.Y;
+            int threshold = UISettings.AutoHideWidgetsRevealThresholdPx;
+            
+            // Calculate exclusion zones (15% from top and bottom)
+            int screenHeight = Framebuffer.Height;
+            int topExclusionZone = (int)(screenHeight * 0.15f);
+            int bottomExclusionZone = screenHeight - (int)(screenHeight * 0.15f);
+            
+            // Check if mouse is at right edge AND within the middle 70% of screen height
+            bool atRightEdge = mx >= (Framebuffer.Width - threshold);
+            bool inValidVerticalZone = my >= topExclusionZone && my <= bottomExclusionZone;
+            bool shouldReveal = atRightEdge && inValidVerticalZone;
+
+            long nowMs = (long)guideXOS.Kernel.Drivers.Timer.Ticks;
+
+            if (shouldReveal) {
+                // Reveal widgets when mouse is at the far right edge in valid zone
+                if (_autoHidden || !Visible) {
+                    RevealWidgets();
+                }
+                _lastRevealCheckMs = nowMs;
+            } else {
+                // If mouse left reveal area, schedule hide
+                if (!_autoHidden && Visible) {
+                    int delay = UISettings.AutoHideWidgetsHideDelayMs;
+                    if (nowMs - _lastRevealCheckMs >= delay) {
+                        HideWidgetsAuto();
+                    }
+                }
+            }
         }
     }
 }
