@@ -92,6 +92,21 @@ namespace guideXOS.Misc {
             // Record boot time for uptime tracking
             guideXOS.DockableWidgets.Uptime.BootTimeTicks = Timer.Ticks;
 
+            // Detect system mode (LiveMode vs Installed)
+            guideXOS.OS.SystemMode.DetectMode();
+
+            if (File.Exists("/boot/config.txt")) {
+                // Booting from HDD - switch to system partition
+                Disk.Instance = IDE.Ports[0]; // Or SATA.Drives[0]
+                File.Instance = new FAT();
+                Console.WriteLine("[BOOT] Mounted /dev/sda2 as root");
+            } else {
+                // Booting from USB/CD - use ramdisk
+                Console.WriteLine("[BOOT] Using ramdisk");
+            }
+
+            // Initialize configuration system (only works when not in LiveMode)
+            guideXOS.OS.Configuration.Initialize();
 
             KMain();
         }

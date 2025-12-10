@@ -164,6 +164,9 @@ unsafe class Program {
         // Apply saved display mode before wallpaper resize
         DisplayManager.ApplySavedResolution();
 
+        // Load saved configuration (UI settings, window positions, recent files, etc.)
+        guideXOS.OS.Configuration.LoadConfiguration();
+
         SMain();
     }
 

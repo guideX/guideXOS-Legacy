@@ -343,9 +343,28 @@ namespace guideXOS.GUI {
             int dateY = timeY + WindowManager.font.FontSize;
             WindowManager.font.DrawString(timeX, dateY, _cachedDate);
 
-            // Network indicator left of time
+            // LiveMode indicator (left of network indicator)
+            int liveModeWidth = 0;
+            if (guideXOS.OS.SystemMode.IsLiveMode) {
+                string liveText = "LIVE";
+                liveModeWidth = WindowManager.font.MeasureString(liveText) + 12;
+                int liveX = timeX - liveModeWidth - 8;
+                int liveY = timeY + (WindowManager.font.FontSize / 2) - 6;
+                int liveH = 14;
+                
+                // Draw live mode badge
+                Framebuffer.Graphics.FillRectangle(liveX, liveY, liveModeWidth - 4, liveH, 0xFFFF6B35); // Orange background
+                Framebuffer.Graphics.DrawRectangle(liveX, liveY, liveModeWidth - 4, liveH, 0xFFFFAA00, 1); // Brighter orange border
+                
+                // Draw text centered
+                int textX = liveX + ((liveModeWidth - 4) / 2) - (WindowManager.font.MeasureString(liveText) / 2);
+                int textY = liveY + (liveH / 2) - (WindowManager.font.FontSize / 2);
+                WindowManager.font.DrawString(textX, textY, liveText);
+            }
+
+            // Network indicator left of time (or left of LiveMode if present)
             int iconSize = 14;
-            int netX = timeX - iconSize - 8;
+            int netX = timeX - iconSize - 8 - liveModeWidth;
             int netY = timeY + (WindowManager.font.FontSize / 2) - (iconSize/2);
 
             // Simple animation clock

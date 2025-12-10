@@ -24,7 +24,7 @@ namespace guideXOS.Kernel.Drivers {
             for (uint i = 0; i < count; ++i) {
                 SetEntry((byte)i, 1 << 16);
             }
-            Console.WriteLine("[I/O APIC] I/O APIC Initialized");
+            //Console.WriteLine("[I/O APIC] I/O APIC Initialized");
         }
 
         public static uint In(byte reg) {
