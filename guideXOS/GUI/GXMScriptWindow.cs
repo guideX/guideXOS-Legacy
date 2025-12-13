@@ -735,6 +735,19 @@ namespace guideXOS.GUI {
                 }
             } else if (a == "CLOSE") {
                 this.Visible = false;
+            } else if (a == "CLEAR") {
+                // Clear textbox content - arg contains the textbox ID
+                int id = ParseInt(arg);
+                for (int i = 0; i < _textboxes.Count; i++) {
+                    if (_textboxes[i].Id == id) {
+                        // Dispose old text and set to empty
+                        if (_textboxes[i].Text != null && _textboxes[i].Text.Length > 0) {
+                            _textboxes[i].Text.Dispose();
+                        }
+                        _textboxes[i].Text = string.Empty;
+                        break;
+                    }
+                }
             } else if (a == "SAVEFILE") {
                 // Save file functionality
                 SaveFileAction(arg);
@@ -827,6 +840,29 @@ namespace guideXOS.GUI {
             }
             
             return -1;
+        }
+        
+        /// <summary>
+        /// Converts a string to an integer
+        /// </summary>
+        /// <param name="s">String to convert</param>
+        /// <returns>Integer value</returns>
+        private static int ParseInt(string s) {
+            int n = 0;
+            bool neg = false;
+            if (!string.IsNullOrEmpty(s)) {
+                int i = 0;
+                if (s[0] == '-') {
+                    neg = true;
+                    i = 1;
+                }
+                for (; i < s.Length; i++) {
+                    char ch = s[i];
+                    if (ch < '0' || ch > '9') break;
+                    n = n * 10 + (ch - '0');
+                }
+            }
+            return neg ? -n : n;
         }
         #endregion
 

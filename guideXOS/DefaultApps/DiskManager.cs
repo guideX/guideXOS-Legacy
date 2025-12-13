@@ -64,7 +64,6 @@ namespace guideXOS.DefaultApps {
             string driver;
             if (File.Instance == null) driver = "<none>";
             else if (File.Instance is FAT) driver = "FAT";
-            else if (File.Instance is FATFS) driver = "FATFS";
             else if (File.Instance is TarFS) driver = "TarFS";
             else if (File.Instance is EXT2) driver = "EXT2";
             else if (File.Instance is CloudFS) driver = "Cloud";
@@ -196,7 +195,7 @@ namespace guideXOS.DefaultApps {
                 if (Hit(mx, my, _bxSwitchFatX, _bxSwitchFatY, 180, BtnH)) { TrySetFS_FAT(); _clickLock = true; return; }
                 if (Hit(mx, my, _bxSwitchTarX, _bxSwitchTarY, 180, BtnH)) { TrySetFS_TAR(); _clickLock = true; return; }
                 if (Hit(mx, my, _bxSwitchExtX, _bxSwitchExtY, 180, BtnH)) { TrySetFS_EXT2(); _clickLock = true; return; }
-                if (Hit(mx, my, _bxFormatExfatX, _bxFormatExfatY, 200, BtnH)) { TryFormatFATFS(); _clickLock = true; return; }
+                if (Hit(mx, my, _bxFormatExfatX, _bxFormatExfatY, 200, BtnH)) { TryFormatFAT(); _clickLock = true; return; }
                 if (Hit(mx, my, _bxCreatePartX, _bxCreatePartY, 220, BtnH)) { TryCreatePartitionLargestFree(); _clickLock = true; return; }
                 if (Hit(mx, my, _bxRefreshX, _bxRefreshY, 160, BtnH)) { RefreshDisks(); _clickLock = true; return; }
             } else {
@@ -327,7 +326,7 @@ namespace guideXOS.DefaultApps {
             _bxSwitchTarX = leftX; _bxSwitchTarY = byL; DrawButton(_bxSwitchTarX, _bxSwitchTarY, btnWLeft, BtnH, "Set FS: TarFS"); byL += BtnH + Gap;
             _bxSwitchExtX = leftX; _bxSwitchExtY = byL; DrawButton(_bxSwitchExtX, _bxSwitchExtY, btnWLeft, BtnH, "Set FS: EXT2");
 
-            _bxFormatExfatX = rightX; _bxFormatExfatY = byR; DrawButton(_bxFormatExfatX, _bxFormatExfatY, btnWRight, BtnH, "Format RAM as exFAT"); byR += BtnH + Gap;
+            _bxFormatExfatX = rightX; _bxFormatExfatY = byR; DrawButton(_bxFormatExfatX, _bxFormatExfatY, btnWRight, BtnH, "Format as FAT"); byR += BtnH + Gap;
             _bxCreatePartX = rightX; _bxCreatePartY = byR; DrawButton(_bxCreatePartX, _bxCreatePartY, btnWRight, BtnH, "Create partition (largest free)"); byR += BtnH + Gap;
             _bxRefreshX = rightX; _bxRefreshY = byR; DrawButton(_bxRefreshX, _bxRefreshY, btnWRight, BtnH, "Refresh");
         }
@@ -356,7 +355,7 @@ namespace guideXOS.DefaultApps {
         private void TrySetFS_FAT() { try { File.Instance = new FAT(); Desktop.InvalidateDirCache(); _status = BuildStatus(); } catch { _status = "Switch to FAT failed."; } }
         private void TrySetFS_TAR() { try { File.Instance = new TarFS(); Desktop.InvalidateDirCache(); _status = BuildStatus(); } catch { _status = "Switch to TAR failed."; } }
         private void TrySetFS_EXT2() { try { File.Instance = new EXT2(); Desktop.InvalidateDirCache(); _status = BuildStatus(); } catch { _status = "Switch to EXT2 failed."; } }
-        private void TryFormatFATFS() { try { var fs = new FATFS(); fs.Format(); File.Instance = fs; Desktop.InvalidateDirCache(); _detected = "FAT (boot sector)"; _status = BuildStatus(); } catch { _status = "Format failed."; } }
+        private void TryFormatFAT() { try { var fs = new FAT(); fs.Format(); File.Instance = fs; Desktop.InvalidateDirCache(); _detected = "FAT (boot sector)"; _status = BuildStatus(); } catch { _status = "Format failed."; } }
 
         private void TryCreatePartitionLargestFree() {
             var sel = GetSelected(); if (sel == null || !sel.IsSystem) { _status = "Partitioning supported only on System disk"; return; }

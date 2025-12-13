@@ -1,18 +1,33 @@
-using guideXOS.Kernel.Drivers;
-using guideXOS.Kernel.Helpers;
 using guideXOS.Misc;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-
 namespace guideXOS.FS {
     /// <summary>
-    /// Minimal FAT12/16/32 reader with LFN support and a simple sector cache.
-    /// Read-only for now. Provides better performance than TarFS via caching.
+    /// Complete FAT12/16/32 filesystem with LFN support and sector caching.
+    /// Supports read, write, create, delete, and format operations.
     /// </summary>
     internal unsafe class FAT : FileSystem {
-        enum FatType { FAT12, FAT16, FAT32 }
-
+        /// <summary>
+        /// Fat Type
+        /// </summary>
+        enum FatType {
+            /// <summary>
+            /// FAT12
+            /// </summary>
+            FAT12, 
+            /// <summary>
+            /// FAT16
+            /// </summary>
+            FAT16, 
+            /// <summary>
+            /// FAT32
+            /// </summary>
+            FAT32
+        }
+        /// <summary>
+        /// BPB Common
+        /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         struct BPB_Common {
             public fixed byte jmpBoot[3];
@@ -99,8 +114,7 @@ namespace guideXOS.FS {
         private int _cacheCount;
         private int _lruHead; // simple circular buffer for LRU
 
-        public FAT(Disk disk)
-        {
+        public FAT(Disk disk) {
             this._disk = disk;
             // Initialize cache arrays
             _cacheKeys = new ulong[CacheCapacity];
@@ -110,8 +124,7 @@ namespace guideXOS.FS {
 
             // Read boot sector
             var sec0 = ReadSectorsCached(0, 1);
-            fixed (byte* p = sec0)
-            {
+            fixed (byte* p = sec0) {
                 BPB_Common* bpb = (BPB_Common*)p;
                 _bytesPerSec = bpb->BytsPerSec;
                 _secPerClus = bpb->SecPerClus;
@@ -119,8 +132,7 @@ namespace guideXOS.FS {
                 _numFATs = bpb->NumFATs;
                 uint totSec = bpb->TotSec16 != 0 ? bpb->TotSec16 : bpb->TotSec32;
                 uint fatsz = bpb->FATSz16;
-                if (fatsz == 0)
-                {
+                if (fatsz == 0) {
                     BPB_FAT32* bpb32 = (BPB_FAT32*)(p + 0x24);
                     fatsz = bpb32->FATSz32;
                     _rootCluster = bpb32->RootClus;
@@ -145,7 +157,7 @@ namespace guideXOS.FS {
             _cacheValues = new byte[CacheCapacity][];
             _cacheCount = 0;
             _lruHead = 0;
-            
+
             // Read boot sector
             var sec0 = ReadSectorsCached(0, 1);
             fixed (byte* p = sec0) {
@@ -194,11 +206,11 @@ namespace guideXOS.FS {
                         return _cacheValues[i];
                     }
                 }
-                
+
                 // Not in cache - read from disk
                 var buf = new byte[SectorSize];
                 fixed (byte* p = buf) disk.Read(lba, 1, p);
-                
+
                 // Add to cache
                 if (_cacheCount < CacheCapacity) {
                     // Add new entry
@@ -211,7 +223,7 @@ namespace guideXOS.FS {
                     _cacheValues[_lruHead] = buf;
                     _lruHead = (_lruHead + 1) % CacheCapacity;
                 }
-                
+
                 return buf;
             } else {
                 // Multi-sector read - don't cache
@@ -231,32 +243,32 @@ namespace guideXOS.FS {
         private uint ReadFatEntry(uint cluster) {
             switch (_type) {
                 case FatType.FAT12: {
-                    uint fatOffset = cluster + (cluster / 2);
-                    uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
-                    int off = (int)(fatOffset % _bytesPerSec);
-                    var sec = ReadSectorsCached(fatSec, 1);
-                    var nextSec = off == _bytesPerSec - 1 ? ReadSectorsCached(fatSec + 1, 1) : null;
-                    uint val = sec[off];
-                    if (off == _bytesPerSec - 1) val |= (uint)(nextSec[0] << 8);
-                    else val |= (uint)(sec[off + 1] << 8);
-                    if ((cluster & 1) == 1) val >>= 4; else val &= 0x0FFF;
-                    return val;
-                }
+                        uint fatOffset = cluster + (cluster / 2);
+                        uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
+                        int off = (int)(fatOffset % _bytesPerSec);
+                        var sec = ReadSectorsCached(fatSec, 1);
+                        var nextSec = off == _bytesPerSec - 1 ? ReadSectorsCached(fatSec + 1, 1) : null;
+                        uint val = sec[off];
+                        if (off == _bytesPerSec - 1) val |= (uint)(nextSec[0] << 8);
+                        else val |= (uint)(sec[off + 1] << 8);
+                        if ((cluster & 1) == 1) val >>= 4; else val &= 0x0FFF;
+                        return val;
+                    }
                 case FatType.FAT16: {
-                    uint fatOffset = cluster * 2u;
-                    uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
-                    int off = (int)(fatOffset % _bytesPerSec);
-                    var sec = ReadSectorsCached(fatSec, 1);
-                    return (uint)(sec[off] | (sec[off + 1] << 8));
-                }
+                        uint fatOffset = cluster * 2u;
+                        uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
+                        int off = (int)(fatOffset % _bytesPerSec);
+                        var sec = ReadSectorsCached(fatSec, 1);
+                        return (uint)(sec[off] | (sec[off + 1] << 8));
+                    }
                 default: {
-                    uint fatOffset = cluster * 4u;
-                    uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
-                    int off = (int)(fatOffset % _bytesPerSec);
-                    var sec = ReadSectorsCached(fatSec, 1);
-                    uint val = (uint)(sec[off] | (sec[off + 1] << 8) | (sec[off + 2] << 16) | (sec[off + 3] << 24));
-                    return val & 0x0FFFFFFF;
-                }
+                        uint fatOffset = cluster * 4u;
+                        uint fatSec = (uint)(_fatStart + (fatOffset / _bytesPerSec));
+                        int off = (int)(fatOffset % _bytesPerSec);
+                        var sec = ReadSectorsCached(fatSec, 1);
+                        uint val = (uint)(sec[off] | (sec[off + 1] << 8) | (sec[off + 2] << 16) | (sec[off + 3] << 24));
+                        return val & 0x0FFFFFFF;
+                    }
             }
         }
 
@@ -266,60 +278,60 @@ namespace guideXOS.FS {
                 uint fatBase = (uint)(_fatStart + (fatCopy * _FATSz));
                 switch (_type) {
                     case FatType.FAT12: {
-                        uint fatOffset = cluster + (cluster / 2);
-                        uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
-                        int off = (int)(fatOffset % _bytesPerSec);
-                        var sec = ReadSectorsCached(fatSec, 1);
-                        // get the two bytes
-                        byte b0 = sec[off];
-                        byte b1 = (off == _bytesPerSec - 1) ? ReadSectorsCached(fatSec + 1, 1)[0] : sec[off + 1];
-                        uint cur = (uint)(b0 | (b1 << 8));
-                        if ((cluster & 1) == 1) {
-                            // odd cluster: high 12 bits
-                            cur &= 0x000F;
-                            cur |= (value & 0x0FFF) << 4;
-                        } else {
-                            // even cluster: low 12 bits
-                            cur &= 0xF000;
-                            cur |= (value & 0x0FFF);
+                            uint fatOffset = cluster + (cluster / 2);
+                            uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
+                            int off = (int)(fatOffset % _bytesPerSec);
+                            var sec = ReadSectorsCached(fatSec, 1);
+                            // get the two bytes
+                            byte b0 = sec[off];
+                            byte b1 = (off == _bytesPerSec - 1) ? ReadSectorsCached(fatSec + 1, 1)[0] : sec[off + 1];
+                            uint cur = (uint)(b0 | (b1 << 8));
+                            if ((cluster & 1) == 1) {
+                                // odd cluster: high 12 bits
+                                cur &= 0x000F;
+                                cur |= (value & 0x0FFF) << 4;
+                            } else {
+                                // even cluster: low 12 bits
+                                cur &= 0xF000;
+                                cur |= (value & 0x0FFF);
+                            }
+                            // write back
+                            sec[off] = (byte)(cur & 0xFF);
+                            if (off == _bytesPerSec - 1) {
+                                var sec2 = ReadSectorsCached(fatSec + 1, 1);
+                                sec2[0] = (byte)((cur >> 8) & 0xFF);
+                                WriteSector(fatSec + 1, sec2);
+                            } else {
+                                sec[off + 1] = (byte)((cur >> 8) & 0xFF);
+                            }
+                            WriteSector(fatSec, sec);
+                            break;
                         }
-                        // write back
-                        sec[off] = (byte)(cur & 0xFF);
-                        if (off == _bytesPerSec - 1) {
-                            var sec2 = ReadSectorsCached(fatSec + 1, 1);
-                            sec2[0] = (byte)((cur >> 8) & 0xFF);
-                            WriteSector(fatSec + 1, sec2);
-                        } else {
-                            sec[off + 1] = (byte)((cur >> 8) & 0xFF);
-                        }
-                        WriteSector(fatSec, sec);
-                        break;
-                    }
                     case FatType.FAT16: {
-                        uint fatOffset = cluster * 2u;
-                        uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
-                        int off = (int)(fatOffset % _bytesPerSec);
-                        var sec = ReadSectorsCached(fatSec, 1);
-                        sec[off] = (byte)(value & 0xFF);
-                        sec[off + 1] = (byte)((value >> 8) & 0xFF);
-                        WriteSector(fatSec, sec);
-                        break;
-                    }
+                            uint fatOffset = cluster * 2u;
+                            uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
+                            int off = (int)(fatOffset % _bytesPerSec);
+                            var sec = ReadSectorsCached(fatSec, 1);
+                            sec[off] = (byte)(value & 0xFF);
+                            sec[off + 1] = (byte)((value >> 8) & 0xFF);
+                            WriteSector(fatSec, sec);
+                            break;
+                        }
                     default: {
-                        uint fatOffset = cluster * 4u;
-                        uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
-                        int off = (int)(fatOffset % _bytesPerSec);
-                        var sec = ReadSectorsCached(fatSec, 1);
-                        uint cur = (uint)(sec[off] | (sec[off + 1] << 8) | (sec[off + 2] << 16) | (sec[off + 3] << 24));
-                        cur &= 0xF0000000; // upper 4 bits preserved
-                        cur |= (value & 0x0FFFFFFF);
-                        sec[off] = (byte)(cur & 0xFF);
-                        sec[off + 1] = (byte)((cur >> 8) & 0xFF);
-                        sec[off + 2] = (byte)((cur >> 16) & 0xFF);
-                        sec[off + 3] = (byte)((cur >> 24) & 0xFF);
-                        WriteSector(fatSec, sec);
-                        break;
-                    }
+                            uint fatOffset = cluster * 4u;
+                            uint fatSec = (uint)(fatBase + (fatOffset / _bytesPerSec));
+                            int off = (int)(fatOffset % _bytesPerSec);
+                            var sec = ReadSectorsCached(fatSec, 1);
+                            uint cur = (uint)(sec[off] | (sec[off + 1] << 8) | (sec[off + 2] << 16) | (sec[off + 3] << 24));
+                            cur &= 0xF0000000; // upper 4 bits preserved
+                            cur |= (value & 0x0FFFFFFF);
+                            sec[off] = (byte)(cur & 0xFF);
+                            sec[off + 1] = (byte)((cur >> 8) & 0xFF);
+                            sec[off + 2] = (byte)((cur >> 16) & 0xFF);
+                            sec[off + 3] = (byte)((cur >> 24) & 0xFF);
+                            WriteSector(fatSec, sec);
+                            break;
+                        }
                 }
             }
         }
@@ -462,9 +474,11 @@ namespace guideXOS.FS {
             if (path.Length == 0) return new DirResult { Found = true, FirstCluster = _type == FatType.FAT32 ? _rootCluster : 0, Size = 0 };
             var parts = path.Split('/');
             uint current = _type == FatType.FAT32 ? _rootCluster : 0;
-            for (int i = 0; i < parts.Length; i++) { string part = parts[i]; bool last = i == parts.Length - 1; bool found = false;
+            for (int i = 0; i < parts.Length; i++) {
+                string part = parts[i]; bool last = i == parts.Length - 1; bool found = false;
                 IterateDirectory(current, (name, isDir, clus, size) => { if (EqualsIgnoreCase(name, part)) { if (!last && !isDir) return true; found = true; current = clus; return false; } return true; });
-                if (!found) return new DirResult { Found = false }; if (!last && current < 2 && _type == FatType.FAT32) return new DirResult { Found = false }; part.Dispose(); }
+                if (!found) return new DirResult { Found = false }; if (!last && current < 2 && _type == FatType.FAT32) return new DirResult { Found = false }; part.Dispose();
+            }
             uint sizeFinal = 0; string parent = path.LastIndexOf('/') >= 0 ? path.Substring(0, path.LastIndexOf('/')) : ""; string lastName = path.Substring(path.LastIndexOf('/') + 1);
             uint parentCluster = _type == FatType.FAT32 ? _rootCluster : 0; if (parent.Length > 0) { var parentRes = FindPath(parent); if (!parentRes.Found) return new DirResult { Found = false }; parentCluster = parentRes.FirstCluster; }
             uint firstClusFinal = 0; IterateDirectory(parentCluster, (name, isDir, clus, size) => { if (EqualsIgnoreCase(name, lastName)) { firstClusFinal = clus; sizeFinal = size; return false; } return true; }); parent.Dispose(); lastName.Dispose();
@@ -517,6 +531,7 @@ namespace guideXOS.FS {
                 uint idx = 2 + ((c - 2) % lastClusterNum);
                 if (ReadFatEntry(idx) == 0) return idx;
             }
+            // No free clusters available
             return 0;
         }
 
@@ -526,7 +541,14 @@ namespace guideXOS.FS {
             int clustersNeeded = AlignUp((int)size, _secPerClus * _bytesPerSec) / (_secPerClus * _bytesPerSec);
             uint prev = 0; uint search = 2;
             for (int i = 0; i < clustersNeeded; i++) {
-                uint c = NextFreeCluster(search); if (c == 0) { Panic.Error("FAT: No free clusters"); break; }
+                uint c = NextFreeCluster(search); 
+                if (c == 0) {
+                    // Out of space - free what we allocated and return empty chain
+                    if (chain.Count > 0) {
+                        FreeClusterChain(chain[0]);
+                    }
+                    return new List<uint>();
+                }
                 // mark allocated
                 WriteFatEntry(c, EOC());
                 if (prev != 0) WriteFatEntry(prev, c);
@@ -610,11 +632,18 @@ namespace guideXOS.FS {
             if (slot.Found) return;
             // need to expand directory if possible
             if (_type == FatType.FAT12 || _type == FatType.FAT16) {
-                if (dirCluster == 0) Panic.Error("FAT: Root directory full");
+                if (dirCluster == 0) {
+                    // Root directory is full on FAT12/16 - cannot expand
+                    return;
+                }
             }
             // FAT32 or subdir: append a new cluster
             uint lastCluster = 0; var chain = GetClusterChain(GetDirStartCluster(dirCluster)); if (chain.Count > 0) lastCluster = chain[chain.Count - 1];
-            uint newc = NextFreeCluster(2); if (newc == 0) Panic.Error("FAT: No free cluster for dir growth");
+            uint newc = NextFreeCluster(2); 
+            if (newc == 0) {
+                // No free clusters available
+                return;
+            }
             WriteFatEntry(newc, EOC()); if (lastCluster != 0) WriteFatEntry(lastCluster, newc);
             ZeroCluster(newc);
             // first entry of new cluster
@@ -641,11 +670,26 @@ namespace guideXOS.FS {
             string parent = Name.LastIndexOf('/') >= 0 ? Name.Substring(0, Name.LastIndexOf('/')) : "";
             string just = Name.Substring(Name.LastIndexOf('/') + 1);
             uint parentCluster = _type == FatType.FAT32 ? _rootCluster : 0;
-            if (parent.Length > 0) { var pr = FindPath(parent); if (!pr.Found) { Panic.Error("Delete: parent not found"); return; } parentCluster = pr.FirstCluster; }
-            bool exists; var loc = FindEntryLoc(parentCluster, just, false, out exists); if (!exists || !loc.Found) { Panic.Error("Delete: not found"); return; }
-            uint firstClus = ((uint)loc.Entry.FstClusHI << 16) | loc.Entry.FstClusLO; if (firstClus >= 2) FreeClusterChain(firstClus);
+            if (parent.Length > 0) { 
+                var pr = FindPath(parent); 
+                if (!pr.Found) { 
+                    // Parent directory not found - cannot delete
+                    return; 
+                } 
+                parentCluster = pr.FirstCluster; 
+            }
+            bool exists; 
+            var loc = FindEntryLoc(parentCluster, just, false, out exists); 
+            if (!exists || !loc.Found) { 
+                // File not found - nothing to delete
+                return; 
+            }
+            uint firstClus = ((uint)loc.Entry.FstClusHI << 16) | loc.Entry.FstClusLO; 
+            if (firstClus >= 2) FreeClusterChain(firstClus);
             // mark deleted
-            var sec = ReadSectorsCached(loc.LBA, 1); sec[loc.Index * 32] = 0xE5; WriteSector(loc.LBA, sec);
+            var sec = ReadSectorsCached(loc.LBA, 1); 
+            sec[loc.Index * 32] = 0xE5; 
+            WriteSector(loc.LBA, sec);
         }
 
         public override byte[] ReadAllBytes(string Name) {
@@ -659,10 +703,23 @@ namespace guideXOS.FS {
             string parent = Name.LastIndexOf('/') >= 0 ? Name.Substring(0, Name.LastIndexOf('/')) : "";
             string just = Name.Substring(Name.LastIndexOf('/') + 1);
             uint parentCluster = _type == FatType.FAT32 ? _rootCluster : 0;
-            if (parent.Length > 0) { var pr = FindPath(parent); if (!pr.Found) Panic.Error("Parent directory not found"); parentCluster = pr.FirstCluster; }
+            if (parent.Length > 0) { 
+                var pr = FindPath(parent); 
+                if (!pr.Found) {
+                    // Parent directory not found - cannot write file
+                    return;
+                }
+                parentCluster = pr.FirstCluster; 
+            }
             // locate entry or free slot
             bool exists; var loc = FindEntryLoc(parentCluster, just, true, out exists);
-            if (!loc.Found && !exists) { EnsureDirHasFreeSlot(parentCluster, ref loc); }
+            if (!loc.Found && !exists) { 
+                EnsureDirHasFreeSlot(parentCluster, ref loc); 
+                if (!loc.Found) {
+                    // No space available in directory
+                    return;
+                }
+            }
             uint firstClus = 0;
             if (exists) {
                 // free old chain
@@ -670,6 +727,10 @@ namespace guideXOS.FS {
             }
             // allocate if needed
             List<uint> chain = AllocateClustersForSize((uint)Content.Length);
+            if (Content.Length > 0 && chain.Count == 0) {
+                // Allocation failed - out of space
+                return;
+            }
             if (chain.Count > 0) firstClus = chain[0];
             // write data
             if (Content.Length > 0) WriteDataToChain(chain, Content);
@@ -680,6 +741,205 @@ namespace guideXOS.FS {
             parent.Dispose(); just.Dispose(); shortName.Dispose();
         }
 
-        public override void Format() { Panic.Error("FAT: Format not implemented yet."); }
+        public override void Format() {
+            // Format the disk as FAT32
+            // Get total sectors from disk
+            ulong totalSectors = 0;
+            
+            // Try to read boot sector to get disk size, or use a default
+            byte[] testSec = new byte[512];
+            try {
+                testSec = ReadSectorsCached(0, 1);
+                // If we can read it, try to get total sectors from existing BPB
+                fixed (byte* p = testSec) {
+                    BPB_Common* bpb = (BPB_Common*)p;
+                    totalSectors = bpb->TotSec16 != 0 ? bpb->TotSec16 : bpb->TotSec32;
+                }
+            } catch {
+                // If we can't determine size, default to 100MB
+                totalSectors = (100 * 1024 * 1024) / 512;
+            }
+            
+            if (totalSectors == 0 || totalSectors < 4096) {
+                totalSectors = (100 * 1024 * 1024) / 512; // Default to 100MB
+            }
+            
+            // Choose FAT type based on size
+            bool useFAT32 = totalSectors > 65525 * 8; // > ~256MB
+            ushort bytesPerSec = 512;
+            byte secPerClus = 8; // 4KB clusters
+            ushort rsvdSecCnt = (ushort)(useFAT32 ? 32 : 1);
+            byte numFATs = 2;
+            ushort rootEntCnt = (ushort)(useFAT32 ? 0 : 512);
+            uint rootDirSectors = (uint)((rootEntCnt * 32 + (bytesPerSec - 1)) / bytesPerSec);
+            
+            // Calculate FAT size
+            uint tmpVal1 = (uint)(totalSectors - (rsvdSecCnt + rootDirSectors));
+            uint tmpVal2 = (uint)((256 * secPerClus) + numFATs);
+            if (useFAT32) tmpVal2 = (uint)((128 * secPerClus) + numFATs);
+            uint FATSz = (tmpVal1 + tmpVal2 - 1) / tmpVal2;
+            
+            // Create boot sector
+            byte[] bootSector = new byte[512];
+            for (int i = 0; i < 512; i++) bootSector[i] = 0;
+            
+            fixed (byte* p = bootSector) {
+                BPB_Common* bpb = (BPB_Common*)p;
+                
+                // Jump instruction
+                bpb->jmpBoot[0] = 0xEB;
+                bpb->jmpBoot[1] = 0x58;
+                bpb->jmpBoot[2] = 0x90;
+                
+                // OEM name
+                string oem = "GUIDEXOS";
+                for (int i = 0; i < 8; i++) bpb->OEMName[i] = (byte)(i < oem.Length ? oem[i] : ' ');
+                
+                bpb->BytsPerSec = bytesPerSec;
+                bpb->SecPerClus = secPerClus;
+                bpb->RsvdSecCnt = rsvdSecCnt;
+                bpb->NumFATs = numFATs;
+                bpb->RootEntCnt = rootEntCnt;
+                bpb->TotSec16 = (ushort)(totalSectors < 65536 && !useFAT32 ? totalSectors : 0);
+                bpb->Media = 0xF8;
+                bpb->FATSz16 = (ushort)(useFAT32 ? 0 : FATSz);
+                bpb->SecPerTrk = 63;
+                bpb->NumHeads = 255;
+                bpb->HiddSec = 0;
+                bpb->TotSec32 = (uint)(totalSectors >= 65536 || useFAT32 ? totalSectors : 0);
+                
+                if (useFAT32) {
+                    BPB_FAT32* bpb32 = (BPB_FAT32*)(p + 0x24);
+                    bpb32->FATSz32 = FATSz;
+                    bpb32->ExtFlags = 0;
+                    bpb32->FSVer = 0;
+                    bpb32->RootClus = 2;
+                    bpb32->FSInfo = 1;
+                    bpb32->BkBootSec = 6;
+                    bpb32->DrvNum = 0x80;
+                    bpb32->BootSig = 0x29;
+                    bpb32->VolID = 0x12345678;
+                    
+                    string label = "GUIDEXOS   ";
+                    for (int i = 0; i < 11; i++) bpb32->VolLab[i] = (byte)(i < label.Length ? label[i] : ' ');
+                    
+                    string fstype = "FAT32   ";
+                    for (int i = 0; i < 8; i++) bpb32->FilSysType[i] = (byte)(i < fstype.Length ? fstype[i] : ' ');
+                }
+                
+                // Boot signature
+                bootSector[510] = 0x55;
+                bootSector[511] = 0xAA;
+            }
+            
+            // Write boot sector
+            WriteSector(0, bootSector);
+            
+            // Clear reserved sectors
+            byte[] zeroSec = new byte[512];
+            for (int i = 0; i < 512; i++) zeroSec[i] = 0;
+            
+            for (ulong s = 1; s < rsvdSecCnt; s++) {
+                WriteSector(s, zeroSec);
+            }
+            
+            // Write FSInfo for FAT32
+            if (useFAT32) {
+                byte[] fsInfo = new byte[512];
+                for (int i = 0; i < 512; i++) fsInfo[i] = 0;
+                fsInfo[0] = (byte)'R';
+                fsInfo[1] = (byte)'R';
+                fsInfo[2] = (byte)'a';
+                fsInfo[3] = (byte)'A';
+                fsInfo[484] = 0xFF; fsInfo[485] = 0xFF; fsInfo[486] = 0xFF; fsInfo[487] = 0xFF;
+                fsInfo[488] = 0xFF; fsInfo[489] = 0xFF; fsInfo[490] = 0xFF; fsInfo[491] = 0xFF;
+                fsInfo[510] = 0x55;
+                fsInfo[511] = 0xAA;
+                WriteSector(1, fsInfo);
+            }
+            
+            // Initialize FAT tables
+            ulong fatStart = rsvdSecCnt;
+            for (int fatNum = 0; fatNum < numFATs; fatNum++) {
+                for (uint i = 0; i < FATSz; i++) {
+                    WriteSector(fatStart + (ulong)(fatNum * FATSz) + i, zeroSec);
+                }
+            }
+            
+            // Write initial FAT entries
+            byte[] fatFirst = new byte[512];
+            for (int i = 0; i < 512; i++) fatFirst[i] = 0;
+            
+            if (useFAT32) {
+                // Media descriptor
+                fatFirst[0] = 0xF8; fatFirst[1] = 0xFF; fatFirst[2] = 0xFF; fatFirst[3] = 0x0F;
+                // EOC for cluster 1
+                fatFirst[4] = 0xFF; fatFirst[5] = 0xFF; fatFirst[6] = 0xFF; fatFirst[7] = 0x0F;
+                // Root directory cluster (2)
+                fatFirst[8] = 0xFF; fatFirst[9] = 0xFF; fatFirst[10] = 0xFF; fatFirst[11] = 0x0F;
+            } else {
+                // FAT12/16
+                fatFirst[0] = 0xF8;
+                fatFirst[1] = 0xFF;
+                fatFirst[2] = 0xFF;
+                if (!useFAT32 && totalSectors >= 4085) {
+                    // FAT16
+                    fatFirst[3] = 0xFF;
+                }
+            }
+            
+            // Write to all FAT copies
+            for (int fatNum = 0; fatNum < numFATs; fatNum++) {
+                WriteSector(fatStart + (ulong)(fatNum * FATSz), fatFirst);
+            }
+            
+            // Clear root directory area
+            ulong firstRootSec = fatStart + (ulong)(numFATs * FATSz);
+            if (useFAT32) {
+                // Root is in data area - clear cluster 2
+                ulong firstDataSector = firstRootSec;
+                for (int i = 0; i < secPerClus; i++) {
+                    WriteSector(firstDataSector + (ulong)i, zeroSec);
+                }
+            } else {
+                // Fixed root directory for FAT12/16
+                for (uint i = 0; i < rootDirSectors; i++) {
+                    WriteSector(firstRootSec + i, zeroSec);
+                }
+            }
+            
+            // Re-initialize this FAT instance with the new filesystem
+            _cacheKeys = new ulong[CacheCapacity];
+            _cacheValues = new byte[CacheCapacity][];
+            _cacheCount = 0;
+            _lruHead = 0;
+            
+            var sec0 = ReadSectorsCached(0, 1);
+            fixed (byte* p = sec0) {
+                BPB_Common* bpb = (BPB_Common*)p;
+                _bytesPerSec = bpb->BytsPerSec;
+                _secPerClus = bpb->SecPerClus;
+                _rsvdSecCnt = bpb->RsvdSecCnt;
+                _numFATs = bpb->NumFATs;
+                uint totSec = bpb->TotSec16 != 0 ? bpb->TotSec16 : bpb->TotSec32;
+                uint fatsz = bpb->FATSz16;
+                if (fatsz == 0) {
+                    BPB_FAT32* bpb32 = (BPB_FAT32*)(p + 0x24);
+                    fatsz = bpb32->FATSz32;
+                    _rootCluster = bpb32->RootClus;
+                }
+                _FATSz = fatsz;
+                uint rootEntCnt2 = bpb->RootEntCnt;
+                _rootDirSectors = (uint)((rootEntCnt2 * 32 + (_bytesPerSec - 1)) / _bytesPerSec);
+                uint dataSec = totSec - (uint)(_rsvdSecCnt + (_numFATs * fatsz) + _rootDirSectors);
+                uint countOfClusters = dataSec / _secPerClus;
+                _clusterCount = countOfClusters;
+                _type = countOfClusters < 4085 ? FatType.FAT12 : (countOfClusters < 65525 ? FatType.FAT16 : FatType.FAT32);
+                _fatStart = _rsvdSecCnt;
+                _firstDataSector = (uint)(_rsvdSecCnt + (_numFATs * fatsz) + _rootDirSectors);
+                _firstRootDirSector = (uint)(_rsvdSecCnt + (_numFATs * fatsz));
+                if (_type != FatType.FAT32) _rootCluster = 0;
+            }
+        }
     }
 }

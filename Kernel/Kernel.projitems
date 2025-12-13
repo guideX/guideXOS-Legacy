@@ -50,7 +50,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)FS\Disk.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FS\EXT2.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FS\FAT.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)FS\FATFS.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FS\FileSystem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FS\NTFS.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FS\TarFS.cs" />

@@ -518,53 +518,158 @@ namespace guideXOS.DefaultApps {
 
             contentY += 20;
             WindowManager.font.DrawString(X + Pad, contentY, "Please wait, do not power off your computer...", Width - Pad * 2, WindowManager.font.FontSize);
-        }
+        } 
 
         private void DrawCompleteStep() {
-            int contentY = Y + 120;
+            int contentY = Y + 100;
 
             WindowManager.font.DrawString(X + Pad, contentY, "Installation Complete!");
-            contentY += 50;
+            contentY += 40;
 
-            string[] lines = new string[] {
-                "guideXOS has been successfully installed to your hard drive!",
+            // Check if USB installation media is still present
+            bool usbStillPresent = CheckUSBInstallMediaPresent();
+
+            if (usbStillPresent) {
+                // Draw prominent warning about removing USB drive
+                int warningBoxY = contentY;
+                int warningBoxH = 140;
+                
+                // Warning box background (orange/red)
+                Framebuffer.Graphics.FillRectangle(X + Pad, warningBoxY, Width - Pad * 2, warningBoxH, 0xFFDD4400);
+                Framebuffer.Graphics.DrawRectangle(X + Pad, warningBoxY, Width - Pad * 2, warningBoxH, 0xFFFF6600, 3);
+                
+                // Warning text
+                int warnTextY = warningBoxY + 10;
+                WindowManager.font.DrawString(X + Pad + 10, warnTextY, "WARNING: REMOVE INSTALLATION MEDIA", Width - Pad * 2 - 20, WindowManager.font.FontSize);
+                warnTextY += WindowManager.font.FontSize + 10;
+                
+                string[] warnLines = new string[] {
+                    "Before rebooting, you MUST remove the USB flash drive",
+                    "or installation media from your computer.",
+                    "",
+                    "If you reboot without removing it, your computer will",
+                    "boot from the USB drive again instead of the newly",
+                    "installed system on your hard drive.",
+                    "",
+                    "Please remove the USB drive now."
+                };
+                
+                for (int i = 0; i < warnLines.Length; i++) {
+                    WindowManager.font.DrawString(X + Pad + 10, warnTextY, warnLines[i], Width - Pad * 2 - 20, WindowManager.font.FontSize);
+                    warnTextY += WindowManager.font.FontSize + 4;
+                }
+                
+                contentY += warningBoxH + 20;
+            } else {
+                // USB removed - show success message
+                int successBoxY = contentY;
+                int successBoxH = 80;
+                
+                // Success box background (green)
+                Framebuffer.Graphics.FillRectangle(X + Pad, successBoxY, Width - Pad * 2, successBoxH, 0xFF228B22);
+                Framebuffer.Graphics.DrawRectangle(X + Pad, successBoxY, Width - Pad * 2, successBoxH, 0xFF32CD32, 2);
+                
+                // Success text
+                int successTextY = successBoxY + 10;
+                WindowManager.font.DrawString(X + Pad + 10, successTextY, "Installation media removed - Ready to reboot!", Width - Pad * 2 - 20, WindowManager.font.FontSize);
+                successTextY += WindowManager.font.FontSize + 10;
+                
+                string[] successLines = new string[] {
+                    "Your computer is now ready to boot from the hard drive.",
+                    "Click the Reboot button below to restart and enjoy",
+                    "your newly installed guideXOS system!"
+                };
+                
+                for (int i = 0; i < successLines.Length; i++) {
+                    WindowManager.font.DrawString(X + Pad + 10, successTextY, successLines[i], Width - Pad * 2 - 20, WindowManager.font.FontSize);
+                    successTextY += WindowManager.font.FontSize + 4;
+                }
+                
+                contentY += successBoxH + 20;
+            }
+
+            // Installation summary
+            string[] summaryLines = new string[] {
+                "guideXOS has been successfully installed!",
                 "",
-                "To complete the setup:",
-                "",
-                "1. Remove the USB flash drive",
-                "2. Click Reboot",
-                "3. Your computer will boot from the hard drive",
-                "",
-                "You can now enjoy the full guideXOS experience with:",
+                "You can now enjoy:",
                 "  * Faster boot times",
                 "  * Persistent file storage",
                 "  * Better performance",
                 "  * Full system access",
                 "",
-                "Thank you for choosing guideXOS!",
-                "",
-                "Click Finish to close this installer."
+                "Thank you for choosing guideXOS!"
             };
 
-            for (int i = 0; i < lines.Length; i++) {
-                WindowManager.font.DrawString(X + Pad, contentY, lines[i], Width - Pad * 2, WindowManager.font.FontSize);
+            for (int i = 0; i < summaryLines.Length; i++) {
+                WindowManager.font.DrawString(X + Pad, contentY, summaryLines[i], Width - Pad * 2, WindowManager.font.FontSize);
                 contentY += WindowManager.font.FontSize + 6;
             }
 
-            // Draw Reboot button
+            // Draw Reboot button (only enabled if USB is removed)
             int rbW = 140, rbH = 32;
-            int rbX = X + Width - Pad - rbW;
-            int rbY = Y + Height - 110;
-            DrawButton(rbX, rbY, rbW, rbH, "Reboot", true);
-
-            // Handle reboot click
-            int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
-            bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
-            if (left && !_clickLock && Hit(mx, my, rbX, rbY, rbW, rbH)) {
-                try { guideXOS.Kernel.Drivers.Power.Reboot(); } catch { }
-                _clickLock = true;
-            } else if (!left) {
+            int rbX = X + Width - Pad - rbW - BtnW - 10; // Positioned next to Finish button
+            int rbY = Y + Height - 60;
+            
+            // Draw button with different color based on USB status
+            int mx = Control.MousePosition.X; 
+            int my = Control.MousePosition.Y;
+            bool hover = Hit(mx, my, rbX, rbY, rbW, rbH);
+            
+            if (usbStillPresent) {
+                // Disabled state - gray
+                Framebuffer.Graphics.FillRectangle(rbX, rbY, rbW, rbH, 0xFF444444);
+                WindowManager.font.DrawString(rbX + rbW / 2 - 30, rbY + rbH / 2 - WindowManager.font.FontSize / 2, "Reboot");
+            } else {
+                // Enabled state - clickable
+                uint bgColor = hover ? 0xFF4C8BF5 : 0xFF3A3A3A;
+                Framebuffer.Graphics.FillRectangle(rbX, rbY, rbW, rbH, bgColor);
+                WindowManager.font.DrawString(rbX + rbW / 2 - 30, rbY + rbH / 2 - WindowManager.font.FontSize / 2, "Reboot");
+                
+                // Handle reboot click (only if USB is removed)
+                bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
+                if (left && !_clickLock && hover) {
+                    try { guideXOS.Kernel.Drivers.Power.Reboot(); } catch { }
+                    _clickLock = true;
+                }
+            }
+            
+            // Reset click lock when mouse released
+            if (!Control.MouseButtons.HasFlag(MouseButtons.Left)) {
                 _clickLock = false;
+            }
+        }
+        
+        /// <summary>
+        /// Check if USB installation media is still present
+        /// Returns true if any USB storage device is detected
+        /// </summary>
+        private bool CheckUSBInstallMediaPresent() {
+            try {
+                var devices = USBStorage.GetAll();
+                if (devices == null || devices.Length == 0) {
+                    return false;
+                }
+                
+                // Check if any USB mass storage devices are present
+                for (int i = 0; i < devices.Length; i++) {
+                    var d = devices[i];
+                    if (d == null) continue;
+                    
+                    // Check for USB Mass Storage Class device
+                    if (d.Class == 0x08 && d.SubClass == 0x06 && d.Protocol == 0x50) {
+                        var usbDisk = USBMSC.TryOpenDisk(d);
+                        if (usbDisk != null && usbDisk.IsReady) {
+                            // USB storage device detected
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            } catch {
+                // If we can't determine, assume it's removed (safer to allow reboot)
+                return false;
             }
         }
 
