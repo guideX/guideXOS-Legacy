@@ -5,6 +5,7 @@
 /guideXOS.Web/obj
 /guideXOS.WinPETestApp/x64
 /guideXOS.Web/.vs
+/guideXOS/bin
 /guideXOS/obj
 /Tools/MediaCreator.Windows/obj
 /Tools/MediaCreator.Windows/bin
@@ -13,5 +14,15 @@
 /Tools/Installer/GuideXOS.Installer/obj
 /Tools/Installer/GuideXOS.Installer/bin
 /Docs
+/guideXOSBootLoader/x64
+/guideXOS/Kernel.map
+/kernel.elf
+/guideXOS/native_stubs.obj
 /Tools/grub2/boot/kernel.bin
-/grub2
+/ESP/EFI/BOOT/BOOTX64.EFI
+/ESP/NvVars
+/ESP/kernel.elf
+/Tools/grub2/boot/grub/i386-pc/eltorito.img
+/ESP/ramdisk.img
+/guideXOSBootLoader/guideXOS.1fedf2ad
+/Tools/grub2/boot/ramdisk.tar
