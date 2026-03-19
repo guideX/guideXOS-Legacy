@@ -245,7 +245,7 @@ namespace guideXOS.GUI {
             int screenH = Framebuffer.Graphics.Height;
             int x = devide;
             int y = devide;
-            bool leftDown = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool leftDown = (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left;
             bool mouseOverWindow = IsMouseOverAnyVisibleWindow();
             bool mouseBlocked = WindowManager.HasWindowMoving || WindowManager.MouseHandled || mouseOverWindow;
             bool clickable = leftDown && !mouseBlocked;
@@ -403,7 +403,7 @@ namespace guideXOS.GUI {
             // Draw taskbar and handle Start Menu interactions
             Taskbar.Draw();
             // Right-click pinning for desktop items (apps/files)
-            if (Control.MouseButtons.HasFlag(MouseButtons.Right)) {
+            if ((Control.MouseButtons & MouseButtons.Right) == MouseButtons.Right) {
                 int mx = Control.MousePosition.X;
                 int my = Control.MousePosition.Y;
                 int scanX = devide;

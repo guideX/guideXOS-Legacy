@@ -471,7 +471,7 @@ namespace guideXOS.GUI {
             ComputeButtonRects();
             int mx = Control.MousePosition.X; int my = Control.MousePosition.Y;
             _hoverBtn = HitTestButtons(mx, my);
-            bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool left = (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left;
 
             // Title buttons interaction
             if (left) {

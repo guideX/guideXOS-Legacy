@@ -182,7 +182,7 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.AFillRectangle(0, yTop, Framebuffer.Width, _barHeight, 0x66111111);
 
             // Mouse coordinates already obtained above for auto-hide
-            bool left = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool left = (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left;
 
             int startX = 12; int startY = yTop + 4;
             // Start icon - determine which icon to show based on mouse state
@@ -206,7 +206,7 @@ namespace guideXOS.GUI {
             int qx = startX + (_startIcon != null ? _startIcon.Width + 8 : 0) + 8;
             int qy = yTop + 6;
             int qh = _barHeight - 12;
-            bool leftMousePinned = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool leftMousePinned = (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left;
             for (int i=0;i<PinnedManager.Count;i++){
                 var ic = PinnedManager.Icon(i);
                 int iw = ic.Width; int ih = ic.Height; int bx = qx; int by = qy + (qh/2 - ih/2);
@@ -233,7 +233,7 @@ namespace guideXOS.GUI {
             int btnW = 140; // fixed width
             int gap = 8;
 
-            bool right = Control.MouseButtons.HasFlag(MouseButtons.Right);
+            bool right = (Control.MouseButtons & MouseButtons.Right) == MouseButtons.Right;
 
             // Handle right click -> show menu and mark mouse as handled
             int barTop = yTop;
@@ -445,7 +445,7 @@ namespace guideXOS.GUI {
             Framebuffer.Graphics.DrawRectangle(sdX + 1, sdY + 1, sdW - 2, sdH - 2, 0xFF777777, 1);
 
             // Input handling for start/time areas
-            if (Control.MouseButtons.HasFlag(MouseButtons.Left)) {
+            if ((Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left) {
                 int mx2 = Control.MousePosition.X; int my2 = Control.MousePosition.Y;
                 if (mx2 >= timeX && mx2 <= timeX + timeW && my2 >= yTop && my2 <= yTop + _barHeight) {
                     if (!_clockClickLatch) { _clockUse12Hour = !_clockUse12Hour; _clockClickLatch = true; }

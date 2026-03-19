@@ -35,7 +35,7 @@ namespace guideXOS.GUI {
             int mx = Control.MousePosition.X;
             int my = Control.MousePosition.Y;
 
-            bool leftClick = Control.MouseButtons.HasFlag(MouseButtons.Left);
+            bool leftClick = (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left;
 
             // Calculate Icon Size item index dynamically
             int iconSizeIdx = 2; // Start after Display Options and Performance Widget
@@ -175,12 +175,13 @@ namespace guideXOS.GUI {
             WindowManager.font.DrawString(X + 8, y + (itemH / 2) - (WindowManager.font.FontSize / 2), "Display Options"); y += itemH;
             
             // Performance Widget toggle
-            string perfLabel = "Performance Widget";
-            if (Program.perfWidget != null && Program.perfWidget.Visible) {
-                perfLabel += " ?";
+            bool perfVisible = Program.perfWidget != null && Program.perfWidget.Visible;
+            if (perfVisible) {
+                string perfLabel = "Performance Widget ?";
+                WindowManager.font.DrawString(X + 8, y + (itemH / 2) - (WindowManager.font.FontSize / 2), perfLabel);
+            } else {
+                WindowManager.font.DrawString(X + 8, y + (itemH / 2) - (WindowManager.font.FontSize / 2), "Performance Widget");
             }
-            WindowManager.font.DrawString(X + 8, y + (itemH / 2) - (WindowManager.font.FontSize / 2), perfLabel); 
-            perfLabel.Dispose();
             y += itemH;
             
             // Save Settings (only when not in LiveMode)
