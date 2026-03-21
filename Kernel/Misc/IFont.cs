@@ -135,6 +135,7 @@ namespace guideXOS.Misc {
         public void DrawString(int X, int Y, string Str, Graphics g) {
             int w = 0, h = 0;
             for (int i = 0; i < Str.Length; i++) {
+                if (Str[i] == '\n') { w = 0; h += FontSize; continue; }
                 w += DrawChar(g, X + w, Y + h, Str[i]) + Padding;
             }
         }
@@ -142,6 +143,7 @@ namespace guideXOS.Misc {
         public void DrawString(int X, int Y, string Str) {
             int w = 0, h = 0;
             for (int i = 0; i < Str.Length; i++) {
+                if (Str[i] == '\n') { w = 0; h += FontSize; continue; }
                 w += DrawChar(Framebuffer.Graphics, X + w, Y + h, Str[i]) + Padding;
             }
         }
