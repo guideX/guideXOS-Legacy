@@ -450,12 +450,12 @@ unsafe class Program {
                 try {
                     if ((Control.MouseButtons & MouseButtons.Right) == MouseButtons.Right && !rightClicked && !WindowManager.MouseHandled) {
                         rightClicked = true;
-                        if (rightmenu != null) {
-                            rightmenu.X = Control.MousePosition.X;
-                            rightmenu.Y = Control.MousePosition.Y;
-                            WindowManager.MoveToEnd(rightmenu);
-                            rightmenu.Visible = true;
-                        }
+                        // Always create a fresh RightMenu (old one may have been disposed on close)
+                        rightmenu = new RightMenu();
+                        rightmenu.X = Control.MousePosition.X;
+                        rightmenu.Y = Control.MousePosition.Y;
+                        WindowManager.MoveToEnd(rightmenu);
+                        rightmenu.Visible = true;
                     } else if ((Control.MouseButtons & MouseButtons.Right) != MouseButtons.Right) {
                         rightClicked = false;
                     }

@@ -402,35 +402,40 @@ namespace guideXOS.GUI {
             }
             // Draw taskbar and handle Start Menu interactions
             Taskbar.Draw();
-            // Right-click pinning for desktop items (apps/files)
+        // Right-click pinning for desktop items (apps/files)
             if ((Control.MouseButtons & MouseButtons.Right) == MouseButtons.Right) {
                 int mx = Control.MousePosition.X;
                 int my = Control.MousePosition.Y;
-                int scanX = devide;
-                int scanY = devide;
-                int iconW = docIcon.Width;
-                int iconH = docIcon.Height;
-                if (HomeMode) {
-                    // Computer Files first icon
-                    if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
-                        PinnedManager.PinComputerFiles();
-                    }
-                } else {
-                    // iterate file entries in current directory
-                    for (int i = 0; i < names.Count; i++) {
-                        if (scanY + fh + devide > screenH - devide) {
-                            scanY = devide;
-                            scanX += fw + devide;
-                        }
+                // Only handle right-click pinning if not over a window (prevent crashes)
+                if (!IsMouseOverAnyVisibleWindow()) {
+                    int scanX = devide;
+                    int scanY = devide;
+                    int iconW = docIcon.Width;
+                    int iconH = docIcon.Height;
+                    if (HomeMode) {
+                        // Computer Files first icon
                         if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
-                            string fname = names[i].Name;
-                            bool dir = names[i].Attribute == FileAttribute.Directory;
-                            if (!dir) {
-                                PinnedManager.PinFile(fname, Dir + fname, docIcon);
-                            }
-                            break;
+                            PinnedManager.PinComputerFiles();
                         }
+                    } else {
+                        // Skip the "Desktop" entry at the top (it's drawn first in non-HomeMode)
                         scanY += fh + devide;
+                        // iterate file entries in current directory
+                        for (int i = 0; i < names.Count; i++) {
+                            if (scanY + fh + devide > screenH - devide) {
+                                scanY = devide;
+                                scanX += fw + devide;
+                            }
+                            if (mx >= scanX && mx <= scanX + iconW && my >= scanY && my <= scanY + iconH) {
+                                string fname = names[i].Name;
+                                bool dir = names[i].Attribute == FileAttribute.Directory;
+                                if (!dir) {
+                                    PinnedManager.PinFile(fname, Dir + fname, docIcon);
+                                }
+                                break;
+                            }
+                            scanY += fh + devide;
+                        }
                     }
                 }
             }
@@ -495,14 +500,9 @@ namespace guideXOS.GUI {
                 return;
             }
             if (name == "Computer Files" && HomeMode) {
-                // FIXED: Reuse existing ComputerFiles window instead of creating new one!
-                if (compFiles == null) {
-                    compFiles = new ComputerFiles(300, 200, 540, 380);
-                }
-                if (!compFiles.Visible) {
-                    compFiles.Visible = true;
-                }
-                WindowManager.MoveToEnd(compFiles); // Bring to front
+                // Always create a new ComputerFiles window (old one may have been disposed on close)
+                compFiles = new ComputerFiles(300, 200, 540, 380);
+                WindowManager.MoveToEnd(compFiles);
                 return;
             }
             // Click on USB drive icon opens Computer Files too (when on Home desktop)
@@ -519,14 +519,9 @@ namespace guideXOS.GUI {
                 }
                 // FIXED: NEVER dispose string literals - they are constants!
                 if (isUsb) {
-                    // FIXED: Reuse existing ComputerFiles window!
-                    if (compFiles == null) {
-                        compFiles = new ComputerFiles(300, 200, 540, 380);
-                    }
-                    if (!compFiles.Visible) {
-                        compFiles.Visible = true;
-                    }
-                    WindowManager.MoveToEnd(compFiles); // Bring to front
+                    // Always create a new ComputerFiles window (old one may have been disposed)
+                    compFiles = new ComputerFiles(300, 200, 540, 380);
+                    WindowManager.MoveToEnd(compFiles);
                     return;
                 }
             }

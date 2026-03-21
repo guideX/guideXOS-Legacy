@@ -654,15 +654,15 @@ namespace guideXOS.DefaultApps {
                     }
 
                     if (driveIcon != null) Framebuffer.Graphics.DrawImage(gx, gy, driveIcon);
-                    WindowManager.font.DrawString(gx, gy + icon + 6, drive.Name, tileW - pad, WindowManager.font.FontSize * 2);
+                    WindowManager.font.DrawString(gx, gy + icon + 6, drive.Name, icon, WindowManager.font.FontSize * 2);
                 }
             } else {
                 EnsureEntries(); var list = _entriesCache; if (list != null) {
                     int icon = _iconFolder != null ? _iconFolder.Width : 48; int tileW = icon + pad * 2; int tileH = icon + WindowManager.font.FontSize * 2 + pad; int cols = tileW > 0 ? rcW / tileW : 1; if (cols < 1) cols = 1;
                     for (int i = 0; i < list.Count; i++) {
                         string name = list[i].Name; bool matches = string.IsNullOrEmpty(_search) || ContainsIgnoreCase(name, _search); if (!matches) continue; int gridX = i % cols; int gridY = i / cols; int gx = rcX + gridX * tileW + pad; int gy = contentY + gridY * tileH + pad - _scroll; if (gy + tileH < contentY || gy > contentY + contentH) continue; bool isDir = list[i].Attribute == FileAttribute.Directory; if (isDir) { if (_iconFolder != null) Framebuffer.Graphics.DrawImage(gx, gy, _iconFolder); } else { if (_iconDoc != null) Framebuffer.Graphics.DrawImage(gx, gy, _iconDoc); }
-                        // Draw label clipped to single line width without pre-truncation allocations
-                        WindowManager.font.DrawString(gx, gy + icon + 6, name, tileW - pad, WindowManager.font.FontSize * 2);
+                        // Draw label clipped to icon width to prevent overhang into adjacent tiles
+                        WindowManager.font.DrawString(gx, gy + icon + 6, name, icon, WindowManager.font.FontSize * 2);
                     }
                 }
             }
