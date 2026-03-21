@@ -93,13 +93,13 @@ namespace System.Diagnostics {
                         ushort ord = (ushort)(val & 0xFFFF);
                         // Represent ordinal as #nnn
                         string proc = "#" + ord.ToString();
-                        //func = guideXOS.Compat.Win32Shim.Resolve(dllName, proc);
-                        //proc.Dispose();
+                        func = guideXOS.Compat.Win32Shim.Resolve(dllName, proc);
+                        proc.Dispose();
                     } else {
                         ImportByName* ibn = (ImportByName*)(moduleBase + (uint)val);
                         string name = ReadAsciiZ(&ibn->Name[0]);
-                        //func = guideXOS.Compat.Win32Shim.Resolve(dllName, name);
-                        //name.Dispose();
+                        func = guideXOS.Compat.Win32Shim.Resolve(dllName, name);
+                        name.Dispose();
                     }
                     // If unresolved, leave zero in IAT (callers may guard or crash).
                     iat[i] = func;

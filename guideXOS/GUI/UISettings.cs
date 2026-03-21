@@ -3,7 +3,7 @@ namespace guideXOS.GUI {
     internal static class UISettings {
         // ===== ANIMATION SETTINGS =====
         // Fading animations (open/close) 
-        public static bool EnableFadeAnimations = false;
+        public static bool EnableFadeAnimations = false; // THIS CAUSES CRASH!
         public static int FadeInDurationMs = 180;
         public static int FadeOutDurationMs = 180;
         public static bool UpdateAnimations = true; // enable animation updates during draw calls
@@ -378,7 +378,7 @@ namespace guideXOS.GUI {
     /// </summary>
     public enum WindowEffectType {
         None,           // No effect (instant)
-        Fade,           // Simple fade (default)
+        Fade,           // Simple fade (default) TESTED/WORKING
         Digitize,       // Tron-style scanline materialization
         Derezz,         // Tron-style de-resolution
         BurnIn,         // Fire particles coalescing

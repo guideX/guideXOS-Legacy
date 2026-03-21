@@ -103,6 +103,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\stdio.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\stdlib.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\BufferDescriptor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Win32Shim.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Libraries\" />
