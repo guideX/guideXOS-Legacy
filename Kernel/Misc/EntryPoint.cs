@@ -108,6 +108,9 @@ namespace guideXOS.Misc {
             // Initialize configuration system (only works when not in LiveMode)
             guideXOS.OS.Configuration.Initialize();
 
+            // Initialize virtual disk auto-mount
+            guideXOS.OS.VirtualDiskAutoMount.Initialize();
+
             KMain();
         }
 
