@@ -90,15 +90,24 @@ namespace guideXOS.OS {
         /// </summary>
         private static void MountDefaultImages() {
             // Try to mount test images if they exist
+            Console.WriteLine("[AutoMount] Checking for /disks/test-fat32.img...");
             if (File.Exists("/disks/test-fat32.img")) {
                 Console.WriteLine("[AutoMount] Found /disks/test-fat32.img, auto-mounting...");
                 MountVirtualDisk("/disks/test-fat32.img", "/mnt/fat32", "FAT32");
+            } else {
+                Console.WriteLine("[AutoMount] /disks/test-fat32.img not found on ramdisk");
             }
             
+            Console.WriteLine("[AutoMount] Checking for /disks/test-ext4.img...");
             if (File.Exists("/disks/test-ext4.img")) {
                 Console.WriteLine("[AutoMount] Found /disks/test-ext4.img, auto-mounting...");
                 MountVirtualDisk("/disks/test-ext4.img", "/mnt/ext4", "EXT4");
+            } else {
+                Console.WriteLine("[AutoMount] /disks/test-ext4.img not found on ramdisk");
             }
+            
+            Console.WriteLine("[AutoMount] Tip: Include .img files in your ramdisk/initrd to auto-mount at boot");
+            Console.WriteLine("[AutoMount] Or use 'vfsmount' command to manually mount images from the ramdisk");
         }
         
         /// <summary>

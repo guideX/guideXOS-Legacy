@@ -1251,6 +1251,14 @@ namespace guideXOS.DefaultApps {
                         var mounts = guideXOS.OS.VirtualDiskAutoMount.GetMountedDisks();
                         if (mounts.Count == 0) {
                             WriteLine("No virtual disks mounted.");
+                            WriteLine("");
+                            WriteLine("Troubleshooting:");
+                            WriteLine("  1. Check if /disks/ exists: ls /");
+                            WriteLine("  2. Check for .img files: ls /disks/");
+                            WriteLine("  3. The .img files must be ON the ramdisk, not on your host OS");
+                            WriteLine("  4. Use 'vfsmount <path> <mnt> <fstype>' to manually mount if files exist");
+                            WriteLine("");
+                            WriteLine("See VFS_SETUP_TROUBLESHOOTING.md for detailed setup instructions.");
                             break;
                         }
                         WriteLine(PadRight("MOUNT", 18) + PadRight("FSTYPE", 8) + PadRight("SIZE", 12) + "IMAGE");
