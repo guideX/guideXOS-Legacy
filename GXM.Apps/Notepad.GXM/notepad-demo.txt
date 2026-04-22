@@ -1,0 +1,38 @@
+WINDOW|Notepad Demo|600|500
+LABEL|GXM Notepad - NOW WITH REAL FILE I/O!|20|20
+LABEL|This demonstrates WORKING save and load features:|20|50
+DROPDOWN|1|20|80|200|30|demo.txt;document.txt;notes.txt;readme.txt;todo.txt
+ONCHANGE|1|LOADFILE|$VALUE
+LABEL|Text Content (editable via list):|240|85
+LIST|2|240|110|340|200|This is line 1 of text;This is line 2 of text;This is line 3 of text;Edit me and click Save!;Add more lines here;GXM apps are powerful;Easy to create;Real file I/O works!
+ONCHANGE|2|MSG|Selected line: $VALUE
+LABEL|File Operations:|20|130
+BUTTON|10|?? New File|20|160|140|35
+BUTTON|11|?? Save File|170|160|140|35
+BUTTON|12|?? Load File|320|160|140|35
+ONCLICK|10|MSG|New file ready! Edit text and save.
+ONCLICK|11|SAVEFILE|demo.txt
+ONCLICK|12|LOADFILE|demo.txt
+LABEL|Edit Operations:|20|210
+BUTTON|20|?? Cut|20|240|95|35
+BUTTON|21|?? Copy|125|240|95|35
+BUTTON|22|?? Paste|230|240|95|35
+ONCLICK|20|MSG|Cut: Not yet implemented
+ONCLICK|21|MSG|Copy: Not yet implemented
+ONCLICK|22|MSG|Paste: Not yet implemented
+LABEL|Quick Actions:|20|290
+BUTTON|30|?? Find|20|320|140|35
+BUTTON|31|?? Replace|170|320|140|35
+BUTTON|32|?? Settings|320|320|140|35
+ONCLICK|30|MSG|Find dialog coming soon!
+ONCLICK|31|MSG|Replace dialog coming soon!
+ONCLICK|32|MSG|Opening settings...
+LABEL|Application:|20|370
+BUTTON|40|?? Open Full Notepad|20|400|180|35
+BUTTON|41|?? Statistics|210|400|140|35
+BUTTON|42|? Help|360|400|100|35
+BUTTON|43|? Close|470|400|110|35
+ONCLICK|40|OPENAPP|Notepad
+ONCLICK|41|MSG|Save and Load now work! Try them!
+ONCLICK|42|MSG|Notepad GXM v2.0 - NOW WITH REAL FILE I/O! Save and load text files to disk!
+ONCLICK|43|CLOSE|

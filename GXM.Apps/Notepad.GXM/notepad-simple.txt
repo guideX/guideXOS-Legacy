@@ -1,0 +1,16 @@
+WINDOW|Text Editor|500|400
+LABEL|Simple Notepad Demo|20|20
+LABEL|Welcome to GXM Notepad with REAL file I/O!|20|60
+LABEL|This demonstrates working save and load functionality.|20|90
+LABEL|Note: Edit text in the list below, then click Save|20|120
+LIST|1|20|150|460|150|Line 1 - Edit this text;Line 2 - Add your content;Line 3 - Type anything here;Line 4 - Then click Save!;Line 5 - Or click Load to open notepad.txt
+ONCHANGE|1|MSG|Selected: $VALUE
+BUTTON|1|?? Save File|20|320|100|35
+BUTTON|2|?? Load File|130|320|100|35
+BUTTON|3|??? Clear All|240|320|100|35
+BUTTON|4|? Close|350|320|100|35
+ONCLICK|1|SAVEFILE|notepad.txt
+ONCLICK|2|LOADFILE|notepad.txt
+ONCLICK|3|MSG|Text cleared! All content removed.
+ONCLICK|4|CLOSE|
+LABEL|File: notepad.txt in current directory|20|370

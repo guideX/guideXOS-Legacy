@@ -1,0 +1,14 @@
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\bin\Debug\net9.0\GXMPackager.exe
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\bin\Debug\net9.0\GXMPackager.deps.json
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\bin\Debug\net9.0\GXMPackager.runtimeconfig.json
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\bin\Debug\net9.0\GXMPackager.dll
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\bin\Debug\net9.0\GXMPackager.pdb
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.GeneratedMSBuildEditorConfig.editorconfig
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.AssemblyInfoInputs.cache
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.AssemblyInfo.cs
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.csproj.CoreCompileInputs.cache
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.dll
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\refint\GXMPackager.dll
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.pdb
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\GXMPackager.genruntimeconfig.cache
+D:\devgitlab\guideXOS\GXM.Apps\GXMPackager\obj\Debug\net9.0\ref\GXMPackager.dll

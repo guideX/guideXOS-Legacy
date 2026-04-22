@@ -1,0 +1,25 @@
+WINDOW|Window Chrome Showcase|600|500
+RESIZABLE|true
+TASKBAR|true
+MAXIMIZE|true
+MINIMIZE|true
+TOMBSTONE|true
+STARTMENU|true
+LABEL|Window Chrome Showcase|20|50
+LABEL|This window demonstrates all available chrome options.|20|80
+LABEL|Current Configuration:|20|120
+LABEL|? Resizable - You can resize this window|30|150
+LABEL|? Taskbar - Appears in the taskbar|30|180
+LABEL|? Maximize - Has maximize button|30|210
+LABEL|? Minimize - Has minimize button|30|240
+LABEL|? Tombstone - Has tombstone button|30|270
+LABEL|? Start Menu - Will appear in start menu|30|300
+LABEL|Try the different window configurations below:|20|340
+BUTTON|1|Open Minimal Window|20|380|180|32
+BUTTON|2|Open Dialog Style|220|380|180|32
+BUTTON|3|Open Utility Window|420|380|150|32
+BUTTON|4|Close|250|440|100|32
+ONCLICK|1|NOTIFY|Minimal: No taskbar, no resize, no buttons
+ONCLICK|2|NOTIFY|Dialog: Fixed size, no maximize
+ONCLICK|3|NOTIFY|Utility: Small, no taskbar/start menu
+ONCLICK|4|CLOSE|

@@ -1,0 +1,2 @@
+D:\devgitlab\guideXOS\GXM.Apps\Notepad.GXM\obj\Debug\net9.0\Notepad.GXM.GeneratedMSBuildEditorConfig.editorconfig
+D:\devgitlab\guideXOS\GXM.Apps\Notepad.GXM\obj\Debug\net9.0\Notepad.GXM.csproj.CoreCompileInputs.cache

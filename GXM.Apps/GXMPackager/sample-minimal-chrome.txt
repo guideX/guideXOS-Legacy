@@ -1,0 +1,11 @@
+WINDOW|Minimal Window|320|200
+RESIZABLE|false
+TASKBAR|false
+MAXIMIZE|false
+MINIMIZE|false
+TOMBSTONE|false
+STARTMENU|false
+LABEL|This is a minimal window with all|20|50
+LABEL|window chrome features disabled.|20|80
+BUTTON|1|Close|110|140|100|32
+ONCLICK|1|CLOSE|

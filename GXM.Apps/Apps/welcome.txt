@@ -1,0 +1,32 @@
+WINDOW|Welcome to guideXOS|600|480
+RESIZABLE|true
+TASKBAR|true
+MAXIMIZE|true
+MINIMIZE|true
+TOMBSTONE|true
+STARTMENU|true
+LABEL|Welcome to guideXOS|200|20
+LABEL|A modern operating system built from scratch|120|50
+LABEL|Getting Started:|20|100
+LABEL|? Click the Start button to browse applications|40|130
+LABEL|? Right-click the desktop for quick actions|40|160
+LABEL|? Use the taskbar to switch between windows|40|190
+LABEL|? Access widgets from the top-right corner|40|220
+LABEL|Featured Applications:|20|270
+BUTTON|1|Open Notepad|40|300|140|30
+BUTTON|2|Calculator|200|300|140|30
+BUTTON|3|File Manager|360|300|140|30
+BUTTON|4|Web Browser|40|340|140|30
+BUTTON|5|Image Viewer|200|340|140|30
+BUTTON|6|Settings|360|340|140|30
+LABEL|Keyboard Shortcuts:|20|390
+LABEL|ESC - Close active window|40|420
+LABEL|Mouse wheel - Scroll in menus and lists|40|445
+BUTTON|99|Close Welcome|220|465|160|30
+ONCLICK|1|OPENAPP|Notepad
+ONCLICK|2|OPENAPP|Calculator
+ONCLICK|3|OPENAPP|Computer Files
+ONCLICK|4|OPENAPP|WebBrowser
+ONCLICK|5|OPENAPP|ImageViewer
+ONCLICK|6|NOTIFY|Settings coming soon!
+ONCLICK|99|CLOSE|

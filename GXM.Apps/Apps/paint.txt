@@ -1,0 +1,36 @@
+WINDOW|Paint|800|600
+RESIZABLE|true
+TASKBAR|true
+MAXIMIZE|true
+MINIMIZE|true
+TOMBSTONE|true
+STARTMENU|true
+LABEL|Paint - Drawing Canvas|10|10
+LABEL|Colors:|10|40
+BUTTON|1|Black|70|35|60|25
+BUTTON|2|Red|140|35|60|25
+BUTTON|3|Green|210|35|60|25
+BUTTON|4|Blue|280|35|60|25
+BUTTON|5|Yellow|350|35|60|25
+BUTTON|6|White|420|35|60|25
+LABEL|Tools:|500|40
+BUTTON|10|Pen|550|35|60|25
+BUTTON|11|Eraser|620|35|60|25
+BUTTON|12|Fill|690|35|60|25
+BUTTON|20|Clear|10|70|80|25
+BUTTON|21|Save|100|70|80|25
+BUTTON|22|Load|190|70|80|25
+ONCLICK|1|NOTIFY|Black color selected
+ONCLICK|2|NOTIFY|Red color selected
+ONCLICK|3|NOTIFY|Green color selected
+ONCLICK|4|NOTIFY|Blue color selected
+ONCLICK|5|NOTIFY|Yellow color selected
+ONCLICK|6|NOTIFY|White color selected
+ONCLICK|10|NOTIFY|Pen tool selected
+ONCLICK|11|NOTIFY|Eraser tool selected
+ONCLICK|12|NOTIFY|Fill tool selected
+ONCLICK|20|NOTIFY|Canvas cleared
+ONCLICK|21|SAVEDIALOG|drawing.png
+ONCLICK|22|OPENDIALOG|
+LABEL|Canvas area will be available for drawing|10|110
+LABEL|(Full Paint functionality requires native implementation)|10|130

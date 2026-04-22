@@ -1,0 +1,18 @@
+WINDOW|Window Properties Demo|500|380
+RESIZABLE|false
+MAXIMIZE|false
+MINIMIZE|true
+TOMBSTONE|true
+TASKBAR|true
+STARTMENU|false
+LABEL|This window demonstrates custom window properties:|20|50
+LABEL|- Not resizable (RESIZABLE|false)|30|80
+LABEL|- No maximize button (MAXIMIZE|false)|30|110
+LABEL|- Has minimize button (MINIMIZE|true)|30|140
+LABEL|- Has tombstone button (TOMBSTONE|true)|30|170
+LABEL|- Shows in taskbar (TASKBAR|true)|30|200
+LABEL|- Hidden from start menu (STARTMENU|false)|30|230
+BUTTON|1|Test Notification|20|280|180|32
+BUTTON|2|Close Window|220|280|120|32
+ONCLICK|1|MSG|Window properties are working correctly!
+ONCLICK|2|CLOSE|

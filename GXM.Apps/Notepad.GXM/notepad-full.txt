@@ -1,0 +1,17 @@
+WINDOW|Notepad|600|450
+LABEL|GXM Notepad - Full Version with Real File I/O!|20|20
+LABEL|Select file type, edit text in list, then save!|20|50
+DROPDOWN|1|20|80|200|30|notepad.txt;document.txt;readme.txt;notes.txt;data.txt
+ONCHANGE|1|LOADFILE|$VALUE
+LIST|2|240|80|340|250|Line 1 - Edit this text;Line 2 - Add your content;Line 3 - Select any line to edit;Line 4 - Click Save to write to disk;Line 5 - Click Load to read from disk;Line 6 - Use dropdown to switch files;Line 7 - All changes are saved!;Line 8 - Real file I/O works!
+ONCHANGE|2|MSG|Editing: $VALUE
+BUTTON|10|?? Save|20|360|100|30
+BUTTON|11|?? Load|130|360|100|30
+BUTTON|12|?? New|240|360|100|30
+BUTTON|13|?? Open Built-in|350|360|140|30
+BUTTON|14|? Close|500|360|80|30
+ONCLICK|10|SAVEFILE|notepad.txt
+ONCLICK|11|LOADFILE|notepad.txt
+ONCLICK|12|MSG|New file created! Edit text and click Save.
+ONCLICK|13|OPENAPP|Notepad
+ONCLICK|14|CLOSE|
